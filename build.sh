@@ -1,0 +1,1 @@
+g++ -o a.out main.cpp -lssl -lcrypto
