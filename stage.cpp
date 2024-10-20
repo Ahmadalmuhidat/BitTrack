@@ -1,6 +1,6 @@
 #include "stage.hpp"
 
-void AddToStage(std::string FilePath)
+void stage(std::string FilePath)
 {
   if (!std::filesystem::exists(FilePath))
   {
@@ -48,7 +48,7 @@ void AddToStage(std::string FilePath)
   std::cout << "Added/updated in staging: " << FilePath << std::endl;
 }
 
-void RemoveFromStage(const std::string &filePath)
+void unstage(const std::string &filePath)
 {
   std::ifstream stagingFile(".bittrack/index");
   std::ofstream tempFile(".bittrack/index_temp");
@@ -110,7 +110,7 @@ void DisplayUnstagedFiles()
     {
       continue;
     }
-    std::string FilesMap = NormalizePath(fileName);
+    std::string FilesMap = normalizePath(fileName);
 
     UnstagedFiles.insert(FilesMap);
     UnstagedFileHashes[FilesMap] = fileHash;
@@ -124,7 +124,7 @@ void DisplayUnstagedFiles()
     if (entry.is_regular_file())
     {
       std::string filePath = entry.path().string();
-      std::string normalizedFilePath = NormalizePath(filePath);
+      std::string normalizedFilePath = normalizePath(filePath);
       std::vector<std::string> ignorePatterns = ReadBitignore(".bitignore");
 
       if (filePath.find(".bittrack") != std::string::npos)
@@ -135,7 +135,7 @@ void DisplayUnstagedFiles()
       {
         continue;
       }
-      if (!CompareWithCurrentVersion(filePath))
+      if (!compareWithCurrentVersion(filePath))
       {
         if (UnstagedFiles.find(normalizedFilePath) == UnstagedFiles.end())
         {
@@ -154,7 +154,7 @@ void DisplayUnstagedFiles()
   }
 }
 
-std::string NormalizePath(const std::string &path)
+std::string normalizePath(const std::string &path)
 {
   if (path.substr(0, 2) == "./")
   {
@@ -163,9 +163,9 @@ std::string NormalizePath(const std::string &path)
   return path;
 }
 
-bool CompareWithCurrentVersion(const std::string &CurrentFile)
+bool compareWithCurrentVersion(const std::string &CurrentFile)
 {
-  for (const auto &entry: std::filesystem::recursive_directory_iterator(".bittrack/objects/" + GetCurrentCommit()))
+  for (const auto &entry: std::filesystem::recursive_directory_iterator(".bittrack/objects/" + getCurrentCommit()))
   {
     if (entry.is_regular_file())
     {
@@ -182,7 +182,7 @@ bool CompareWithCurrentVersion(const std::string &CurrentFile)
   return false;
 }
 
-std::string GetCurrentCommit()
+std::string getCurrentCommit()
 {
   std::ifstream stagingFile(".bittrack/refs/heads/master");
   std::string line;

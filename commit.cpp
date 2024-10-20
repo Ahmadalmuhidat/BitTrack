@@ -1,10 +1,10 @@
 #include "commit.hpp"
 
-void StoreSnapshot(const std::string &filePath, const std::string &CommitHash)
+void storeSnapshot(const std::string &filePath, const std::string &CommitHash)
 {
   std::ifstream inputFile(filePath, std::ios::binary);
 
-  std::filesystem::create_directory(".bittrack/objects/" + CommitHash);
+  std::filesystem::create_directory(".bittrack/objects/" + getCurrentBranch() + "/" + CommitHash);
 
   std::stringstream buffer;
   buffer << inputFile.rdbuf();
@@ -18,7 +18,7 @@ void StoreSnapshot(const std::string &filePath, const std::string &CommitHash)
   std::cout << "Stored snapshot: " << filePath << " -> " << objectPath << std::endl;
 }
 
-void CreateCommitLog(
+void createCommitLog(
   const std::string &author,
   const std::string &message,
   const std::unordered_map<std::string, std::string> &fileHashes,
@@ -36,6 +36,7 @@ void CreateCommitLog(
 
   std::ofstream commitFile(".bittrack/commits/" + commitHash);
   commitFile << "Author: " << author << std::endl;
+  commitChanges << "Branch: " << getCurrentBranch() << std:endl;
   commitFile << "Timestamp: " << formatedTimestamp << std::endl;
   commitFile << "Message: " << message << std::endl;
   commitFile << "Files: " << std::endl;
@@ -55,7 +56,7 @@ void CreateCommitLog(
   headFile.close();
 }
 
-void CommitChanges(const std::string &author, const std::string &message)
+void commitChanges(const std::string &author, const std::string &message)
 {
   std::ifstream stagingFile(".bittrack/index");
   if (!stagingFile)
@@ -74,12 +75,12 @@ void CommitChanges(const std::string &author, const std::string &message)
     std::string filePath = line.substr(0, line.find(" "));
     std::string fileHash = HashFile(filePath);
 
-    StoreSnapshot(filePath, CommitHash);
+    storeSnapshot(filePath, CommitHash);
     FileHashes[filePath] = fileHash;
   }
   stagingFile.close();
 
-  CreateCommitLog(author, message, FileHashes, CommitHash);
+  createCommitLog(author, message, FileHashes, CommitHash);
 
   std::ofstream clearStagingFile(".bittrack/index", std::ios::trunc);
   clearStagingFile.close();
@@ -87,7 +88,7 @@ void CommitChanges(const std::string &author, const std::string &message)
   std::cout << "Commit created with hash: " << CommitHash << std::endl;
 }
 
-void CommitHistory()
+void commitHistory()
 {
   std::ifstream filePath(".bittrack/commits/history");
   std::string FileName;

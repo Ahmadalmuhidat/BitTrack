@@ -9,5 +9,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <openssl/sha.h>
+#include <algorithm>
 
 #endif

@@ -1,7 +1,8 @@
+
 #include "includes.hpp"
+#include "branch.cpp"
 #include "stage.cpp"
 #include "commit.cpp"
-#include "branch.cpp"
 
 int main(int argc, const char *argv[])
 {
@@ -27,6 +28,9 @@ int main(int argc, const char *argv[])
       std::ofstream HistoryFile(".bittrack/commits/history");
       HistoryFile.close();
 
+      addBranch("master");
+      switchBranch("master");
+
       std::cout << "Initialized empty BitTrack repository." << std::endl;
     }
     else if (arg == "--status")
@@ -40,7 +44,7 @@ int main(int argc, const char *argv[])
       if (i + 1 < argc)
       {
         std::string fileToAdd = argv[++i];
-        AddToStage(fileToAdd);
+        stage(fileToAdd); // make sure it is there
       }
       else
       {
@@ -50,7 +54,7 @@ int main(int argc, const char *argv[])
     else if (arg == "--unstage")
     {
       std::string fileToRemove = argv[++i];
-      RemoveFromStage(fileToRemove);
+      unstage(fileToRemove); // make sure it is there
     }
     else if (arg == "--commit")
     {
@@ -58,7 +62,7 @@ int main(int argc, const char *argv[])
       std::string message;
       getline(std::cin, message);
 
-      CommitChanges("almuhidat", message);
+      commitChanges("almuhidat", message);
     }
     else if (arg == "--staged-files-hashes")
     {
@@ -66,11 +70,11 @@ int main(int argc, const char *argv[])
     }
     else if (arg == "--current-commit")
     {
-      std::cout << GetCurrentCommit() << std::endl;
+      std::cout << getCurrentCommit() << std::endl;
     }
     else if (arg == "--commit-history")
     {
-      CommitHistory();
+      commitHistory();
     }
     else if (arg == "--remove-repo")
     {
@@ -83,9 +87,31 @@ int main(int argc, const char *argv[])
       std::filesystem::remove_all(".bittrack");
       std::cout << "Repository removed." << std::endl;
     }
-    else if (arg == "branch")
+    else if (arg == "--branch")
     {
-      listBranches();
+      if (i + 1 < argc)
+      {
+        std::string subFlag = argv[++i];
+
+        if (subFlag == "-l")
+        {
+          printBranshesList();
+        }
+        else if (subFlag == "-c")
+        {
+          std::string name = argv[3];
+          addBranch(name);
+        }
+      }
+      else
+      {
+        std::cout << "sub flag missing" << std::endl;
+      }
+    }
+    else if (arg == "--checkout")
+    {
+      std::string name = argv[2];
+      switchBranch(name);
     }
     else
     {

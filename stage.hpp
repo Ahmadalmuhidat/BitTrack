@@ -4,12 +4,12 @@
 #include "ignore.cpp"
 #include "hash.cpp"
 
-void AddToStage(std::string FilePath);
-void RemoveFromStage(const std::string &filePath);
+void stage(std::string FilePath);
+void unstage(const std::string &filePath);
 void DisplayStagedFiles();
 void DisplayUnstagedFiles();
-bool CompareWithCurrentVersion(const std::string &CurrentFile);
-std::string NormalizePath(const std::string &path);
-std::string GetCurrentCommit();
+bool compareWithCurrentVersion(const std::string &CurrentFile);
+std::string normalizePath(const std::string &path);
+std::string getCurrentCommit();
 
 #endif
