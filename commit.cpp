@@ -36,7 +36,7 @@ void createCommitLog(
 
   std::ofstream commitFile(".bittrack/commits/" + commitHash);
   commitFile << "Author: " << author << std::endl;
-  commitChanges << "Branch: " << getCurrentBranch() << std:endl;
+  commitFile << "Branch: " << getCurrentBranch() << std::endl;
   commitFile << "Timestamp: " << formatedTimestamp << std::endl;
   commitFile << "Message: " << message << std::endl;
   commitFile << "Files: " << std::endl;

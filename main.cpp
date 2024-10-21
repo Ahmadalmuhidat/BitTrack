@@ -99,7 +99,7 @@ int main(int argc, const char *argv[])
         }
         else if (subFlag == "-c")
         {
-          std::string name = argv[3];
+          std::string name = argv[++i];
           addBranch(name);
         }
       }
