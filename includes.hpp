@@ -1,5 +1,5 @@
-#ifndef HASH_HPP
-#define HASH_HPP
+#ifndef INCLUDES_HPP
+#define INCLUDES_HPP
 
 #include <iostream>
 #include <ctime>
