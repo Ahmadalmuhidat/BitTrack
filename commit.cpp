@@ -2,20 +2,22 @@
 
 void storeSnapshot(const std::string &filePath, const std::string &CommitHash)
 {
-  std::ifstream inputFile(filePath, std::ios::binary);
+  std::string newDir = ".bittrack/objects/" + getCurrentBranch() + "/" + CommitHash;
 
-  std::filesystem::create_directory(".bittrack/objects/" + getCurrentBranch() + "/" + CommitHash);
+  std::ifstream inputFile(filePath, std::ios::binary);
+  std::filesystem::create_directory(newDir);
 
   std::stringstream buffer;
   buffer << inputFile.rdbuf();
   std::string fileContent = buffer.str();
 
-  std::string objectPath = ".bittrack/objects/" + CommitHash + "/" + filePath;
-  std::ofstream objectFile(objectPath, std::ios::binary);
-  objectFile << fileContent;
-  objectFile.close();
+  std::string snapshotPath = newDir + "/" + filePath;
 
-  std::cout << "Stored snapshot: " << filePath << " -> " << objectPath << std::endl;
+  std::cout << snapshotPath << std::endl;
+
+  std::ofstream snapshotFile(snapshotPath, std::ios::binary);
+  snapshotFile << fileContent;
+  snapshotFile.close();
 }
 
 void createCommitLog(
@@ -25,6 +27,8 @@ void createCommitLog(
   const std::string &commitHash
 )
 {
+  std::string logFile = ".bittrack/commits/" + commitHash;
+  std::string currentBranch = getCurrentBranch();
   std::time_t currentTime = std::time(nullptr);
   char formatedTimestamp[80];
   std::strftime(
@@ -34,9 +38,9 @@ void createCommitLog(
     std::localtime(&currentTime)
   );
 
-  std::ofstream commitFile(".bittrack/commits/" + commitHash);
+  std::ofstream commitFile(logFile);
   commitFile << "Author: " << author << std::endl;
-  commitFile << "Branch: " << getCurrentBranch() << std::endl;
+  commitFile << "Branch: " << currentBranch << std::endl;
   commitFile << "Timestamp: " << formatedTimestamp << std::endl;
   commitFile << "Message: " << message << std::endl;
   commitFile << "Files: " << std::endl;
@@ -51,8 +55,8 @@ void createCommitLog(
   historyFile << commitHash << std::endl;
   historyFile.close();
 
-  std::ofstream headFile(".bittrack/refs/heads/master", std::ios::trunc);
-  headFile << commitHash;
+  std::ofstream headFile(".bittrack/refs/heads/" + getCurrentBranch(), std::ios::trunc);
+  headFile << commitHash << std::endl;
   headFile.close();
 }
 
@@ -84,8 +88,6 @@ void commitChanges(const std::string &author, const std::string &message)
 
   std::ofstream clearStagingFile(".bittrack/index", std::ios::trunc);
   clearStagingFile.close();
-
-  std::cout << "Commit created with hash: " << CommitHash << std::endl;
 }
 
 void commitHistory()

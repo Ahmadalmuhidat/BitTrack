@@ -3,11 +3,20 @@
 #include "stage.cpp"
 #include "commit.cpp"
 
+bool insideBitTrack()
+{
+  if (!std::filesystem::exists(".bittrack"))
+  {
+    return false;
+  }
+  return true;
+}
+
 void init()
 {
-  if (std::filesystem::exists(".bittrack"))
+  if (insideBitTrack())
   {
-    std::cout << "Repository already exists!" << std::endl;
+    std::cerr << "Repository already exists!" << std::endl;
     return;
   }
 
@@ -29,9 +38,9 @@ void init()
 
 void status()
 {
-  DisplayStagedFiles();
+  getStagedFiles();
   std::cout << "\n" << std::endl;
-  DisplayUnstagedFiles();
+  getUnstagedFiles();
 }
 
 void stageFile(int argc, const char *argv[], int &i)
@@ -62,7 +71,7 @@ void unstageFiles(int argc, const char *argv[], int &i)
 
 void commit()
 {
-  std::cout << "commit message: ";
+  std::cout << "message: ";
   std::string message;
   getline(std::cin, message);
 
@@ -86,13 +95,6 @@ void showCommitHistory()
 
 void removeCurrentRepo()
 {
-  if (!std::filesystem::exists(".bittrack"))
-  {
-    HASH_HPP
-    std::cout << "No repository found." << std::endl;
-    return;
-  }
-
   std::filesystem::remove_all(".bittrack");
   std::cout << "Repository removed." << std::endl;
 }
@@ -109,13 +111,20 @@ void branchOperations(int argc, const char *argv[], int &i)
     }
     else if (subFlag == "-c")
     {
-      std::string name = argv[++i];
-      addBranch(name);
+      if (i + 2 < argc)
+      {
+        std::string name = argv[++i];
+        addBranch(name);
+      }
+      else
+      {
+        std::cerr << "branch name missing" << std::endl;
+      }
     }
   }
   else
   {
-    std::cout << "sub flag missing" << std::endl;
+    std::cerr << "sub flag missing" << std::endl;
   }
 }
 
@@ -134,50 +143,71 @@ int main(int argc, const char *argv[])
     if (arg == "init")
     {
       init();
+      break;
     }
-    else if (arg == "--status")
+
+    if (insideBitTrack())
     {
-      status();
-    }
-    else if (arg == "--stage")
-    {
-      stageFile(argc, argv, i);
-    }
-    else if (arg == "--unstage")
-    {
-      unstageFiles(argc, argv, i);
-    }
-    else if (arg == "--commit")
-    {
-      commit();
-    }
-    else if (arg == "--staged-files-hashes")
-    {
-      showStagedFilesHashes();
-    }
-    else if (arg == "--current-commit")
-    {
-      showCurrentCommit();
-    }
-    else if (arg == "--commit-history")
-    {
-      commitHistory();
-    }
-    else if (arg == "--remove-repo")
-    {
-      removeCurrentRepo();
-    }
-    else if (arg == "--branch")
-    {
-      branchOperations(argc, argv, i);
-    }
-    else if (arg == "--checkout")
-    {
-      checkout(argv, i);
+      if (arg == "--status")
+      {
+        status();
+        break;
+      }
+      else if (arg == "--stage")
+      {
+        stageFile(argc, argv, i);
+        break;
+      }
+      else if (arg == "--unstage")
+      {
+        unstageFiles(argc, argv, i);
+        break;
+      }
+      else if (arg == "--commit")
+      {
+        commit();
+        break;
+      }
+      else if (arg == "--staged-files-hashes")
+      {
+        showStagedFilesHashes();
+        break;
+      }
+      else if (arg == "--current-commit")
+      {
+        showCurrentCommit();
+        break;
+      }
+      else if (arg == "--commit-history")
+      {
+        commitHistory();
+        break;
+      }
+      else if (arg == "--remove-repo")
+      {
+        removeCurrentRepo();
+        break;
+      }
+      else if (arg == "--branch")
+      {
+        branchOperations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--checkout")
+      {
+        // checkout(argv, i);
+        std::cout << "checkout feature will be here soon!" << std::endl;
+        break;
+      }
+      else
+      {
+        std::cerr << "Unknown flag: " << arg << std::endl;
+        break;
+      } 
     }
     else
     {
-      std::cerr << "Unknown flag: " << arg << std::endl;
+      std::cerr << "Not inside a BitTrack repository!" << std::endl;
     }
   }
 

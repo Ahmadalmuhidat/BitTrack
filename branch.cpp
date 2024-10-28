@@ -2,19 +2,13 @@
 
 std::string getCurrentBranch()
 {
-  if (!std::filesystem::exists(".bittrack"))
-  {
-    std::cout << "Not inside a BitTrack repository!" << std::endl;
-    return "";
-  }
-
   std::ifstream headFile(".bittrack/HEAD");
+
   if (!headFile.is_open())
   {
     std::cerr << "Error: Could not open HEAD file." << std::endl;
     return "";
   }
-
   std::string line;
   std::getline(headFile, line);
   headFile.close();
@@ -24,7 +18,7 @@ std::string getCurrentBranch()
 
 std::vector<std::string> getBranchesList()
 {
-  std::vector<std::string> branches;
+  std::vector<std::string> branchesList;
   const std::string prefix = ".bittrack/refs/heads/";
 
   for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack/refs/heads"))
@@ -32,35 +26,29 @@ std::vector<std::string> getBranchesList()
     if (entry.is_regular_file())
     {
       std::string branch = entry.path().string();
-      branches.push_back(branch.substr(prefix.length()));
+      branchesList.push_back(branch.substr(prefix.length()));
     }
   }
-  return branches;
+
+  return branchesList;
 }
 
 void printBranshesList()
 {
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack/refs/heads"))
+  std::vector<std::string> branchesList = getBranchesList();
+  std::string head = getCurrentBranch();
+
+  for (int i = 0; i < branchesList.size(); i++)
   {
-    if (entry.is_regular_file())
+    std::string branch = branchesList[i];
+
+    if (branch == head)
     {
-      std::string filePath = entry.path().string();
-      const std::string prefix = ".bittrack/refs/heads/";
-
-      if (filePath.find(prefix) == 0)
-      {
-        std::string head = getCurrentBranch();
-        std::string branch = filePath.substr(prefix.length());
-
-        if (branch == head)
-        {
-          std::cout << "\033[32m" << filePath.substr(prefix.length()) << "\033[0m" << std::endl;
-        }
-        else
-        {
-          std::cout << filePath.substr(prefix.length()) << std::endl;
-        }
-      }
+      std::cout << "\033[32m" << branch << "\033[0m" << std::endl;
+    }
+    else
+    {
+      std::cout << branch << std::endl;
     }
   }
 }
@@ -71,8 +59,8 @@ void addBranch(std::string name)
 
   if (std::find(branches.begin(), branches.end(), name) == branches.end())
   {
-    std::ofstream NewBranch(".bittrack/refs/heads/" + name);
-    NewBranch.close();
+    std::ofstream newBranch(".bittrack/refs/heads/" + name);
+    newBranch.close();
 
     std::filesystem::create_directory(".bittrack/objects/" + name);
   }
@@ -88,18 +76,17 @@ void switchBranch(std::string name)
 
   if (std::find(branches.begin(), branches.end(), name) == branches.end())
   {
-    std::cout << "create the branch first" << std::endl;
+    std::cerr << "create the branch first" << std::endl;
   }
   else if (getCurrentBranch() == name)
   {
-    std::cout << name << " is already the main branch" << std::endl;
+    std::cerr << name << " is already the main branch" << std::endl;
   }
   else
   {
     std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
     HeadFile << name << std::endl;
 
-    std::cout << "switch to branch " << name  << std::endl;
+    std::cout << "current branch " << name  << std::endl;
   }
-
 }

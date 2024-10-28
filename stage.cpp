@@ -29,7 +29,7 @@ void stage(std::string FilePath)
     {
       if (stagedFileHash == fileHash)
       {
-        std::cout << "File is already staged and unchanged." << std::endl;
+        std::cerr << "File is already staged and unchanged." << std::endl;
         return;
       }
     }
@@ -44,8 +44,6 @@ void stage(std::string FilePath)
     updatedStagingFile << path << " " << hash << std::endl;
   }
   updatedStagingFile.close();
-
-  std::cout << "Added/updated in staging: " << FilePath << std::endl;
 }
 
 void unstage(const std::string &filePath)
@@ -67,11 +65,9 @@ void unstage(const std::string &filePath)
 
   std::filesystem::remove(".bittrack/index");
   std::filesystem::rename(".bittrack/index_temp", ".bittrack/index");
-
-  std::cout << "Unstaged: " << filePath << std::endl;
 }
 
-void DisplayStagedFiles()
+void getStagedFiles()
 {
   std::ifstream stagingFile(".bittrack/index");
   std::string line;
@@ -92,7 +88,7 @@ void DisplayStagedFiles()
   stagingFile.close();
 }
 
-void DisplayUnstagedFiles()
+void getUnstagedFiles()
 {
   std::unordered_set<std::string> UnstagedFiles;
   std::unordered_map<std::string, std::string> UnstagedFileHashes;
@@ -165,7 +161,8 @@ std::string normalizePath(const std::string &path)
 
 bool compareWithCurrentVersion(const std::string &CurrentFile)
 {
-  for (const auto &entry: std::filesystem::recursive_directory_iterator(".bittrack/objects/" + getCurrentCommit()))
+  std::string dirPath = ".bittrack/objects/" + getCurrentCommit();
+  for (const auto &entry: std::filesystem::recursive_directory_iterator(dirPath))
   {
     if (entry.is_regular_file())
     {
@@ -184,7 +181,7 @@ bool compareWithCurrentVersion(const std::string &CurrentFile)
 
 std::string getCurrentCommit()
 {
-  std::ifstream stagingFile(".bittrack/refs/heads/master");
+  std::ifstream stagingFile(".bittrack/refs/heads/" + getCurrentBranch());
   std::string line;
 
   while (std::getline(stagingFile, line))
