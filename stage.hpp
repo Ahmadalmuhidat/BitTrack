@@ -1,6 +1,14 @@
 #ifndef STAGE_HPP
 #define STAGE_HPP
 
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <filesystem>
+#include <unordered_map>
+#include <unordered_set>
+
 #include "ignore.cpp"
 #include "hash.cpp"
 

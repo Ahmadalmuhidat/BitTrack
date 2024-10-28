@@ -1,6 +1,13 @@
 #ifndef BRANCH_HPP
 #define BRANCH_HPP
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <filesystem>
+#include <algorithm>
+
 std::string getCurrentBranch();
 std::vector<std::string> getBranchesList();
 void printBranshesList();

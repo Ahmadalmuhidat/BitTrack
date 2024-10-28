@@ -1,6 +1,15 @@
 #ifndef COMMIT_HPP
 #define COMMIT_HPP
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <ctime>
+#include <fstream>
+#include <filesystem>
+#include <unordered_map>
+
+#include "hash.hpp"
 #include "branch.hpp"
 
 void storeSnapshot(const std::string &filePath, const std::string &CommitHash);
