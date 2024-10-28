@@ -178,7 +178,7 @@ int main(int argc, const char *argv[])
         showCurrentCommit();
         break;
       }
-      else if (arg == "--commit-history")
+      else if (arg == "--log")
       {
         commitHistory();
         break;
