@@ -38,9 +38,19 @@ void init()
 
 void status()
 {
-  getStagedFiles();
+  std::cout << "staged files:" << std::endl;
+  for (std::string fileName: getStagedFiles())
+  {
+    std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
+  }
+
   std::cout << "\n" << std::endl;
-  getUnstagedFiles();
+
+  std::cout << "unstaged files:" << std::endl;
+  for (std::string fileName: getUnstagedFiles())
+  {
+    std::cout << "\033[31m" << fileName << "\033[0m" << std::endl;
+  }
 }
 
 void stageFile(int argc, const char *argv[], int &i)
@@ -48,7 +58,7 @@ void stageFile(int argc, const char *argv[], int &i)
   if (i + 1 < argc)
   {
     std::string fileToAdd = argv[++i];
-    stage(fileToAdd); // make sure it is there
+    stage(fileToAdd);
   }
   else
   {
@@ -61,7 +71,7 @@ void unstageFiles(int argc, const char *argv[], int &i)
   if (i + 1 < argc)
   {
     std::string fileToRemove = argv[++i];
-    unstage(fileToRemove); // make sure it is there
+    unstage(fileToRemove);
   }
   else
   {

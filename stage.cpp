@@ -50,6 +50,18 @@ void unstage(const std::string &filePath)
 {
   std::ifstream stagingFile(".bittrack/index");
   std::ofstream tempFile(".bittrack/index_temp");
+  std::vector<std::string> stagedFiles = getStagedFiles();
+
+  if (!std::filesystem::exists(filePath))
+  {
+    std::cerr << "Error: File does not exist!" << std::endl;
+    return;
+  }
+
+  if (std::find(stagedFiles.begin(), stagedFiles.end(), filePath) == stagedFiles.end())
+  {
+    std::cerr << "the file is not staged already" << std::endl;
+  }
 
   std::string line;
   while (std::getline(stagingFile, line))
@@ -67,12 +79,12 @@ void unstage(const std::string &filePath)
   std::filesystem::rename(".bittrack/index_temp", ".bittrack/index");
 }
 
-void getStagedFiles()
+std::vector<std::string> getStagedFiles()
 {
   std::ifstream stagingFile(".bittrack/index");
   std::string line;
+  std::vector<std::string> files;
 
-  std::cout << "Staged files:" << std::endl;
   while (std::getline(stagingFile, line))
   {
     std::istringstream iss(line);
@@ -83,18 +95,22 @@ void getStagedFiles()
     {
       continue;
     }
-    std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
+    files.push_back(fileName);
   }
   stagingFile.close();
+
+  return files;
 }
 
-void getUnstagedFiles()
+std::vector<std::string> getUnstagedFiles()
 {
   std::unordered_set<std::string> UnstagedFiles;
   std::unordered_map<std::string, std::string> UnstagedFileHashes;
 
   std::ifstream IndexFile(".bittrack/index");
   std::string line;
+
+  std::vector<std::string> files;
 
   while (std::getline(IndexFile, line))
   {
@@ -112,8 +128,6 @@ void getUnstagedFiles()
     UnstagedFileHashes[FilesMap] = fileHash;
   }
   IndexFile.close();
-
-  std::cout << "Unstaged files:" << std::endl;
 
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
@@ -135,19 +149,21 @@ void getUnstagedFiles()
       {
         if (UnstagedFiles.find(normalizedFilePath) == UnstagedFiles.end())
         {
-          std::cout << "\033[31m" << normalizedFilePath << "\033[0m" << std::endl;
+          files.push_back(normalizedFilePath);
         }
         else
         {
           std::string currentHash = HashFile(filePath);
           if (currentHash != UnstagedFileHashes[normalizedFilePath])
           {
-            std::cout << "\033[31m" << normalizedFilePath << "\033[0m" << std::endl;
+            files.push_back(normalizedFilePath);
           }
         }
       }
     }
   }
+
+  return files;
 }
 
 std::string normalizePath(const std::string &path)
