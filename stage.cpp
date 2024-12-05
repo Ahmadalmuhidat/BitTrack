@@ -106,6 +106,7 @@ std::vector<std::string> getUnstagedFiles()
 {
   std::unordered_set<std::string> UnstagedFiles;
   std::unordered_map<std::string, std::string> UnstagedFileHashes;
+  std::string CurrentBranch = ".bittrack/objects/" + getCurrentBranch() + "/" + getCurrentCommit();
 
   std::ifstream IndexFile(".bittrack/index");
   std::string line;
@@ -145,7 +146,7 @@ std::vector<std::string> getUnstagedFiles()
       {
         continue;
       }
-      if (!compareWithCurrentVersion(filePath))
+      if (!compareWithCurrentVersion(filePath, CurrentBranch))
       {
         if (UnstagedFiles.find(normalizedFilePath) == UnstagedFiles.end())
         {
@@ -175,10 +176,9 @@ std::string normalizePath(const std::string &path)
   return path;
 }
 
-bool compareWithCurrentVersion(const std::string &CurrentFile)
+bool compareWithCurrentVersion(const std::string &CurrentFile, const std::string &CurrentBranch)
 {
-  std::string dirPath = ".bittrack/objects/" + getCurrentCommit();
-  for (const auto &entry: std::filesystem::recursive_directory_iterator(dirPath))
+  for (const auto &entry: std::filesystem::recursive_directory_iterator(CurrentBranch))
   {
     if (entry.is_regular_file())
     {
@@ -200,9 +200,11 @@ std::string getCurrentCommit()
   std::ifstream stagingFile(".bittrack/refs/heads/" + getCurrentBranch());
   std::string line;
 
-  while (std::getline(stagingFile, line))
+  if (std::getline(stagingFile, line))
   {
-    std::istringstream iss(line);
+    stagingFile.close();
+    return line;
   }
-  return line;
+  stagingFile.close();
+  return "";
 }

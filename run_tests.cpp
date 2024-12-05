@@ -66,6 +66,8 @@ TEST(commit_tests, commit_staged_file_test)
 
 int main(int argc, char **argv)
 {
+  system("./bittrack init");
+
   std::ofstream test_file("test_file.txt");
   test_file.close();
 
@@ -74,6 +76,9 @@ int main(int argc, char **argv)
 
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
+
+  std::filesystem::remove_all(".bittrack");
+  std::cout << "Repository removed." << std::endl;
 
   return 0;
 }

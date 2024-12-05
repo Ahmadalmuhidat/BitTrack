@@ -31,7 +31,6 @@ void init()
 
   addBranch("master");
   switchBranch("master");
-
   std::cout << "Initialized empty BitTrack repository." << std::endl;
 }
 

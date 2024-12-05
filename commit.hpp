@@ -8,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_map>
+#include <sstream>
 
 #include "hash.hpp"
 #include "branch.hpp"

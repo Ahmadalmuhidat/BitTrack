@@ -21,7 +21,10 @@ std::vector<std::string> ReadBitignore(const std::string &filePath)
   return patterns;
 }
 
-bool isIgnored(const std::string &filePath, const std::vector<std::string> &patterns)
+bool isIgnored(
+  const std::string &filePath,
+  const std::vector<std::string> &patterns
+)
 {
   for (const auto &pattern : patterns)
   {

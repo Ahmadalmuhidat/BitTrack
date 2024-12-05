@@ -8,6 +8,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <openssl/sha.h>
+#include <sstream>
 
 #include "ignore.hpp"
 
