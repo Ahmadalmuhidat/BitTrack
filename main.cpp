@@ -1,6 +1,6 @@
-#include "branch.cpp"
-#include "stage.cpp"
-#include "commit.cpp"
+#include "src/branch.cpp"
+#include "src/stage.cpp"
+#include "src/commit.cpp"
 
 bool insideBitTrack()
 {

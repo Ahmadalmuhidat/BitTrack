@@ -10,8 +10,8 @@
 #include <unordered_set>
 #include <sstream>
 
-#include "ignore.cpp"
-#include "hash.cpp"
+#include "../src/ignore.cpp"
+#include "../src/hash.cpp"
 #include "branch.hpp"
 
 void stage(std::string FilePath);

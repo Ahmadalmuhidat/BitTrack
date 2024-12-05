@@ -1,4 +1,4 @@
-#include "commit.hpp"
+#include "../include/commit.hpp"
 
 void storeSnapshot(const std::string &filePath, const std::string &CommitHash)
 {

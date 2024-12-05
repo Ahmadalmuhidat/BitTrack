@@ -1,4 +1,4 @@
-#include "hash.hpp"
+#include "../include/hash.hpp"
 
 std::string toHexString(unsigned char *hash, std::size_t length)
 {

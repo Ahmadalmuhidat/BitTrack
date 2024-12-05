@@ -1,0 +1,1 @@
+g++ -std=c++17 -I$(brew --prefix openssl)/include -L$(brew --prefix openssl)/lib -lssl -lcrypto -o bittrack ./main.cpp -lssl -lcrypto

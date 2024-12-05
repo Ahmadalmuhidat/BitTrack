@@ -1,4 +1,4 @@
-#include "branch.hpp"
+#include "../include/branch.hpp"
 
 std::string getCurrentBranch()
 {

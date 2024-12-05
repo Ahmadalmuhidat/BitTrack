@@ -1,4 +1,4 @@
-#include "ignore.hpp"
+#include "../include/ignore.hpp"
 
 std::string getFileExtension(const std::string &filePath)
 {

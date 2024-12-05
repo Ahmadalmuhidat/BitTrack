@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
-#include "branch.cpp"
-#include "stage.cpp"
-#include "commit.cpp"
+#include "../src/branch.cpp"
+#include "../src/stage.cpp"
+#include "../src/commit.cpp"
 
 TEST(branch_tests, valid_current_branch_test)
 {
