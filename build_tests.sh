@@ -1,0 +1,1 @@
+g++ run_tests.cpp -lgtest -lgtest_main -pthread -lssl -lcrypto -o tests.out

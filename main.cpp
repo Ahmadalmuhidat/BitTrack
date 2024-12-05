@@ -1,4 +1,3 @@
-
 #include "branch.cpp"
 #include "stage.cpp"
 #include "commit.cpp"

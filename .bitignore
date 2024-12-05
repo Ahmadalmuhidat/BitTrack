@@ -40,3 +40,9 @@ LICENSE
 *.cpp
 *.hpp
 *.sh
+
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+test_ignore_file.txt

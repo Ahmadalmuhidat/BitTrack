@@ -36,3 +36,7 @@
 .bittrack/
 .vscode/
 .git/
+
+CMakeFiles/
+cmake_install.cmake
+Makefile
