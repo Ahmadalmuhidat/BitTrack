@@ -6,6 +6,29 @@
 #include "stage.test.cpp"
 #include "commit.test.cpp"
 
+void prepareTestEnviroment()
+{
+  // create new repo
+  std::cout << "preparing a new repo for testing..." << std::endl;
+  system("build/bittrack init");
+
+  // create a test file
+  std::cout << "create a test file..." << std::endl;
+
+  std::ofstream test_file("test_file.txt");
+  test_file.close();
+
+  // insert content in the test file
+  std::ofstream test_content("test_file.txt");
+  test_content << "test content" << std::endl;
+}
+
+void cleanTestEnviroment()
+{
+  std::cout << "cleaning testing enviroment" << std::endl;
+  std::filesystem::remove_all(".bittrack");
+}
+
 TEST(branch_tests, valid_current_branch_test)
 {
   EXPECT_TRUE(testBranchMaster());
@@ -33,23 +56,12 @@ TEST(commit_tests, commit_staged_file_test)
 
 int main(int argc, char **argv)
 {
-  // create new repo
-  system("./bittrack init");
+  prepareTestEnviroment();
 
-  // create test file
-  std::ofstream test_file("test_file.txt");
-  test_file.close();
-
-  // insert content in file
-  std::ofstream test_content("test_file.txt");
-  test_content << "test content" << std::endl;
-
-  // start testing
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
 
-  std::filesystem::remove_all(".bittrack");
-  std::cout << "Repository removed." << std::endl;
+  cleanTestEnviroment();
 
   return 0;
 }
