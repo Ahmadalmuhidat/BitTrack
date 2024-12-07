@@ -175,7 +175,10 @@ std::string normalizePath(const std::string &path)
   return path;
 }
 
-bool compareWithCurrentVersion(const std::string &CurrentFile, const std::string &CurrentBranch)
+bool compareWithCurrentVersion(
+  const std::string &CurrentFile,
+  const std::string &CurrentBranch
+)
 {
   for (const auto &entry: std::filesystem::recursive_directory_iterator(CurrentBranch))
   {

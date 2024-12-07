@@ -2,78 +2,49 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
-#include "../src/branch.cpp"
-#include "../src/stage.cpp"
-#include "../src/commit.cpp"
+#include "branch.test.cpp"
+#include "stage.test.cpp"
+#include "commit.test.cpp"
 
 TEST(branch_tests, valid_current_branch_test)
 {
-  std::string current_branch = getCurrentBranch();
-  EXPECT_TRUE(current_branch == "master");
+  EXPECT_TRUE(testBranchMaster());
 }
 
 TEST(staging_tests, stage_file_test)
 {
-  stage("test_file.txt");
-
-  std::vector<std::string> StagedFiles = getStagedFiles();
-  auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
-    "test_file.txt"
-  );
-
-  EXPECT_TRUE(it != StagedFiles.end());
+  EXPECT_TRUE(testStagedFiles());
 }
 
 TEST(ignore_tests, ignored_file_test)
 {
-  std::vector<std::string> StagedFiles = getStagedFiles();
-  auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
-    "test_ignore_file.txt"
-  );
-
-  EXPECT_FALSE(it != StagedFiles.end());
+  EXPECT_FALSE(testIgnoreFiles());
 }
 
 TEST(staging_tests, unstage_stage_test)
 {
-  unstage("test_file.txt");
-
-  std::vector<std::string> StagedFiles = getUnstagedFiles();
-  auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
-    "test_file.txt"
-  );
-
-  EXPECT_TRUE(it != StagedFiles.end());
+  EXPECT_TRUE(testUnstageFiles());
 }
 
 TEST(commit_tests, commit_staged_file_test)
 {
-  stage("test_file.txt");
-  commitChanges("almuhidat", "test commit");
-
-  std::string commit_path = ".bittrack/objects/"  + getCurrentBranch() + "/" + getCurrentCommit() + "/test_file.txt";
-  bool file_exists = std::filesystem::exists(commit_path);
-
-  EXPECT_TRUE(file_exists);
+  EXPECT_TRUE(testCommitStagedFiles());
 }
-
 
 int main(int argc, char **argv)
 {
+  // create new repo
   system("./bittrack init");
 
+  // create test file
   std::ofstream test_file("test_file.txt");
   test_file.close();
 
+  // insert content in file
   std::ofstream test_content("test_file.txt");
   test_content << "test content" << std::endl;
 
+  // start testing
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
 

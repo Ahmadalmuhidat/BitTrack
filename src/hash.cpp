@@ -12,7 +12,12 @@ std::string toHexString(unsigned char *hash, std::size_t length)
   return hexStream.str();
 }
 
-std::string GenerateCommitHash(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
+std::string GenerateCommitHash(
+  const std::string &author,
+  const std::string &commitMessage,
+  const std::unordered_map<std::string,
+  std::string> &fileHashes
+)
 {
   // get the current time
   auto now = std::chrono::system_clock::now();
