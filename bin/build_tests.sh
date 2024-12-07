@@ -1,0 +1,1 @@
+g++ -std=c++17 -I$(brew --prefix openssl)/include -L$(brew --prefix openssl)/lib -lgtest -lgtest_main -pthread -lssl -lcrypto tests/run_tests.cpp -o build/RunTests
