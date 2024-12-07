@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <algorithm>
 
+#include "stage.hpp"
+
 std::string getCurrentBranch();
 std::vector<std::string> getBranchesList();
 void printBranshesList();

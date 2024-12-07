@@ -88,7 +88,7 @@ void commit()
 
 void showStagedFilesHashes()
 {
-  index();
+  getIndexHashes();
 }
 
 void showCurrentCommit()
@@ -119,7 +119,7 @@ void branchOperations(int argc, const char *argv[], int &i)
     }
     else if (subFlag == "-c")
     {
-      if (i + 2 < argc)
+      if (i + 1 < argc)
       {
         std::string name = argv[++i];
         addBranch(name);
@@ -203,8 +203,8 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--checkout")
       {
-        // checkout(argv, i);
-        std::cout << "checkout feature will be here soon!" << std::endl;
+        checkout(argv, i);
+        // std::cout << "checkout feature will be here soon!" << std::endl;
         break;
       }
       else

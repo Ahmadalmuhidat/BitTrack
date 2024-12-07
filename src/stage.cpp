@@ -10,14 +10,15 @@ void stage(std::string FilePath)
 
   std::string fileHash = HashFile(FilePath);
   std::ifstream stagingFile(".bittrack/index");
-  std::string line;
   std::unordered_map<std::string, std::string> stagedFiles;
+  std::string line;
 
   while (std::getline(stagingFile, line))
   {
     std::istringstream iss(line);
     std::string stagedFilePath;
     std::string stagedFileHash;
+
     if (!(iss >> stagedFilePath >> stagedFileHash))
     {
       continue;
@@ -71,7 +72,6 @@ void unstage(const std::string &filePath)
       tempFile << line << std::endl;
     }
   }
-
   stagingFile.close();
   tempFile.close();
 
@@ -106,9 +106,8 @@ std::vector<std::string> getUnstagedFiles()
 {
   std::unordered_set<std::string> UnstagedFiles;
   std::unordered_map<std::string, std::string> UnstagedFileHashes;
-  std::string CurrentBranch = ".bittrack/objects/" + getCurrentBranch() + "/" + getCurrentCommit();
-
   std::ifstream IndexFile(".bittrack/index");
+  std::string CurrentBranch = ".bittrack/objects/" + getCurrentBranch() + "/" + getCurrentCommit();
   std::string line;
 
   std::vector<std::string> files;
