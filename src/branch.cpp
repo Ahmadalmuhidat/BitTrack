@@ -74,10 +74,14 @@ void addBranch(std::string name)
 
     std::string currentCommit = getCurrentCommit();
     std::string currentBranch = getCurrentBranch();
-    std::string source = ".bittrack/objects/" + currentBranch  + "/" + currentCommit;
-    std::string destination = ".bittrack/objects/" + name  + "/" + currentCommit;
 
-    std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+    if (currentBranch != "" && currentCommit != "")
+    {
+      std::string source = ".bittrack/objects/" + currentBranch  + "/" + currentCommit;
+      std::string destination = ".bittrack/objects/" + name  + "/" + currentCommit;
+
+      std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+    }
 
     // insert in the head file the random hash as last commit
     std::ofstream headFile(".bittrack/refs/heads/" + name, std::ios::trunc);

@@ -9,7 +9,7 @@ TEST_SRC = tests/main.test.cpp
 OUT = build/bittrack
 TEST_OUT = build/RunTests
 
-mkdir_build:
+build:
 	mkdir -p build
 
 compile: build
