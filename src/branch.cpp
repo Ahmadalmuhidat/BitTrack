@@ -71,6 +71,18 @@ void addBranch(std::string name)
 
     // create a directory with the new branch name
     std::filesystem::create_directory(".bittrack/objects/" + name);
+
+    std::string currentCommit = getCurrentCommit();
+    std::string currentBranch = getCurrentBranch();
+    std::string source = ".bittrack/objects/" + currentBranch  + "/" + currentCommit;
+    std::string destination = ".bittrack/objects/" + name  + "/" + currentCommit;
+
+    std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+
+    // insert in the head file the random hash as last commit
+    std::ofstream headFile(".bittrack/refs/heads/" + name, std::ios::trunc);
+    headFile << currentCommit << std::endl;
+    headFile.close();
   }
   else
   {
@@ -93,14 +105,8 @@ void switchBranch(std::string name)
   }
   else
   {
-    std::string lastCommit = getCurrentCommit();
-    // generate a random hash
-    // copy the last commit folder to the new branch
-
     // clear the HEAD file content and insert the new head branch
     std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
     HeadFile << name << std::endl;
-
-    // insert in the head file the random hash as last commit
   }
 }

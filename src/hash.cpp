@@ -15,8 +15,7 @@ std::string toHexString(unsigned char *hash, std::size_t length)
 std::string GenerateCommitHash(
   const std::string &author,
   const std::string &commitMessage,
-  const std::unordered_map<std::string,
-  std::string> &fileHashes
+  const std::unordered_map<std::string, std::string> &fileHashes
 )
 {
   // get the current time

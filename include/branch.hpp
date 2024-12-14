@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "stage.hpp"
+#include "hash.hpp"
 
 std::string getCurrentBranch();
 std::vector<std::string> getBranchesList();

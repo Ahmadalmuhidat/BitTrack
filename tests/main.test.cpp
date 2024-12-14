@@ -23,12 +23,6 @@ void prepareTestEnviroment()
   test_content << "test content" << std::endl;
 }
 
-void cleanTestEnviroment()
-{
-  std::cout << "cleaning testing enviroment" << std::endl;
-  std::filesystem::remove_all(".bittrack");
-}
-
 TEST(branch_tests, valid_current_branch_test)
 {
   EXPECT_TRUE(testBranchMaster());
@@ -60,8 +54,6 @@ int main(int argc, char **argv)
 
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
-
-  cleanTestEnviroment();
 
   return 0;
 }

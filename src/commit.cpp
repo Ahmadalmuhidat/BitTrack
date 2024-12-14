@@ -2,20 +2,31 @@
 
 void storeSnapshot(const std::string &filePath, const std::string &CommitHash)
 {
-  // create new folder to store the snapshot
+  // Base path for the snapshot
   std::string newDirPath = ".bittrack/objects/" + getCurrentBranch() + "/" + CommitHash;
-  std::filesystem::create_directory(newDirPath);
 
-  // read the content of the modified file into a buffer
+  // Determine the relative path of the file
+  std::filesystem::path relativePath = std::filesystem::relative(filePath, ".");
+  std::filesystem::path snapshotPath = std::filesystem::path(newDirPath) / relativePath;
+
+  // Create all necessary directories for the relative path
+  std::filesystem::create_directories(snapshotPath.parent_path());
+
+  // Read the content of the file into a buffer
   std::ifstream inputFile(filePath, std::ios::binary);
+  if (!inputFile) {
+    std::cerr << "Error: Unable to open file: " << filePath << std::endl;
+  }
   std::stringstream buffer;
   buffer << inputFile.rdbuf();
+  inputFile.close();
 
-  std::string fileContent = buffer.str();
-  std::string snapshotPath = newDirPath + "/" + filePath;
-  std::ofstream snapshotFile(snapshotPath, std::ios::binary); // create a copy of the file
-  snapshotFile << fileContent; // write the buffer content in the copy
-  
+  // Write the buffer content to the snapshot file
+  std::ofstream snapshotFile(snapshotPath, std::ios::binary);
+  if (!snapshotFile) {
+    std::cerr << "Error: Unable to create snapshot file: " << snapshotPath << std::endl;
+  }
+  snapshotFile << buffer.str();
   snapshotFile.close();
 }
 
