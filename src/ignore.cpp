@@ -1,11 +1,11 @@
 #include "../include/ignore.hpp"
 
-std::string getFileExtenion(const std::string &filePath)
+std::string get_file_extenion(const std::string &filePath)
 {
   return std::filesystem::path(filePath).extension().string();
 }
 
-std::vector<std::string> ReadBitignore(const std::string &filePath)
+std::vector<std::string> read_bitignore(const std::string &filePath)
 {
   std::vector<std::string> patterns;
   std::ifstream bitignoreFile(filePath);
@@ -19,11 +19,10 @@ std::vector<std::string> ReadBitignore(const std::string &filePath)
       patterns.push_back(line);
     }
   }
-
   return patterns;
 }
 
-bool isIgnored(const std::string &filePath, const std::vector<std::string> &patterns)
+bool is_file_ignored(const std::string &filePath, const std::vector<std::string> &patterns)
 {
   for (const auto &pattern: patterns)
   {
@@ -42,7 +41,7 @@ bool isIgnored(const std::string &filePath, const std::vector<std::string> &patt
       if (pattern[0] == '*' && pattern[1] == '.')
       {
         // get the pattern file extenion
-        std::string fileExtension = getFileExtenion(filePath);
+        std::string fileExtension = get_file_extenion(filePath);
 
         // check if the file extenion match the targeted extenion
         if (fileExtension == pattern.substr(1))

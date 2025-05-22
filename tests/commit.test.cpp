@@ -1,12 +1,11 @@
 #include "../src/commit.cpp"
 
-bool testCommitStagedFiles()
+bool test_commit_staged_files()
 {
   stage("test_file.txt");
-  commitChanges("almuhidat", "test commit");
+  commit_changes("almuhidat", "test commit");
 
-  std::string commit_path = ".bittrack/objects/"  + getCurrentBranch() + "/" + getCurrentCommit() + "/test_file.txt";
+  std::string commit_path = ".bittrack/objects/"  + get_current_branch() + "/" + get_current_commit() + "/test_file.txt";
   bool file_exists = std::filesystem::exists(commit_path);
-
   return file_exists; 
 }

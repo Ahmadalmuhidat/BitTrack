@@ -1,8 +1,9 @@
 #include "branch.cpp"
 #include "stage.cpp"
 #include "commit.cpp"
+#include "remote.cpp"
 
-bool insideBitTrack()
+bool inside_BitTrack()
 {
   if (!std::filesystem::exists(".bittrack"))
   {
@@ -13,7 +14,7 @@ bool insideBitTrack()
 
 void init()
 {
-  if (insideBitTrack())
+  if (inside_BitTrack())
   {
     std::cerr << "Repository already exists!" << std::endl;
     return;
@@ -29,15 +30,15 @@ void init()
   std::ofstream HistoryFile(".bittrack/commits/history");
   HistoryFile.close();
 
-  addBranch("master");
-  switchBranch("master");
+  add_branch("master");
+  switch_branch("master");
   std::cout << "Initialized empty BitTrack repository." << std::endl;
 }
 
 void status()
 {
   std::cout << "staged files:" << std::endl;
-  for (std::string fileName: getStagedFiles())
+  for (std::string fileName: get_staged_files())
   {
     std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
   }
@@ -45,18 +46,18 @@ void status()
   std::cout << "\n" << std::endl;
 
   std::cout << "unstaged files:" << std::endl;
-  for (std::string fileName: getUnstagedFiles())
+  for (std::string fileName: get_unstaged_files())
   {
     std::cout << "\033[31m" << fileName << "\033[0m" << std::endl;
   }
 }
 
-void stageFile(int argc, const char *argv[], int &i)
+void stage_file(int argc, const char *argv[], int &i)
 {
   if (i + 1 < argc)
   {
-    std::string fileToAdd = argv[++i];
-    stage(fileToAdd);
+    std::string file_to_add = argv[++i];
+    stage(file_to_add);
   }
   else
   {
@@ -64,7 +65,7 @@ void stageFile(int argc, const char *argv[], int &i)
   }
 }
 
-void unstageFiles(int argc, const char *argv[], int &i)
+void unstage_files(int argc, const char *argv[], int &i)
 {
   if (i + 1 < argc)
   {
@@ -83,31 +84,31 @@ void commit()
   std::string message;
   getline(std::cin, message);
 
-  commitChanges("almuhidat", message);
+  commit_changes("almuhidat", message);
 }
 
-void showStagedFilesHashes()
+void show_staged_files_hashes()
 {
-  getIndexHashes();
+  get_index_hashes();
 }
 
-void showCurrentCommit()
+void show_current_commit()
 {
-  std::cout << getCurrentCommit() << std::endl;
+  std::cout << get_current_commit() << std::endl;
 }
 
-void showCommitHistory()
+void show_commit_history()
 {
-  commitHistory();
+  commit_history();
 }
 
-void removeCurrentRepo()
+void remove_current_repo()
 {
   std::filesystem::remove_all(".bittrack");
   std::cout << "Repository removed." << std::endl;
 }
 
-void branchOperations(int argc, const char *argv[], int &i)
+void branch_operations(int argc, const char *argv[], int &i)
 {
   if (i + 1 < argc)
   {
@@ -115,14 +116,27 @@ void branchOperations(int argc, const char *argv[], int &i)
 
     if (subFlag == "-l")
     {
-      printBranshesList();
+      print_branshes_list();
     }
     else if (subFlag == "-c")
     {
       if (i + 1 < argc)
       {
         std::string name = argv[++i];
-        addBranch(name);
+        add_branch(name);
+      }
+      else
+      {
+        std::cerr << "branch name missing" << std::endl;
+      }
+    }
+    else if (subFlag == "-r")
+    {
+      if (i + 1 < argc)
+      {
+        std::string name = argv[++i];
+        remove_branch(name);
+        switch_branch("master");
       }
       else
       {
@@ -136,10 +150,20 @@ void branchOperations(int argc, const char *argv[], int &i)
   }
 }
 
+void merge(int argc, const char *argv[], int &i)
+{
+  if (i + 2 < argc)
+  {
+    std::string first_branch = argv[++i];
+    std::string second_branch = argv[++i];
+    merge_two_branches(first_branch, second_branch);
+  }
+}
+
 void checkout(const char *argv[], int &i)
 {
   std::string name = argv[++i];
-  switchBranch(name);
+  switch_branch(name);
 }
 
 int main(int argc, const char *argv[])
@@ -154,7 +178,7 @@ int main(int argc, const char *argv[])
       break;
     }
 
-    if (insideBitTrack())
+    if (inside_BitTrack())
     {
       if (arg == "--status")
       {
@@ -163,12 +187,12 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--stage")
       {
-        stageFile(argc, argv, i);
+        stage_file(argc, argv, i);
         break;
       }
       else if (arg == "--unstage")
       {
-        unstageFiles(argc, argv, i);
+        unstage_files(argc, argv, i);
         break;
       }
       else if (arg == "--commit")
@@ -178,34 +202,45 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--staged-files-hashes")
       {
-        showStagedFilesHashes();
+        show_staged_files_hashes();
         break;
       }
       else if (arg == "--current-commit")
       {
-        showCurrentCommit();
+        show_current_commit();
         break;
       }
       else if (arg == "--log")
       {
-        commitHistory();
+        commit_history();
         break;
       }
       else if (arg == "--remove-repo")
       {
-        removeCurrentRepo();
+        remove_current_repo();
         break;
       }
       else if (arg == "--branch")
       {
-        branchOperations(argc, argv, i);
+        branch_operations(argc, argv, i);
         break;
       }
       else if (arg == "--checkout")
       {
         checkout(argv, i);
-        // std::cout << "checkout feature will be here soon!" << std::endl;
         break;
+      }
+      else if (arg == "--merge")
+      {
+        merge(argc, argv, i);
+      }
+      else if (arg == "--push")
+      {
+        std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + get_current_commit();
+        std::string commit_zip_file = ".bittrack/tmp.zip";
+        std::string endpoint = "http://localhost:5000/";
+        compress_folder(commit_path, commit_zip_file);
+        push(endpoint, commit_zip_file);
       }
       else
       {

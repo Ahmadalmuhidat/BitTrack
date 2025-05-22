@@ -12,13 +12,9 @@
 
 #include "ignore.hpp"
 
-std::string HashFile(const std::string& FilePath);
-std::string toHexString(unsigned char *hash, std::size_t length);
-std::string GenerateCommitHash(
-  const std::string &author,
-  const std::string &commitMessage,
-  const std::unordered_map<std::string, std::string> &fileHashes
-);
-void DisplayFilesHashes();
+std::string hash_file(const std::string& FilePath);
+std::string to_hex_string(unsigned char *hash, std::size_t length);
+std::string generate_commit_hash(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes);
+void display_files_hashes();
 
 #endif

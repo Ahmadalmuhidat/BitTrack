@@ -6,7 +6,7 @@
 #include "stage.test.cpp"
 #include "commit.test.cpp"
 
-void prepareTestEnviroment()
+void prepare_test_enviroment()
 {
   // create new repo
   std::cout << "preparing a new repo for testing..." << std::endl;
@@ -23,37 +23,51 @@ void prepareTestEnviroment()
   test_content << "test content" << std::endl;
 }
 
-TEST(branch_tests, valid_current_branch_test)
+TEST(t01_branch, valid_current_branch_is_master_test)
 {
-  EXPECT_TRUE(testBranchMaster());
+  EXPECT_TRUE(test_branch_master());
 }
 
-TEST(staging_tests, stage_file_test)
+TEST(t02_branch, add_new_branch_test)
 {
-  EXPECT_TRUE(testStagedFiles());
+  EXPECT_TRUE(test_add_new_branch());
 }
 
-TEST(ignore_tests, ignored_file_test)
+TEST(t03_branch, checkout_to_new_branch_test)
 {
-  EXPECT_FALSE(testIgnoreFiles());
+  EXPECT_TRUE(test_checkout_to_new_branch());
 }
 
-TEST(staging_tests, unstage_stage_test)
+TEST(t04_stage, stage_file_test)
 {
-  EXPECT_TRUE(testUnstageFiles());
+  EXPECT_TRUE(test_staged_files());
+}
+
+TEST(t05_ignore, ignored_file_test)
+{
+  EXPECT_FALSE(test_ignored_files());
+}
+
+TEST(t06_stage, unstage_stage_test)
+{
+  EXPECT_TRUE(test_unstaged_files());
 }
 
 TEST(commit_tests, commit_staged_file_test)
 {
-  EXPECT_TRUE(testCommitStagedFiles());
+  EXPECT_TRUE(test_commit_staged_files());
+}
+
+TEST(t07_branch, remove_new_branch_test)
+{
+  EXPECT_TRUE(test_remove_new_branch());
 }
 
 int main(int argc, char **argv)
 {
-  prepareTestEnviroment();
+  prepare_test_enviroment();
 
   testing::InitGoogleTest(&argc, argv);
   int res = RUN_ALL_TESTS();
-
   return 0;
 }

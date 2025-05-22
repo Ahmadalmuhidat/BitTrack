@@ -6,11 +6,8 @@
 #include <fstream>
 #include <filesystem>
 
-std::string getFileExtenion(const std::string &filePath);
-std::vector<std::string> ReadBitignore(const std::string &filePath);
-bool isIgnored(
-  const std::string &filePath,
-  const std::vector<std::string> &patterns
-);
+std::string get_file_extenion(const std::string &filePath);
+std::vector<std::string> read_bitignore(const std::string &filePath);
+bool is_file_ignored(const std::string &filePath, const std::vector<std::string> &patterns);
 
 #endif

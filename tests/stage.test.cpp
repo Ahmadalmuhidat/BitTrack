@@ -1,41 +1,38 @@
 #include "../src/stage.cpp"
 
-bool testStagedFiles()
+bool test_staged_files()
 {
   stage("test_file.txt");
 
-  std::vector<std::string> StagedFiles = getStagedFiles();
+  std::vector<std::string> staged_files = get_staged_files();
   auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
+    staged_files.begin(),
+    staged_files.end(),
     "test_file.txt"
   );
-
-  return (it != StagedFiles.end());
+  return (it != staged_files.end());
 }
 
-bool testUnstageFiles()
+bool test_unstaged_files()
 {
   unstage("test_file.txt");
 
-  std::vector<std::string> StagedFiles = getUnstagedFiles();
+  std::vector<std::string> staged_files = get_unstaged_files();
   auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
+    staged_files.begin(),
+    staged_files.end(),
     "test_file.txt"
   );
-
-  return (it != StagedFiles.end());
+  return (it != staged_files.end());
 }
 
-bool testIgnoreFiles()
+bool test_ignored_files()
 {
-  std::vector<std::string> StagedFiles = getStagedFiles();
+  std::vector<std::string> staged_files = get_staged_files();
   auto it = std::find(
-    StagedFiles.begin(),
-    StagedFiles.end(),
+    staged_files.begin(),
+    staged_files.end(),
     "test_ignore_file.txt"
   );
-
-  return it != StagedFiles.end();
+  return it != staged_files.end();
 }

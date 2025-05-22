@@ -1,46 +1,46 @@
 #include "../include/stage.hpp"
 
-void stage(std::string FilePath)
+void stage(std::string file_path)
 {
-  if (!std::filesystem::exists(FilePath))
+  if (!std::filesystem::exists(file_path))
   {
     std::cerr << "Error: File does not exist!" << std::endl;
     return;
   }
 
-  std::string fileHash = HashFile(FilePath);
-  std::ifstream stagingFile(".bittrack/index");
-  std::unordered_map<std::string, std::string> stagedFiles;
+  std::string fileHash = hash_file(file_path);
+  std::ifstream staging_file(".bittrack/index");
   std::string line;
+  std::unordered_map<std::string, std::string> staged_files;
 
-  while (std::getline(stagingFile, line))
+  while (std::getline(staging_file, line))
   {
     std::istringstream iss(line);
-    std::string stagedFilePath;
-    std::string stagedFileHash;
+    std::string staged_file_path;
+    std::string staged_file_hash;
 
-    if (!(iss >> stagedFilePath >> stagedFileHash))
+    if (!(iss >> staged_file_path >> staged_file_hash))
     {
       continue;
     }
 
-    stagedFiles[stagedFilePath] = stagedFileHash;
+    staged_files[staged_file_path] = staged_file_hash;
 
-    if (stagedFilePath == FilePath)
+    if (staged_file_path == file_path)
     {
-      if (stagedFileHash == fileHash)
+      if (staged_file_hash == fileHash)
       {
         std::cerr << "File is already staged and unchanged." << std::endl;
         return;
       }
     }
   }
-  stagingFile.close();
+  staging_file.close();
 
-  stagedFiles[FilePath] = fileHash;
+  staged_files[file_path] = fileHash;
   std::ofstream updatedStagingFile(".bittrack/index", std::ios::trunc);
 
-  for (const auto &[path, hash] : stagedFiles)
+  for (const auto &[path, hash] : staged_files)
   {
     updatedStagingFile << path << " " << hash << std::endl;
   }
@@ -51,7 +51,7 @@ void unstage(const std::string &filePath)
 {
   std::ifstream stagingFile(".bittrack/index");
   std::ofstream tempFile(".bittrack/index_temp");
-  std::vector<std::string> stagedFiles = getStagedFiles();
+  std::vector<std::string> stagedFiles = get_staged_files();
 
   if (!std::filesystem::exists(filePath))
   {
@@ -63,6 +63,8 @@ void unstage(const std::string &filePath)
   {
     std::cerr << "the file is not staged already" << std::endl;
   }
+
+  // add unstage . (all)
 
   std::string line;
   while (std::getline(stagingFile, line))
@@ -79,7 +81,7 @@ void unstage(const std::string &filePath)
   std::filesystem::rename(".bittrack/index_temp", ".bittrack/index");
 }
 
-std::vector<std::string> getStagedFiles()
+std::vector<std::string> get_staged_files()
 {
   std::ifstream stagingFile(".bittrack/index");
   std::string line;
@@ -98,18 +100,16 @@ std::vector<std::string> getStagedFiles()
     files.push_back(fileName);
   }
   stagingFile.close();
-
   return files;
 }
 
-std::vector<std::string> getUnstagedFiles()
+std::vector<std::string> get_unstaged_files()
 {
   std::unordered_set<std::string> UnstagedFiles;
   std::unordered_map<std::string, std::string> UnstagedFileHashes;
   std::ifstream IndexFile(".bittrack/index");
-  std::string CurrentBranch = ".bittrack/objects/" + getCurrentBranch() + "/" + getCurrentCommit();
+  std::string CurrentBranch = ".bittrack/objects/" + get_current_branch() + "/" + get_current_commit();
   std::string line;
-
   std::vector<std::string> files;
 
   while (std::getline(IndexFile, line))
@@ -122,7 +122,7 @@ std::vector<std::string> getUnstagedFiles()
     {
       continue;
     }
-    std::string FilesMap = normalizePath(fileName);
+    std::string FilesMap = normalize_file_path(fileName);
 
     UnstagedFiles.insert(FilesMap);
     UnstagedFileHashes[FilesMap] = fileHash;
@@ -134,18 +134,18 @@ std::vector<std::string> getUnstagedFiles()
     if (entry.is_regular_file())
     {
       std::string filePath = entry.path().string();
-      std::string normalizedFilePath = normalizePath(filePath);
-      std::vector<std::string> ignorePatterns = ReadBitignore(".bitignore");
+      std::string normalizedFilePath = normalize_file_path(filePath);
+      std::vector<std::string> ignorePatterns = read_bitignore(".bitignore");
 
       if (filePath.find(".bittrack") != std::string::npos)
       {
         continue;
       }
-      if (isIgnored(filePath, ignorePatterns))
+      if (is_file_ignored(filePath, ignorePatterns))
       {
         continue;
       }
-      if (!compareWithCurrentVersion(filePath, CurrentBranch))
+      if (!compare_with_current_version(filePath, CurrentBranch))
       {
         if (UnstagedFiles.find(normalizedFilePath) == UnstagedFiles.end())
         {
@@ -153,7 +153,7 @@ std::vector<std::string> getUnstagedFiles()
         }
         else
         {
-          std::string currentHash = HashFile(filePath);
+          std::string currentHash = hash_file(filePath);
           if (currentHash != UnstagedFileHashes[normalizedFilePath])
           {
             files.push_back(normalizedFilePath);
@@ -162,11 +162,10 @@ std::vector<std::string> getUnstagedFiles()
       }
     }
   }
-
   return files;
 }
 
-std::string normalizePath(const std::string &path)
+std::string normalize_file_path(const std::string &path)
 {
   if (path.substr(0, 2) == "./")
   {
@@ -175,18 +174,15 @@ std::string normalizePath(const std::string &path)
   return path;
 }
 
-bool compareWithCurrentVersion(
-  const std::string &CurrentFile,
-  const std::string &CurrentBranch
-)
+bool compare_with_current_version(const std::string &CurrentFile, const std::string &CurrentBranch)
 {
   for (const auto &entry: std::filesystem::recursive_directory_iterator(CurrentBranch))
   {
     if (entry.is_regular_file())
     {
       std::string CurrentVersionFile = entry.path().string();
-      std::string CurrentFileHash = HashFile(CurrentFile);
-      std::string CurrentVersionFileHash = HashFile(CurrentVersionFile);
+      std::string CurrentFileHash = hash_file(CurrentFile);
+      std::string CurrentVersionFileHash = hash_file(CurrentVersionFile);
 
       if (CurrentFileHash == CurrentVersionFileHash)
       {
@@ -197,9 +193,9 @@ bool compareWithCurrentVersion(
   return false;
 }
 
-std::string getCurrentCommit()
+std::string get_current_commit()
 {
-  std::ifstream stagingFile(".bittrack/refs/heads/" + getCurrentBranch());
+  std::ifstream stagingFile(".bittrack/refs/heads/" + get_current_branch());
   std::string line;
 
   if (std::getline(stagingFile, line))

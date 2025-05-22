@@ -16,10 +16,10 @@
 
 void stage(std::string FilePath);
 void unstage(const std::string &filePath);
-std::vector<std::string> getStagedFiles();
-std::vector<std::string> getUnstagedFiles();
-bool compareWithCurrentVersion(const std::string &CurrentFile, const std::string &CurrentBranch);
-std::string normalizePath(const std::string &path);
-std::string getCurrentCommit();
+std::vector<std::string> get_staged_files();
+std::vector<std::string> get_unstaged_files();
+bool compare_with_current_version(const std::string &CurrentFile, const std::string &CurrentBranch);
+std::string normalize_file_path(const std::string &path);
+std::string get_current_commit();
 
 #endif

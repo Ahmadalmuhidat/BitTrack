@@ -1,6 +1,6 @@
 #include "../include/hash.hpp"
 
-std::string toHexString(unsigned char *hash, std::size_t length)
+std::string to_hex_string(unsigned char *hash, std::size_t length)
 {
   std::ostringstream hexStream;
 
@@ -8,11 +8,10 @@ std::string toHexString(unsigned char *hash, std::size_t length)
   {
     hexStream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
-
   return hexStream.str();
 }
 
-std::string GenerateCommitHash(
+std::string generate_commit_hash(
   const std::string &author,
   const std::string &commitMessage,
   const std::unordered_map<std::string, std::string> &fileHashes
@@ -36,16 +35,14 @@ std::string GenerateCommitHash(
   {
     commitDataStream << file << " " << fileHash << "\n";
   }
-
   // hash the commit log information
   std::string commitData = commitDataStream.str();
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256((unsigned char *)commitData.c_str(), commitData.size(), hash);
-
-  return toHexString(hash, SHA256_DIGEST_LENGTH);
+  return to_hex_string(hash, SHA256_DIGEST_LENGTH);
 }
 
-std::string HashFile(const std::string &FilePath)
+std::string hash_file(const std::string &FilePath)
 {
   // read the file content
   std::ifstream file(FilePath, std::ios::binary);
@@ -56,14 +53,13 @@ std::string HashFile(const std::string &FilePath)
   std::string FileContent = ss.str();
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256((unsigned char *)FileContent.c_str(), FileContent.size(), hash);
-
-  return toHexString(hash, SHA256_DIGEST_LENGTH);
+  return to_hex_string(hash, SHA256_DIGEST_LENGTH);
 }
 
-void getIndexHashes()
+void get_index_hashes()
 {
   std::unordered_map<std::string, std::string> FileHashes;
-  std::vector<std::string> ignorePatterns = ReadBitignore(".bitignore");
+  std::vector<std::string> ignorePatterns = read_bitignore(".bitignore");
 
   // read all project files
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
@@ -74,17 +70,15 @@ void getIndexHashes()
       // check if the file is ignored
       std::string FilePath = entry.path().string();
 
-      if (isIgnored(FilePath, ignorePatterns))
+      if (is_file_ignored(FilePath, ignorePatterns))
       {
         continue;
       }
-
       // hash the file and store it in {key: value} array
-      std::string FileHash = HashFile(FilePath);
+      std::string FileHash = hash_file(FilePath);
       FileHashes[FilePath] = FileHash;
     }
   }
-
   // print the files along with their hashes
   for (const auto &[FilePath, FileHash] : FileHashes)
   {

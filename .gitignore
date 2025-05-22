@@ -39,8 +39,6 @@
 
 CMakeFiles/
 cmake_install.cmake
-Makefile
 
 bittrack
-
-RunTests
+run_tests
