@@ -1,4 +1,4 @@
-# BitTrack  
+# BitTrack – Personal Version Control System  
 *A lightweight version control system built from scratch in C++—offering full offline control without cloud dependency. Built by a Jordanian Arab developer as a milestone in open-source innovation.*
 
 ---
