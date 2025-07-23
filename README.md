@@ -1,7 +1,82 @@
-BitTrack is a custom-built version control system inspired by Git, created with a vision to showcase the potential of Arab innovation in the tech world. Developed with "Jordanian hands," BitTrack empowers developers with complete control over project versions, history, and collaboration workflows. With BitTrack, you can seamlessly track changes, commit snapshots, and manage file histories, all designed for efficient project management and robust version control.
+# BitTrack  
+*A lightweight version control system built from scratch in C++—offering full offline control without cloud dependency. Built by a Jordanian Arab developer as a milestone in open-source innovation.*
 
-This project is driven by a belief: it is time to start developing our own systems rather than relying solely on those created in the West. We have the capability, talent, and determination to build tools that serve our unique needs and showcase our technical prowess. BitTrack is a step toward proving that we can indeed develop solutions on par with global standards.
+---
 
-Looking forward, the ambition is to expand BitTrack into a comprehensive platform like GitHub, a collaborative hub based on BitTrack’s core technology. This platform will allow users to share, manage, and contribute to projects, establishing BitTrack as a proud representation of Arab talent in the global tech community.
+## Features  
+Core functionalities of the project:
+- **Repository Management**: Create, initialize, and manage repositories easily via CLI  
+- **Branching & Committing**: Add branches, stage files, and commit changes locally  
+- **Push/Pull Mechanism**: Simple local/offline push and pull operations for collaboration  
+- **Issue Tracking**: Built-in issue system and repository-level notes  
 
-I invite everyone passionate about version control and open-source software to join us in developing BitTrack into a stable, powerful versioning system. Your contributions, ideas, and skills are invaluable in transforming BitTrack into a fully-fledged tool that developers around the world can rely on. Let’s build this vision together!
+---
+
+## Tech Stack  
+Technologies and tools used in this project:
+- C++  
+- Custom CLI Parser  
+- File-based storage system (no external DB)  
+- Zlib (for delta compression)  
+
+---
+
+## Installation  
+Step-by-step instructions to set up the project locally:
+1. **Clone the repository**  
+```bash
+git clone https://github.com/your-username/bittrack.git
+```
+2. **Navigate to the project directory**
+```bash
+cd bittrack
+```
+3. **Build the project using g++**
+```bash
+./bin/build.production.sh
+```
+
+---
+
+## Usage
+Run BitTrack via CLI:
+```bash
+./bittrack init
+./bittrack add <file>
+./bittrack commit -m "Initial commit"
+./bittrack log
+./bittrack push
+./bittrack pull
+```
+
+---
+
+## Running Tests
+To run unit tests (if applicable), use:
+```bash
+./bin/build.test.sh
+```
+Or run compiled test binaries:
+```bash
+./build/run_tests
+```
+
+---
+
+## Project Structure
+```bash
+bittrack/
+│
+├── bin/           # Compiled executable binaries
+├── build/         # Intermediate build files and artifacts
+├── include/       # Header files
+├── libs/          # Utility and helper libraries
+├── src/           # Core application source code
+├── tests/         # Unit and integration test cases
+│
+├── .bitignore     # BitTrack-specific ignore file
+├── .gitignore     # Git ignore rules
+├── Makefile       # Build instructions
+├── LICENSE        # Project license (MIT)
+└── README.md      # Project overview and usage
+```
