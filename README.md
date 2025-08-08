@@ -48,6 +48,10 @@ Run BitTrack via CLI:
 ./bittrack push
 ./bittrack pull
 ```
+For a full list of available commands and options:
+```bash
+./bittrack --help
+```
 
 ---
 
