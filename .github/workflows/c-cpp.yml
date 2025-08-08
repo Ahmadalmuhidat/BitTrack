@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: BitTrack CI
 
 on:
   push:
@@ -9,24 +9,28 @@ on:
       - main
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            zlib1g-dev
 
-      - name: Build project
-        run: make build
+      - name: Build, Compile & Test
+        run: |
+          make build
+          make compile
+          make test
 
-      - name: Compile project
-        run: make compile
-
-      - name: Run tests
-        run: make test
-
-      - name: Clean up
+      - name: Cleanup artifacts
+        if: success()
         run: make clean
