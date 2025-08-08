@@ -10,27 +10,45 @@ on:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
             libssl-dev \
             libcurl4-openssl-dev \
-            zlib1g-dev
+            zlib1g-dev \
+            libgtest-dev
+          # Build and install gtest
+          cd /usr/src/googletest
+          sudo cmake .
+          sudo make
+          sudo cp lib/*.a /usr/lib
 
-      - name: Build, Compile & Test
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
         run: |
-          make build
-          make compile
-          make test
+          brew install openssl curl googletest
 
-      - name: Cleanup artifacts
+      - name: Build project
+        run: make build
+
+      - name: Compile project
+        run: make compile
+
+      - name: Run tests
+        run: make test
+
+      - name: Clean up
         if: success()
         run: make clean
