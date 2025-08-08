@@ -166,8 +166,38 @@ void checkout(const char *argv[], int &i)
   switch_branch(name);
 }
 
+void print_help()
+{
+  std::cout << "BitTrack - Lightweight Version Control\n\n";
+  std::cout << "Usage:\n";
+  std::cout << "  bittrack <command> [options]\n\n";
+  std::cout << "Commands:\n";
+  std::cout << "  init                        Initialize a new BitTrack repository\n";
+  std::cout << "  --status                    Show staged and unstaged files\n";
+  std::cout << "  --stage <file>              Stage a file for commit\n";
+  std::cout << "  --unstage <file>            Unstage a file\n";
+  std::cout << "  --commit                    Commit staged files with a message\n";
+  std::cout << "  --log                       Show commit history\n";
+  std::cout << "  --current-commit            Show the current commit ID\n";
+  std::cout << "  --staged-files-hashes       Show hashes of staged files\n";
+  std::cout << "  --remove-repo               Delete the current BitTrack repository\n";
+  std::cout << "  --branch -l                 List all branches\n";
+  std::cout << "           -c <name>          Create a new branch\n";
+  std::cout << "           -r <name>          Remove a branch\n";
+  std::cout << "  --checkout <name>           Switch to a different branch\n";
+  std::cout << "  --merge <b1> <b2>           Merge two branches\n";
+  std::cout << "  --push                      Push current commit to remote\n";
+  std::cout << "  --help                      Show this help menu\n";
+}
+
 int main(int argc, const char *argv[])
 {
+    if (argc == 1 || std::string(argv[1]) == "--help")
+  {
+    print_help();
+    return 0;
+  }
+
   for (int i = 1; i < argc; ++i)
   {
     std::string arg = argv[i];

@@ -2,47 +2,73 @@
 
 void stage(std::string file_path)
 {
-  if (!std::filesystem::exists(file_path))
-  {
-    std::cerr << "Error: File does not exist!" << std::endl;
-    return;
-  }
-
-  std::string fileHash = hash_file(file_path);
-  std::ifstream staging_file(".bittrack/index");
-  std::string line;
   std::unordered_map<std::string, std::string> staged_files;
 
-  while (std::getline(staging_file, line))
+  // Read existing staged files
+  if (std::filesystem::exists(".bittrack/index"))
   {
-    std::istringstream iss(line);
-    std::string staged_file_path;
-    std::string staged_file_hash;
-
-    if (!(iss >> staged_file_path >> staged_file_hash))
+    std::ifstream staging_file(".bittrack/index");
+    std::string line;
+    while (std::getline(staging_file, line))
     {
-      continue;
-    }
-
-    staged_files[staged_file_path] = staged_file_hash;
-
-    if (staged_file_path == file_path)
-    {
-      if (staged_file_hash == fileHash)
+      std::istringstream iss(line);
+      std::string staged_file_path, staged_file_hash;
+      if (iss >> staged_file_path >> staged_file_hash)
       {
-        std::cerr << "File is already staged and unchanged." << std::endl;
-        return;
+        staged_files[staged_file_path] = staged_file_hash;
       }
     }
+    staging_file.close();
   }
-  staging_file.close();
 
-  staged_files[file_path] = fileHash;
-  std::ofstream updatedStagingFile(".bittrack/index", std::ios::trunc);
-
-  for (const auto &[path, hash] : staged_files)
+  // Helper lambda to stage a file
+  auto stage_single_file = [&](const std::string& path)
   {
-    updatedStagingFile << path << " " << hash << std::endl;
+    if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
+      return;
+
+    std::string fileHash = hash_file(path);
+
+    if (staged_files.find(path) != staged_files.end() && staged_files[path] == fileHash)
+    {
+      std::cerr << "File already staged and unchanged: " << path << std::endl;
+      return;
+    }
+
+    staged_files[path] = fileHash;
+    std::cout << "Staged: " << path << std::endl;
+  };
+
+  // If ".", stage all files recursively
+  if (file_path == ".")
+  {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
+    {
+      std::string entryPath = entry.path().string();
+
+      if (entryPath.substr(0, 12) == "./.bittrack")
+        continue;
+
+      if (std::filesystem::is_regular_file(entry))
+        stage_single_file(entryPath);
+    }
+  }
+  else
+  {
+    if (!std::filesystem::exists(file_path))
+    {
+      std::cerr << "Error: File does not exist!" << std::endl;
+      return;
+    }
+
+    stage_single_file(file_path);
+  }
+
+  // Write back updated index
+  std::ofstream updatedStagingFile(".bittrack/index", std::ios::trunc);
+  for (const auto& pair : staged_files)
+  {
+    updatedStagingFile << pair.first << " " << pair.second << std::endl;
   }
   updatedStagingFile.close();
 }
