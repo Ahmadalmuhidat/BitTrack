@@ -3,15 +3,6 @@ A lightweight version control system built from scratch in C++—offering full o
 
 ---
 
-## Features  
-Core functionalities of the project:
-- **Repository Management**: Create, initialize, and manage repositories easily via CLI  
-- **Branching & Committing**: Add branches, stage files, and commit changes locally  
-- **Push/Pull Mechanism**: Simple local/offline push and pull operations for collaboration  
-- **Issue Tracking**: Built-in issue system and repository-level notes  
-
----
-
 ## Installation  
 Step-by-step instructions to set up the project locally:
 1. **Clone the repository**  
