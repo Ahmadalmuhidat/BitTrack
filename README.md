@@ -12,15 +12,6 @@ Core functionalities of the project:
 
 ---
 
-## Tech Stack  
-Technologies and tools used in this project:
-- C++  
-- Custom CLI Parser  
-- File-based storage system (no external DB)  
-- Zlib (for delta compression)  
-
----
-
 ## Installation  
 Step-by-step instructions to set up the project locally:
 1. **Clone the repository**  
