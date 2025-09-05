@@ -27,8 +27,6 @@ Run BitTrack via CLI:
 ./bittrack add <file>
 ./bittrack commit -m "Initial commit"
 ./bittrack log
-./bittrack push
-./bittrack pull
 ```
 For a full list of available commands and options:
 ```bash
