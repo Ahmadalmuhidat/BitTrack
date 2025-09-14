@@ -3,7 +3,7 @@
 #include "commit.cpp"
 #include "remote.cpp"
 
-bool inside_BitTrack()
+bool check_repository_exists()
 {
   if (!std::filesystem::exists(".bittrack"))
   {
@@ -14,7 +14,7 @@ bool inside_BitTrack()
 
 void init()
 {
-  if (inside_BitTrack())
+  if (check_repository_exists())
   {
     std::cerr << "Repository already exists!" << std::endl;
     return;
@@ -29,6 +29,9 @@ void init()
 
   std::ofstream HistoryFile(".bittrack/commits/history");
   HistoryFile.close();
+
+  std::ofstream RemoteFile(".bittrack/remote");
+  RemoteFile.close();
 
   add_branch("master");
   switch_branch("master");
@@ -150,6 +153,35 @@ void branch_operations(int argc, const char *argv[], int &i)
   }
 }
 
+void remote_operations(int argc, const char *argv[], int &i)
+{
+  if (i + 1 < argc)
+  {
+    std::string subFlag = argv[++i];
+
+    if (subFlag == "-v")
+    {
+      std::cout << get_remote_origin() << std::endl;
+    }
+    else if (subFlag == "-s")
+    {
+      if (i + 1 < argc)
+      {
+        std::string name = argv[++i];
+        set_remote_origin(name);
+      }
+      else
+      {
+        std::cerr << "branch name missing" << std::endl;
+      }
+    }
+  }
+  else
+  {
+    std::cerr << "sub flag missing" << std::endl;
+  }
+}
+
 void merge(int argc, const char *argv[], int &i)
 {
   if (i + 2 < argc)
@@ -172,22 +204,24 @@ void print_help()
   std::cout << "Usage:\n";
   std::cout << "  bittrack <command> [options]\n\n";
   std::cout << "Commands:\n";
-  std::cout << "  init                        Initialize a new BitTrack repository\n";
-  std::cout << "  --status                    Show staged and unstaged files\n";
-  std::cout << "  --stage <file>              Stage a file for commit\n";
-  std::cout << "  --unstage <file>            Unstage a file\n";
-  std::cout << "  --commit                    Commit staged files with a message\n";
-  std::cout << "  --log                       Show commit history\n";
-  std::cout << "  --current-commit            Show the current commit ID\n";
-  std::cout << "  --staged-files-hashes       Show hashes of staged files\n";
-  std::cout << "  --remove-repo               Delete the current BitTrack repository\n";
-  std::cout << "  --branch -l                 List all branches\n";
-  std::cout << "           -c <name>          Create a new branch\n";
-  std::cout << "           -r <name>          Remove a branch\n";
-  std::cout << "  --checkout <name>           Switch to a different branch\n";
-  std::cout << "  --merge <b1> <b2>           Merge two branches\n";
-  std::cout << "  --push                      Push current commit to remote\n";
-  std::cout << "  --help                      Show this help menu\n";
+  std::cout << "  init                        initialize a new BitTrack repository\n";
+  std::cout << "  --status                    show staged and unstaged files\n";
+  std::cout << "  --stage <file>              stage a file for commit\n";
+  std::cout << "  --unstage <file>            unstage a file\n";
+  std::cout << "  --commit                    commit staged files with a message\n";
+  std::cout << "  --log                       show commit history\n";
+  std::cout << "  --current-commit            show the current commit ID\n";
+  std::cout << "  --staged-files-hashes       show hashes of staged files\n";
+  std::cout << "  --remove-repo               delete the current BitTrack repository\n";
+  std::cout << "  --branch -l                 list all branches\n";
+  std::cout << "           -c <name>          create a new branch\n";
+  std::cout << "           -r <name>          remove a branch\n";
+  std::cout << "  --checkout <name>           switch to a different branch\n";
+  std::cout << "  --merge <b1> <b2>           merge two branches\n";
+  std::cout << "  --remote -v                 print current remote URL\n";
+  std::cout << "           -s <url>           set remote URL\n";
+  std::cout << "  --push                      push current commit to remote\n";
+  std::cout << "  --help                      show this help menu\n";
 }
 
 int main(int argc, const char *argv[])
@@ -208,7 +242,7 @@ int main(int argc, const char *argv[])
       break;
     }
 
-    if (inside_BitTrack())
+    if (check_repository_exists())
     {
       if (arg == "--status")
       {
@@ -255,6 +289,11 @@ int main(int argc, const char *argv[])
         branch_operations(argc, argv, i);
         break;
       }
+      else if (arg == "--remote")
+      {
+        remote_operations(argc, argv, i);
+        break;
+      }
       else if (arg == "--checkout")
       {
         checkout(argv, i);
@@ -267,8 +306,7 @@ int main(int argc, const char *argv[])
       else if (arg == "--push")
       {
         std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + get_current_commit();
-        std::string commit_zip_file = ".bittrack/tmp.zip";
-        std::string endpoint = "http://localhost:5000/";
+        std::string commit_zip_file = ".bittrack/remote_push_folder.zip";
         compress_folder(commit_path, commit_zip_file);
         push(endpoint, commit_zip_file);
       }

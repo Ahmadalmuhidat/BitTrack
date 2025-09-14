@@ -64,3 +64,16 @@ bittrack/
 ├── LICENSE        # Project license (MIT)
 └── README.md      # Project overview and usage
 ```
+
+## Server Requirements
+To support branch-based integration, your platform must:
+1. **Provide an Push Endpoint** (`POST`):
+  - Accepts:
+  - `upload` → `.zip` file
+  - `branch` → string (branch name)
+2. **Provide a Pull Endpoint** (`GET`):
+  - Accepts:
+    - Query parameter: `branch=<branch_name>`
+  - Returns the `.zip` file for that branch.
+3. **Optional Authentication**
+  - Can be public or secured (e.g., Basic Auth, Bearer Token).
