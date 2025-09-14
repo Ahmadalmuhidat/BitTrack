@@ -197,22 +197,239 @@ void merge_two_branches(const std::string& first_branch, const std::string& seco
   }
 }
 
-void switch_branch(std::string name)
+bool has_uncommitted_changes()
+{
+  // Check for staged files
+  std::vector<std::string> staged_files = get_staged_files();
+  if (!staged_files.empty())
+  {
+    return true;
+  }
+
+  // Check for unstaged files
+  std::vector<std::string> unstaged_files = get_unstaged_files();
+  if (!unstaged_files.empty())
+  {
+    return true;
+  }
+
+  return false;
+}
+
+void backup_untracked_files()
+{
+  // Create a temporary directory for untracked files
+  std::filesystem::create_directories(".bittrack/untracked_backup");
+  
+  // Get all files in working directory
+  for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
+  {
+    if (entry.is_regular_file())
+    {
+      std::string file_path = entry.path().string();
+      
+      // Skip .bittrack directory, build directory, and other system files
+      if (file_path.find(".bittrack") != std::string::npos ||
+          file_path.find("build/") != std::string::npos ||
+          file_path.find(".git/") != std::string::npos ||
+          file_path.find(".DS_Store") != std::string::npos ||
+          file_path.find(".github/") != std::string::npos)
+        continue;
+        
+      // Check if file is tracked in current branch
+      std::string current_commit = get_current_commit();
+      if (current_commit.empty())
+        continue;
+        
+      std::string tracked_file_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit + "/" + file_path;
+      if (std::filesystem::exists(tracked_file_path))
+        continue;
+        
+      // This is an untracked file, backup it
+      try {
+        std::filesystem::path relative_path = std::filesystem::relative(file_path, ".");
+        std::filesystem::path backup_path = ".bittrack/untracked_backup" / relative_path;
+        
+        // Only create directories if the parent path is not empty
+        if (!backup_path.parent_path().empty()) {
+          std::filesystem::create_directories(backup_path.parent_path());
+        }
+        std::filesystem::copy_file(file_path, backup_path, std::filesystem::copy_options::overwrite_existing);
+      } catch (const std::filesystem::filesystem_error& e) {
+        // Skip files that can't be copied (permissions, etc.)
+        continue;
+      }
+    }
+  }
+}
+
+void restore_untracked_files()
+{
+  // Restore untracked files from backup
+  if (std::filesystem::exists(".bittrack/untracked_backup"))
+  {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(".bittrack/untracked_backup"))
+    {
+      if (entry.is_regular_file())
+      {
+        std::filesystem::path relative_path = std::filesystem::relative(entry.path(), ".bittrack/untracked_backup");
+        std::filesystem::path restore_path = relative_path;
+        
+        // Only create directories if the parent path is not empty
+        if (!restore_path.parent_path().empty()) {
+          std::filesystem::create_directories(restore_path.parent_path());
+        }
+        std::filesystem::copy_file(entry.path(), restore_path, std::filesystem::copy_options::overwrite_existing);
+      }
+    }
+    // Clean up backup
+    std::filesystem::remove_all(".bittrack/untracked_backup");
+  }
+}
+
+void restore_files_from_commit(const std::string& commit_path)
+{
+  if (!std::filesystem::exists(commit_path))
+  {
+    std::cerr << "Error: Commit snapshot not found: " << commit_path << std::endl;
+    return;
+  }
+
+  // First, remove all tracked files from working directory
+  std::string current_commit = get_current_commit();
+  if (!current_commit.empty())
+  {
+    std::string current_commit_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit;
+    if (std::filesystem::exists(current_commit_path))
+    {
+      for (const auto& entry : std::filesystem::recursive_directory_iterator(current_commit_path))
+      {
+        if (entry.is_regular_file())
+        {
+          std::filesystem::path relative_path = std::filesystem::relative(entry.path(), current_commit_path);
+          std::filesystem::path working_file = relative_path;
+          
+          if (std::filesystem::exists(working_file))
+          {
+            std::filesystem::remove(working_file);
+          }
+        }
+      }
+    }
+  }
+
+  // Copy files from target commit to working directory
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(commit_path))
+  {
+    if (entry.is_regular_file())
+    {
+      std::filesystem::path relative_path = std::filesystem::relative(entry.path(), commit_path);
+      std::filesystem::path working_file = relative_path;
+      
+      // Only create directories if the parent path is not empty
+      if (!working_file.parent_path().empty()) {
+        std::filesystem::create_directories(working_file.parent_path());
+      }
+      std::filesystem::copy_file(entry.path(), working_file, std::filesystem::copy_options::overwrite_existing);
+    }
+  }
+}
+
+void update_working_directory(const std::string& target_branch)
+{
+  std::string target_commit = get_last_commit(target_branch);
+  if (target_commit.empty())
+  {
+    std::cerr << "Error: No commits found in target branch: " << target_branch << std::endl;
+    return;
+  }
+
+  std::string commit_path = ".bittrack/objects/" + target_branch + "/" + target_commit;
+  
+  // Only backup untracked files if there are any
+  bool has_untracked = false;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
+  {
+    if (entry.is_regular_file())
+    {
+      std::string file_path = entry.path().string();
+      if (file_path.find(".bittrack") == std::string::npos &&
+          file_path.find("build/") == std::string::npos &&
+          file_path.find(".git/") == std::string::npos &&
+          file_path.find(".DS_Store") == std::string::npos &&
+          file_path.find(".github/") == std::string::npos)
+      {
+        has_untracked = true;
+        break;
+      }
+    }
+  }
+  
+  if (has_untracked) {
+    backup_untracked_files();
+  }
+  
+  // Restore files from target branch commit
+  restore_files_from_commit(commit_path);
+  
+  // Restore untracked files if we backed them up
+  if (has_untracked) {
+    restore_untracked_files();
+  }
+}
+
+void switch_branch(std::string name, bool check_uncommitted)
 {
   std::vector<std::string> branches = get_branches_list();
 
   if (std::find(branches.begin(), branches.end(), name) == branches.end()) // check if the branch exist
   {
     std::cout << "you must create the branch first" << std::endl;
+    return;
   }
   else if (get_current_branch() == name) // check if it is not already the head branch
   {
     std::cout << "you are already in " << name << std::endl;
+    return;
   }
-  else
+
+  // Check for uncommitted changes
+  if (has_uncommitted_changes())
   {
-    // clear the HEAD file content and insert the new head branch
-    std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
-    HeadFile << name << std::endl;
+    std::cout << "Warning: You have uncommitted changes. Switching branches may overwrite your changes." << std::endl;
+    std::cout << "Staged files: ";
+    std::vector<std::string> staged = get_staged_files();
+    for (const auto& file : staged)
+    {
+      std::cout << file << " ";
+    }
+    std::cout << std::endl;
+    
+    std::cout << "Unstaged files: ";
+    std::vector<std::string> unstaged = get_unstaged_files();
+    for (const auto& file : unstaged)
+    {
+      std::cout << file << " ";
+    }
+    std::cout << std::endl;
+    
+    std::cout << "Do you want to continue? (y/N): ";
+    std::string response;
+    std::getline(std::cin, response);
+    if (response != "y" && response != "Y")
+    {
+      std::cout << "Branch switch cancelled." << std::endl;
+      return;
+    }
   }
+
+  // Update working directory to match target branch
+  update_working_directory(name);
+
+  // Update HEAD to point to new branch
+  std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
+  HeadFile << name << std::endl;
+  HeadFile.close();
+  
+  std::cout << "Switched to branch: " << name << std::endl;
 }

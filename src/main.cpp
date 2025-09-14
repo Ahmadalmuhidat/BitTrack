@@ -34,7 +34,7 @@ void init()
   RemoteFile.close();
 
   add_branch("master");
-  switch_branch("master");
+  switch_branch("master", false); // Don't check for uncommitted changes during init
   std::cout << "Initialized empty BitTrack repository." << std::endl;
 }
 
@@ -305,10 +305,7 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--push")
       {
-        std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + get_current_commit();
-        std::string commit_zip_file = ".bittrack/remote_push_folder.zip";
-        compress_folder(commit_path, commit_zip_file);
-        push(endpoint, commit_zip_file);
+        push();
       }
       else
       {

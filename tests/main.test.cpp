@@ -8,6 +8,10 @@
 
 void prepare_test_enviroment()
 {
+  // Clean up any existing test files
+  system("rm -f test_file.txt test_master.txt untracked.txt staged_uncommitted.txt restoration_test.txt");
+  system("rm -rf .bittrack");
+  
   // create new repo
   std::cout << "preparing a new repo for testing..." << std::endl;
   system("build/bittrack init");
@@ -16,11 +20,8 @@ void prepare_test_enviroment()
   std::cout << "create a test file..." << std::endl;
 
   std::ofstream test_file("test_file.txt");
+  test_file << "test content" << std::endl;
   test_file.close();
-
-  // insert content in the test file
-  std::ofstream test_content("test_file.txt");
-  test_content << "test content" << std::endl;
 }
 
 TEST(t01_branch, valid_current_branch_is_master_test)
@@ -61,6 +62,36 @@ TEST(commit_tests, commit_staged_file_test)
 TEST(t07_branch, remove_new_branch_test)
 {
   EXPECT_TRUE(test_remove_new_branch());
+}
+
+TEST(t08_branch, working_directory_update_test)
+{
+  EXPECT_TRUE(test_working_directory_update());
+}
+
+TEST(t09_branch, untracked_file_preservation_test)
+{
+  EXPECT_TRUE(test_untracked_file_preservation());
+}
+
+TEST(t10_branch, uncommitted_changes_detection_test)
+{
+  EXPECT_TRUE(test_uncommitted_changes_detection());
+}
+
+TEST(t11_branch, switch_to_nonexistent_branch_test)
+{
+  EXPECT_TRUE(test_switch_to_nonexistent_branch());
+}
+
+TEST(t12_branch, switch_to_same_branch_test)
+{
+  EXPECT_TRUE(test_switch_to_same_branch());
+}
+
+TEST(t13_branch, file_restoration_from_commit_test)
+{
+  EXPECT_TRUE(test_file_restoration_from_commit());
 }
 
 int main(int argc, char **argv)

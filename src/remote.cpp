@@ -143,7 +143,7 @@ void push()
       CURLFORM_COPYNAME,
       "branch",
       CURLFORM_COPYCONTENTS,
-      CurrentBranch,
+      CurrentBranch.c_str(),
       CURLFORM_END
     );
 
@@ -154,7 +154,7 @@ void push()
       CURLFORM_COPYNAME,
       "commit",
       CURLFORM_COPYCONTENTS,
-      CurrentCommit,
+      CurrentCommit.c_str(),
       CURLFORM_END
     );
 
