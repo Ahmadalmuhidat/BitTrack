@@ -5,24 +5,24 @@
 #include <cstdlib>
 #include <iostream>
 
-// Static hook names map
+// lStatic hook names map
 static std::map<HookType, std::string> hook_names;
 
 void install_hook(HookType type, const std::string& script_path)
 {
   if (!std::filesystem::exists(script_path))
   {
-    std::cerr << "Error: Script file '" << script_path << "' does not exist." << std::endl;
-    return;
+  std::cerr << "Error: Script file '" << script_path << "' does not exist." << std::endl;
+  return;
   }
   
   std::string hook_path = get_hook_path(type);
   std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());
   
-  // Copy script to hook location
+  // lCopy script to hook location
   std::filesystem::copy_file(script_path, hook_path, std::filesystem::copy_options::overwrite_existing);
   
-  // Make executable
+  // lMake executable
   make_hook_executable(hook_path);
   
   std::cout << "Installed hook: " << get_hook_name(type) << std::endl;
@@ -34,12 +34,12 @@ void uninstall_hook(HookType type)
   
   if (std::filesystem::exists(hook_path))
   {
-    std::filesystem::remove(hook_path);
-    std::cout << "Uninstalled hook: " << get_hook_name(type) << std::endl;
+  std::filesystem::remove(hook_path);
+  std::cout << "Uninstalled hook: " << get_hook_name(type) << std::endl;
   }
   else
   {
-    std::cout << "Hook not found: " << get_hook_name(type) << std::endl;
+  std::cout << "Hook not found: " << get_hook_name(type) << std::endl;
   }
 }
 
@@ -49,30 +49,30 @@ void list_hooks()
   
   if (!std::filesystem::exists(hooks_dir))
   {
-    std::cout << "No hooks directory found." << std::endl;
-    return;
+  std::cout << "No hooks directory found." << std::endl;
+  return;
   }
   
   std::cout << "Installed hooks:" << std::endl;
   
   for (const auto& entry : std::filesystem::directory_iterator(hooks_dir))
   {
-    if (entry.is_regular_file())
-    {
-      std::string hook_name = entry.path().filename().string();
-      std::cout << "  " << hook_name;
-      
-      if (is_hook_executable(entry.path().string()))
-      {
-        std::cout << " (executable)";
-      }
-      else
-      {
-        std::cout << " (not executable)";
-      }
-      
-      std::cout << std::endl;
-    }
+  if (entry.is_regular_file())
+  {
+  std::string hook_name = entry.path().filename().string();
+  std::cout << "  " << hook_name;
+  
+  if (is_hook_executable(entry.path().string()))
+  {
+  std::cout << " (executable)";
+  }
+  else
+  {
+  std::cout << " (not executable)";
+  }
+  
+  std::cout << std::endl;
+  }
   }
 }
 
@@ -82,17 +82,17 @@ HookResult run_hook(HookType type, const std::vector<std::string>& args)
   
   if (!std::filesystem::exists(hook_path))
   {
-    HookResult result;
-    result.success = true; // No hook to run
-    return result;
+  HookResult result;
+  result.success = true; // lNo hook to run
+  return result;
   }
   
   if (!is_hook_executable(hook_path))
   {
-    HookResult result;
-    result.success = false;
-    result.error = "Hook is not executable: " + hook_path;
-    return result;
+  HookResult result;
+  result.success = false;
+  result.error = "Hook is not executable: " + hook_path;
+  return result;
   }
   
   return execute_hook(hook_path, args);
@@ -104,26 +104,26 @@ void run_all_hooks(const std::string& event, const std::vector<std::string>& arg
   
   if (!std::filesystem::exists(hooks_dir))
   {
-    return;
+  return;
   }
   
   for (const auto& entry : std::filesystem::directory_iterator(hooks_dir))
   {
-    if (entry.is_regular_file())
-    {
-      std::string hook_name = entry.path().filename().string();
-      
-      if (hook_name.find(event) == 0)
-      {
-        HookResult result = execute_hook(entry.path().string(), args);
-        if (!result.success)
-        {
-          std::cerr << "Hook failed: " << hook_name << std::endl;
-          std::cerr << "Error: " << result.error << std::endl;
-          return;
-        }
-      }
-    }
+  if (entry.is_regular_file())
+  {
+  std::string hook_name = entry.path().filename().string();
+  
+  if (hook_name.find(event) == 0)
+  {
+  HookResult result = execute_hook(entry.path().string(), args);
+  if (!result.success)
+  {
+  std::cerr << "Hook failed: " << hook_name << std::endl;
+  std::cerr << "Error: " << result.error << std::endl;
+  return;
+  }
+  }
+  }
   }
 }
 
@@ -219,27 +219,27 @@ HookResult execute_hook(const std::string& hook_path, const std::vector<std::str
 {
   HookResult result;
   
-  // Build command
+  // build command
   std::string command = hook_path;
   for (const auto& arg : args)
   {
-    command += " \"" + arg + "\"";
+  command += " \"" + arg + "\"";
   }
   
-  // Execute hook
+  // execute hook
   FILE* pipe = popen(command.c_str(), "r");
   if (!pipe)
   {
-    result.success = false;
-    result.error = "Failed to execute hook";
-    return result;
+  result.success = false;
+  result.error = "Failed to execute hook";
+  return result;
   }
   
-  // Read output
+  // read output
   char buffer[128];
   while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
   {
-    result.output += buffer;
+  result.output += buffer;
   }
   
   result.exit_code = pclose(pipe);
@@ -247,7 +247,7 @@ HookResult execute_hook(const std::string& hook_path, const std::vector<std::str
   
   if (!result.success)
   {
-    result.error = "Hook exited with code " + std::to_string(result.exit_code);
+  result.error = "Hook exited with code " + std::to_string(result.exit_code);
   }
   
   return result;
@@ -281,7 +281,7 @@ bool is_hook_executable(const std::string& hook_path)
 {
   if (!std::filesystem::exists(hook_path))
   {
-    return false;
+  return false;
   }
   
   std::filesystem::perms perms = std::filesystem::status(hook_path).permissions();
@@ -292,9 +292,9 @@ void make_hook_executable(const std::string& hook_path)
 {
   if (std::filesystem::exists(hook_path))
   {
-    std::filesystem::perms perms = std::filesystem::status(hook_path).permissions();
-    perms |= std::filesystem::perms::owner_exec;
-    std::filesystem::permissions(hook_path, perms);
+  std::filesystem::perms perms = std::filesystem::status(hook_path).permissions();
+  perms |= std::filesystem::perms::owner_exec;
+  std::filesystem::permissions(hook_path, perms);
   }
 }
 
@@ -302,16 +302,16 @@ void initialize_hook_names()
 {
   if (hook_names.empty())
   {
-    hook_names[HookType::PRE_COMMIT] = "pre-commit";
-    hook_names[HookType::POST_COMMIT] = "post-commit";
-    hook_names[HookType::PRE_PUSH] = "pre-push";
-    hook_names[HookType::POST_PUSH] = "post-push";
-    hook_names[HookType::PRE_MERGE] = "pre-merge";
-    hook_names[HookType::POST_MERGE] = "post-merge";
-    hook_names[HookType::PRE_CHECKOUT] = "pre-checkout";
-    hook_names[HookType::POST_CHECKOUT] = "post-checkout";
-    hook_names[HookType::PRE_BRANCH] = "pre-branch";
-    hook_names[HookType::POST_BRANCH] = "post-branch";
+  hook_names[HookType::PRE_COMMIT] = "pre-commit";
+  hook_names[HookType::POST_COMMIT] = "post-commit";
+  hook_names[HookType::PRE_PUSH] = "pre-push";
+  hook_names[HookType::POST_PUSH] = "post-push";
+  hook_names[HookType::PRE_MERGE] = "pre-merge";
+  hook_names[HookType::POST_MERGE] = "post-merge";
+  hook_names[HookType::PRE_CHECKOUT] = "pre-checkout";
+  hook_names[HookType::POST_CHECKOUT] = "post-checkout";
+  hook_names[HookType::PRE_BRANCH] = "pre-branch";
+  hook_names[HookType::POST_BRANCH] = "post-branch";
   }
 }
 
@@ -322,11 +322,11 @@ std::string get_event_name(HookType type)
   
   if (hook_name.find("pre-") == 0)
   {
-    return hook_name.substr(4);
+  return hook_name.substr(4);
   }
   else if (hook_name.find("post-") == 0)
   {
-    return hook_name.substr(5);
+  return hook_name.substr(5);
   }
   
   return hook_name;

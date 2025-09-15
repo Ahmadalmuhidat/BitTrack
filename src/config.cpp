@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-// Global configuration storage
+// global configuration storage
 static std::map<std::string, std::string> global_config;
 static std::map<std::string, std::string> repository_config;
 
@@ -21,19 +21,19 @@ std::string config_get(const std::string& key, ConfigScope scope)
   
   if (scope == ConfigScope::GLOBAL)
   {
-    auto it = global_config.find(key);
-    return (it != global_config.end()) ? it->second : "";
+  auto it = global_config.find(key);
+  return (it != global_config.end()) ? it->second : "";
   }
   else
   {
-    auto it = repository_config.find(key);
-    if (it != repository_config.end())
-    {
-      return it->second;
-    }
-    // Fall back to global config
-    it = global_config.find(key);
-    return (it != global_config.end()) ? it->second : "";
+  auto it = repository_config.find(key);
+  if (it != repository_config.end())
+  {
+  return it->second;
+  }
+  // fall back to global config
+  it = global_config.find(key);
+  return (it != global_config.end()) ? it->second : "";
   }
 }
 
@@ -43,11 +43,11 @@ void config_unset(const std::string& key, ConfigScope scope)
   
   if (scope == ConfigScope::GLOBAL)
   {
-    global_config.erase(key);
+  global_config.erase(key);
   }
   else
   {
-    repository_config.erase(key);
+  repository_config.erase(key);
   }
   
   config_save();
@@ -63,26 +63,26 @@ void config_list(ConfigScope scope)
   
   if (scope == ConfigScope::GLOBAL)
   {
-    config_map = &global_config;
-    scope_name = "global";
+  config_map = &global_config;
+  scope_name = "global";
   }
   else
   {
-    config_map = &repository_config;
-    scope_name = "repository";
+  config_map = &repository_config;
+  scope_name = "repository";
   }
   
   std::cout << scope_name << " configuration:" << std::endl;
   
   if (config_map->empty())
   {
-    std::cout << "  (no configuration set)" << std::endl;
-    return;
+  std::cout << "  (no configuration set)" << std::endl;
+  return;
   }
   
   for (const auto& entry : *config_map)
   {
-    std::cout << "  " << entry.first << " = " << entry.second << std::endl;
+  std::cout << "  " << entry.first << " = " << entry.second << std::endl;
   }
 }
 
@@ -94,25 +94,25 @@ void config_show_all()
   
   if (!global_config.empty())
   {
-    std::cout << "Global:" << std::endl;
-    for (const auto& entry : global_config)
-    {
-      std::cout << "  " << entry.first << " = " << entry.second << std::endl;
-    }
+  std::cout << "Global:" << std::endl;
+  for (const auto& entry : global_config)
+  {
+  std::cout << "  " << entry.first << " = " << entry.second << std::endl;
+  }
   }
   
   if (!repository_config.empty())
   {
-    std::cout << "Repository:" << std::endl;
-    for (const auto& entry : repository_config)
-    {
-      std::cout << "  " << entry.first << " = " << entry.second << std::endl;
-    }
+  std::cout << "Repository:" << std::endl;
+  for (const auto& entry : repository_config)
+  {
+  std::cout << "  " << entry.first << " = " << entry.second << std::endl;
+  }
   }
   
   if (global_config.empty() && repository_config.empty())
   {
-    std::cout << "  (no configuration set)" << std::endl;
+  std::cout << "  (no configuration set)" << std::endl;
   }
 }
 
@@ -138,63 +138,63 @@ std::string config_get_user_email()
 
 void config_load()
 {
-  // Load global config
+  // load global config
   std::string global_path = get_global_config_path();
   if (std::filesystem::exists(global_path))
   {
-    std::ifstream file(global_path);
-    std::string line;
-    
-    while (std::getline(file, line))
-    {
-      if (line.empty() || line[0] == '#') continue;
-      
-      size_t pos = line.find('=');
-      if (pos != std::string::npos)
-      {
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        global_config[key] = value;
-      }
-    }
-    file.close();
+  std::ifstream file(global_path);
+  std::string line;
+  
+  while (std::getline(file, line))
+  {
+  if (line.empty() || line[0] == '#') continue;
+  
+  size_t pos = line.find('=');
+  if (pos != std::string::npos)
+  {
+  std::string key = line.substr(0, pos);
+  std::string value = line.substr(pos + 1);
+  global_config[key] = value;
+  }
+  }
+  file.close();
   }
   
-  // Load repository config
+  // load repository config
   std::string repo_path = get_repository_config_path();
   if (std::filesystem::exists(repo_path))
   {
-    std::ifstream file(repo_path);
-    std::string line;
-    
-    while (std::getline(file, line))
-    {
-      if (line.empty() || line[0] == '#')
-      {
-        continue;
-      }
-      
-      size_t pos = line.find('=');
-      if (pos != std::string::npos)
-      {
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        repository_config[key] = value;
-      }
-    }
-    file.close();
+  std::ifstream file(repo_path);
+  std::string line;
+  
+  while (std::getline(file, line))
+  {
+  if (line.empty() || line[0] == '#')
+  {
+  continue;
   }
   
-  // Create default config if none exists
+  size_t pos = line.find('=');
+  if (pos != std::string::npos)
+  {
+  std::string key = line.substr(0, pos);
+  std::string value = line.substr(pos + 1);
+  repository_config[key] = value;
+  }
+  }
+  file.close();
+  }
+  
+  // create default config if none exists
   if (global_config.empty() && repository_config.empty())
   {
-    create_default_config();
+  create_default_config();
   }
 }
 
 void config_save()
 {
-  // Save global config
+  // save global config
   std::string global_path = get_global_config_path();
   std::filesystem::create_directories(std::filesystem::path(global_path).parent_path());
   
@@ -202,11 +202,11 @@ void config_save()
   global_file << "# BitTrack Global Configuration" << std::endl;
   for (const auto& entry : global_config)
   {
-    global_file << entry.first << "=" << entry.second << std::endl;
+  global_file << entry.first << "=" << entry.second << std::endl;
   }
   global_file.close();
   
-  // Save repository config
+  // save repository config
   std::string repo_path = get_repository_config_path();
   std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
   
@@ -214,7 +214,7 @@ void config_save()
   repo_file << "# BitTrack Repository Configuration" << std::endl;
   for (const auto& entry : repository_config)
   {
-    repo_file << entry.first << "=" << entry.second << std::endl;
+  repo_file << entry.first << "=" << entry.second << std::endl;
   }
   repo_file.close();
 }
@@ -229,11 +229,11 @@ void set_config_value(const std::string& key, const std::string& value, ConfigSc
 {
   if (scope == ConfigScope::GLOBAL)
   {
-    global_config[key] = value;
+  global_config[key] = value;
   }
   else
   {
-    repository_config[key] = value;
+  repository_config[key] = value;
   }
 }
 
@@ -246,7 +246,7 @@ std::string get_global_config_path()
   const char* home = std::getenv("HOME");
   if (home)
   {
-    return std::string(home) + "/.bittrack/config";
+  return std::string(home) + "/.bittrack/config";
   }
   return ".bittrack/config";
 }
@@ -258,7 +258,7 @@ std::string get_repository_config_path()
 
 void create_default_config()
 {
-  // Set default values
+  // set default values
   global_config["core.editor"] = "nano";
   global_config["core.pager"] = "less";
   global_config["init.defaultBranch"] = "main";

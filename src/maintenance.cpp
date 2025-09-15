@@ -22,18 +22,18 @@ void garbage_collect()
   std::vector<std::string> unreachable = get_unreachable_objects();
   
   if (unreachable.empty()) {
-    std::cout << "No unreachable objects found" << std::endl;
-    return;
+  std::cout << "No unreachable objects found" << std::endl;
+  return;
   }
   
   size_t freed_space = 0;
   for (const auto& obj : unreachable)
   {
-    if (std::filesystem::exists(obj))
-    {
-      freed_space += std::filesystem::file_size(obj);
-      std::filesystem::remove(obj);
-    }
+  if (std::filesystem::exists(obj))
+  {
+  freed_space += std::filesystem::file_size(obj);
+  std::filesystem::remove(obj);
+  }
   }
   
   std::cout << "Removed " << unreachable.size() << " unreachable objects" << std::endl;
@@ -47,8 +47,8 @@ void repack_repository()
   std::string objects_dir = ".bittrack/objects/" + get_current_branch();
   if (!std::filesystem::exists(objects_dir))
   {
-    std::cout << "No objects to repack" << std::endl;
-    return;
+  std::cout << "No objects to repack" << std::endl;
+  return;
   }
   
   size_t original_count = 0;
@@ -56,35 +56,35 @@ void repack_repository()
   size_t original_size = 0;
   size_t repacked_size = 0;
   
-  // Count original objects
+  // lCount original objects
   for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
   {
-    if (entry.is_regular_file())
-    {
-      original_count++;
-      original_size += std::filesystem::file_size(entry.path());
-    }
+  if (entry.is_regular_file())
+  {
+  original_count++;
+  original_size += std::filesystem::file_size(entry.path());
+  }
   }
   
-  // Create packed objects directory
+  // lCreate packed objects directory
   std::string packed_dir = objects_dir + "/packed";
   std::filesystem::create_directories(packed_dir);
   
-  // Simple repacking: move all objects to packed directory
+  // lSimple repacking: move all objects to packed directory
   for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
   {
-    if (entry.is_regular_file() && entry.path().parent_path().string() != packed_dir)
-    {
-      std::string filename = entry.path().filename().string();
-      std::string new_path = packed_dir + "/" + filename;
-      
-      if (!std::filesystem::exists(new_path))
-      {
-        std::filesystem::rename(entry.path(), new_path);
-        repacked_count++;
-        repacked_size += std::filesystem::file_size(new_path);
-      }
-    }
+  if (entry.is_regular_file() && entry.path().parent_path().string() != packed_dir)
+  {
+  std::string filename = entry.path().filename().string();
+  std::string new_path = packed_dir + "/" + filename;
+  
+  if (!std::filesystem::exists(new_path))
+  {
+  std::filesystem::rename(entry.path(), new_path);
+  repacked_count++;
+  repacked_size += std::filesystem::file_size(new_path);
+  }
+  }
   }
   
   std::cout << "Repacked " << repacked_count << " objects" << std::endl;
@@ -101,10 +101,10 @@ void prune_objects()
   
   for (const auto& obj : unreachable)
   {
-    if (std::filesystem::exists(obj))
-    {
-      std::filesystem::remove(obj);
-    }
+  if (std::filesystem::exists(obj))
+  {
+  std::filesystem::remove(obj);
+  }
   }
   
   std::cout << "Pruned " << unreachable.size() << " objects" << std::endl;
@@ -114,38 +114,38 @@ void fsck_repository()
 {
   std::cout << "Checking repository integrity..." << std::endl;
   
-  // Check for missing objects
+  // check for missing objects
   std::vector<std::string> missing_objects;
   
-  // Check all commits
+  // check all commits
   std::string objects_dir = ".bittrack/objects/" + get_current_branch();
   if (std::filesystem::exists(objects_dir))
   {
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
-    {
-      if (entry.is_regular_file())
-      {
-        // Check if file is readable
-        std::ifstream file(entry.path());
-        if (!file.good())
-        {
-          missing_objects.push_back(entry.path().string());
-        }
-        file.close();
-      }
-    }
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
+  {
+  if (entry.is_regular_file())
+  {
+  // check if file is readable
+  std::ifstream file(entry.path());
+  if (!file.good())
+  {
+  missing_objects.push_back(entry.path().string());
+  }
+  file.close();
+  }
+  }
   }
   
   if (missing_objects.empty())
   {
-    std::cout << "Repository integrity check passed" << std::endl;
+  std::cout << "Repository integrity check passed" << std::endl;
   }
   else
   {
-    std::cout << "Found " << missing_objects.size() << " corrupted objects" << std::endl;
-    for (const auto& obj : missing_objects) {
-      std::cout << "  " << obj << std::endl;
-    }
+  std::cout << "Found " << missing_objects.size() << " corrupted objects" << std::endl;
+  for (const auto& obj : missing_objects) {
+  std::cout << "  " << obj << std::endl;
+  }
   }
 }
 
@@ -162,7 +162,7 @@ void show_repository_stats()
   
   if (!stats.largest_file.empty())
   {
-    std::cout << "  Largest file: " << stats.largest_file << " (" << format_size(stats.largest_file_size) << ")" << std::endl;
+  std::cout << "  Largest file: " << stats.largest_file << " (" << format_size(stats.largest_file_size) << ")" << std::endl;
   }
 }
 
@@ -172,7 +172,7 @@ void show_repository_info()
   std::cout << "  Current branch: " << get_current_branch() << std::endl;
   std::cout << "  Current commit: " << get_current_commit() << std::endl;
   std::cout << "  Repository size: " << get_repository_size() << std::endl;
-  std::cout << "  Last modified: " << std::endl; // Would get from filesystem
+  std::cout << "  Last modified: " << std::endl; // would get from filesystem
 }
 
 void analyze_repository()
@@ -186,10 +186,10 @@ void analyze_repository()
   std::cout << "  Average commit size: " << format_size(stats.total_size / std::max(stats.commit_count, size_t(1))) << std::endl;
   std::cout << "  Files per commit: " << stats.total_objects / std::max(stats.commit_count, size_t(1)) << std::endl;
   
-  // Find large files
+  // find large files
   find_large_files();
   
-  // Find duplicates
+  // find duplicates
   find_duplicate_files();
 }
 
@@ -201,29 +201,29 @@ void find_large_files(size_t threshold)
   
   for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
   {
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
-    {
-      size_t file_size = std::filesystem::file_size(entry.path());
-      if (file_size > threshold)
-      {
-        large_files.push_back({entry.path().string(), file_size});
-      }
-    }
+  if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
+  {
+  size_t file_size = std::filesystem::file_size(entry.path());
+  if (file_size > threshold)
+  {
+  large_files.push_back({entry.path().string(), file_size});
+  }
+  }
   }
   
   if (large_files.empty())
   {
-    std::cout << "No large files found" << std::endl;
-    return;
+  std::cout << "No large files found" << std::endl;
+  return;
   }
   
-  // Sort by size
+  // sort by size
   std::sort(large_files.begin(), large_files.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
   std::cout << "Large files:" << std::endl;
 
   for (const auto& file : large_files)
   {
-    std::cout << "  " << file.first << " (" << format_size(file.second) << ")" << std::endl;
+  std::cout << "  " << file.first << " (" << format_size(file.second) << ")" << std::endl;
   }
 }
 
@@ -234,14 +234,14 @@ void find_duplicate_files() {
   
   if (duplicates.empty())
   {
-    std::cout << "No duplicate files found" << std::endl;
-    return;
+  std::cout << "No duplicate files found" << std::endl;
+  return;
   }
   
   std::cout << "Duplicate files:" << std::endl;
   for (const auto& file : duplicates)
   {
-    std::cout << "  " << file << std::endl;
+  std::cout << "  " << file << std::endl;
   }
 }
 
@@ -249,13 +249,13 @@ void optimize_repository()
 {
   std::cout << "Optimizing repository..." << std::endl;
   
-  // Run garbage collection
+  // run garbage collection
   garbage_collect();
   
-  // Repack repository
+  // repack repository
   repack_repository();
   
-  // Remove empty directories
+  // remove empty directories
   remove_empty_directories();
   
   std::cout << "Repository optimization completed" << std::endl;
@@ -273,28 +273,28 @@ void clean_untracked_files()
   
   for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
   {
-    if (entry.is_regular_file())
-    {
-      std::string file_path = entry.path().string();
-      
-      // Skip .bittrack directory and tracked files
-      if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
-      {
-        continue;
-      }
-      
-      // Check if file is ignored using Git-like ignore system
-      if (should_ignore_file(file_path))
-      {
-        continue;
-      }
-      
-      size_t file_size = std::filesystem::file_size(entry.path());
-      std::filesystem::remove(entry.path());
-      removed_count++;
-      freed_space += file_size;
-      std::cout << "  Removed: " << file_path << std::endl;
-    }
+  if (entry.is_regular_file())
+  {
+  std::string file_path = entry.path().string();
+  
+  // skip .bittrack directory and tracked files
+  if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
+  {
+  continue;
+  }
+  
+  // check if file is ignored using Git-like ignore system
+  if (should_ignore_file(file_path))
+  {
+  continue;
+  }
+  
+  size_t file_size = std::filesystem::file_size(entry.path());
+  std::filesystem::remove(entry.path());
+  removed_count++;
+  freed_space += file_size;
+  std::cout << "  Removed: " << file_path << std::endl;
+  }
   }
   
   std::cout << "Removed " << removed_count << " untracked files" << std::endl;
@@ -313,26 +313,26 @@ void clean_ignored_files()
   
   for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
   {
-    if (entry.is_regular_file())
-    {
-      std::string file_path = entry.path().string();
-      
-      // Skip .bittrack directory and tracked files
-      if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
-      {
-        continue;
-      }
-      
-      // Only remove ignored files using Git-like ignore system
-      if (should_ignore_file(file_path))
-      {
-        size_t file_size = std::filesystem::file_size(entry.path());
-        std::filesystem::remove(entry.path());
-        removed_count++;
-        freed_space += file_size;
-        std::cout << "  Removed ignored file: " << file_path << std::endl;
-      }
-    }
+  if (entry.is_regular_file())
+  {
+  std::string file_path = entry.path().string();
+  
+  // skip .bittrack directory and tracked files
+  if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
+  {
+  continue;
+  }
+  
+  // only remove ignored files using Git-like ignore system
+  if (should_ignore_file(file_path))
+  {
+  size_t file_size = std::filesystem::file_size(entry.path());
+  std::filesystem::remove(entry.path());
+  removed_count++;
+  freed_space += file_size;
+  std::cout << "  Removed ignored file: " << file_path << std::endl;
+  }
+  }
   }
   
   std::cout << "Removed " << removed_count << " ignored files" << std::endl;
@@ -345,17 +345,17 @@ void remove_empty_directories()
   
   size_t removed_count = 0;
   
-  // Remove empty directories (excluding .bittrack)
+  // remove empty directories (excluding .bittrack)
   for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
   {
-    if (entry.is_directory() && entry.path().string().find(".bittrack") != 0)
-    {
-      if (std::filesystem::is_empty(entry.path()))
-      {
-        std::filesystem::remove(entry.path());
-        removed_count++;
-      }
-    }
+  if (entry.is_directory() && entry.path().string().find(".bittrack") != 0)
+  {
+  if (std::filesystem::is_empty(entry.path()))
+  {
+  std::filesystem::remove(entry.path());
+  removed_count++;
+  }
+  }
   }
   
   std::cout << "Removed " << removed_count << " empty directories" << std::endl;
@@ -365,7 +365,7 @@ void compact_repository()
 {
   std::cout << "Compacting repository..." << std::endl;
   
-  // Run optimization
+  // run optimization
   optimize_repository();
   
   std::cout << "Repository compaction completed" << std::endl;
@@ -376,7 +376,7 @@ void backup_repository(const std::string& backup_path)
   std::string target_path = backup_path.empty() ? "backup_" + std::to_string(std::time(nullptr)) : backup_path;
   std::cout << "Creating backup to: " << target_path << std::endl;
   
-  // Copy entire repository
+  // copy entire repository
   std::filesystem::create_directories(target_path);
   std::filesystem::copy(".", target_path, std::filesystem::copy_options::recursive);
   
@@ -387,13 +387,13 @@ void list_backups()
 {
   std::cout << "Available backups:" << std::endl;
   
-  // Look for backup directories
+  // look for backup directories
   for (const auto& entry : std::filesystem::directory_iterator("."))
   {
-    if (entry.is_directory() && entry.path().filename().string().find("backup_") == 0)
-    {
-      std::cout << "  " << entry.path().filename().string() << std::endl;
-    }
+  if (entry.is_directory() && entry.path().filename().string().find("backup_") == 0)
+  {
+  std::cout << "  " << entry.path().filename().string() << std::endl;
+  }
   }
 }
 
@@ -401,46 +401,46 @@ void restore_from_backup(const std::string& backup_path)
 {
   if (!std::filesystem::exists(backup_path))
   {
-    std::cout << "Backup not found: " << backup_path << std::endl;
-    return;
+  std::cout << "Backup not found: " << backup_path << std::endl;
+  return;
   }
   
   std::cout << "Restoring from backup: " << backup_path << std::endl;
   
-  // Create a temporary directory for the current state
+  // create a temporary directory for the current state
   std::string temp_dir = ".bittrack_temp_" + std::to_string(std::time(nullptr));
   std::filesystem::create_directories(temp_dir);
   
   try {
-    // Move current .bittrack to temp directory
-    if (std::filesystem::exists(".bittrack")) {
-      std::filesystem::rename(".bittrack", temp_dir + "/.bittrack");
-    }
-    
-    // Copy backup .bittrack to current directory
-    std::string backup_bittrack = backup_path + "/.bittrack";
-    if (std::filesystem::exists(backup_bittrack)) {
-      std::filesystem::copy(backup_bittrack, ".bittrack", std::filesystem::copy_options::recursive);
-    }
-    
-    // Copy backup files to current directory
-    for (const auto& entry : std::filesystem::directory_iterator(backup_path)) {
-      if (entry.is_regular_file() && entry.path().filename().string() != ".bittrack") {
-        std::filesystem::copy(entry.path(), entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
-      }
-    }
-    
-    std::cout << "Restore completed successfully" << std::endl;
-    std::cout << "Previous state backed up to: " << temp_dir << std::endl;
-    
+  // move current .bittrack to temp directory
+  if (std::filesystem::exists(".bittrack")) {
+  std::filesystem::rename(".bittrack", temp_dir + "/.bittrack");
+  }
+  
+  // copy backup .bittrack to current directory
+  std::string backup_bittrack = backup_path + "/.bittrack";
+  if (std::filesystem::exists(backup_bittrack)) {
+  std::filesystem::copy(backup_bittrack, ".bittrack", std::filesystem::copy_options::recursive);
+  }
+  
+  // copy backup files to current directory
+  for (const auto& entry : std::filesystem::directory_iterator(backup_path)) {
+  if (entry.is_regular_file() && entry.path().filename().string() != ".bittrack") {
+  std::filesystem::copy(entry.path(), entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
+  }
+  }
+  
+  std::cout << "Restore completed successfully" << std::endl;
+  std::cout << "Previous state backed up to: " << temp_dir << std::endl;
+  
   } catch (const std::exception& e) {
-    std::cout << "Restore failed: " << e.what() << std::endl;
-    
-    // Restore previous state
-    if (std::filesystem::exists(temp_dir + "/.bittrack")) {
-      std::filesystem::remove_all(".bittrack");
-      std::filesystem::rename(temp_dir + "/.bittrack", ".bittrack");
-    }
+  std::cout << "Restore failed: " << e.what() << std::endl;
+  
+  // restore previous state
+  if (std::filesystem::exists(temp_dir + "/.bittrack")) {
+  std::filesystem::remove_all(".bittrack");
+  std::filesystem::rename(temp_dir + "/.bittrack", ".bittrack");
+  }
   }
 }
 
@@ -450,7 +450,7 @@ void benchmark_operations()
   
   auto start = std::chrono::high_resolution_clock::now();
   
-  // Benchmark various operations
+  // benchmark various operations
   show_repository_stats();
   
   auto end = std::chrono::high_resolution_clock::now();
@@ -463,7 +463,7 @@ void profile_repository()
 {
   std::cout << "Profiling repository..." << std::endl;
   
-  // This would implement profiling logic
+  // this would implement profiling logic
   std::cout << "Repository profiling completed" << std::endl;
 }
 
@@ -480,54 +480,54 @@ RepoStats calculate_repository_stats()
 {
   RepoStats stats;
   
-  // Count objects
+  // count objects
   std::string objects_dir = ".bittrack/objects/" + get_current_branch();
   if (std::filesystem::exists(objects_dir))
   {
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
-    {
-      if (entry.is_regular_file())
-      {
-        stats.total_objects++;
-        size_t file_size = std::filesystem::file_size(entry.path());
-        stats.total_size += file_size;
-        
-        if (file_size > stats.largest_file_size)
-        {
-          stats.largest_file_size = file_size;
-          stats.largest_file = entry.path().string();
-        }
-      }
-    }
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir))
+  {
+  if (entry.is_regular_file())
+  {
+  stats.total_objects++;
+  size_t file_size = std::filesystem::file_size(entry.path());
+  stats.total_size += file_size;
+  
+  if (file_size > stats.largest_file_size)
+  {
+  stats.largest_file_size = file_size;
+  stats.largest_file = entry.path().string();
+  }
+  }
+  }
   }
   
-  // Count commits (simplified)
-  stats.commit_count = stats.total_objects; // This is a rough estimate
+  // count commits (simplified)
+  stats.commit_count = stats.total_objects; // this is a rough estimate
   
-  // Count branches
+  // lCount branches
   std::string refs_dir = ".bittrack/refs/heads";
   if (std::filesystem::exists(refs_dir))
   {
-    for (const auto& entry : std::filesystem::directory_iterator(refs_dir))
-    {
-      if (entry.is_regular_file())
-      {
-        stats.branch_count++;
-      }
-    }
+  for (const auto& entry : std::filesystem::directory_iterator(refs_dir))
+  {
+  if (entry.is_regular_file())
+  {
+  stats.branch_count++;
+  }
+  }
   }
   
-  // Count tags
+  // count tags
   std::string tags_dir = ".bittrack/refs/tags";
   if (std::filesystem::exists(tags_dir))
   {
-    for (const auto& entry : std::filesystem::directory_iterator(tags_dir))
-    {
-      if (entry.is_regular_file())
-      {
-        stats.tag_count++;
-      }
-    }
+  for (const auto& entry : std::filesystem::directory_iterator(tags_dir))
+  {
+  if (entry.is_regular_file())
+  {
+  stats.tag_count++;
+  }
+  }
   }
   
   return stats;
@@ -539,43 +539,43 @@ std::vector<std::string> get_unreachable_objects()
   
   std::string objects_dir = ".bittrack/objects/" + get_current_branch();
   if (!std::filesystem::exists(objects_dir)) {
-    return unreachable;
+  return unreachable;
   }
   
   std::set<std::string> reachable_objects;
   
-  // Get all commit hashes from refs
-  // For now, we'll get commits from the current branch
+  // get all commit hashes from refs
+  // lFor now, we'll get commits from the current branch
   std::string current_commit = get_current_commit();
   if (!current_commit.empty()) {
-    reachable_objects.insert(current_commit);
+  reachable_objects.insert(current_commit);
   }
   
-  // Get all branch refs
+  // get all branch refs
   std::string refs_dir = ".bittrack/refs/heads";
   if (std::filesystem::exists(refs_dir)) {
-    for (const auto& entry : std::filesystem::directory_iterator(refs_dir)) {
-      if (entry.is_regular_file()) {
-        std::ifstream file(entry.path());
-        std::string commit_hash;
-        if (std::getline(file, commit_hash)) {
-          reachable_objects.insert(commit_hash);
-        }
-        file.close();
-      }
-    }
+  for (const auto& entry : std::filesystem::directory_iterator(refs_dir)) {
+  if (entry.is_regular_file()) {
+  std::ifstream file(entry.path());
+  std::string commit_hash;
+  if (std::getline(file, commit_hash)) {
+  reachable_objects.insert(commit_hash);
+  }
+  file.close();
+  }
+  }
   }
   
-  // Find unreachable objects
+  // find unreachable objects
   for (const auto& entry : std::filesystem::recursive_directory_iterator(objects_dir)) {
-    if (entry.is_regular_file()) {
-      std::string object_path = entry.path().string();
-      std::string object_hash = entry.path().filename().string();
-      
-      if (reachable_objects.find(object_hash) == reachable_objects.end()) {
-        unreachable.push_back(object_path);
-      }
-    }
+  if (entry.is_regular_file()) {
+  std::string object_path = entry.path().string();
+  std::string object_hash = entry.path().filename().string();
+  
+  if (reachable_objects.find(object_hash) == reachable_objects.end()) {
+  unreachable.push_back(object_path);
+  }
+  }
   }
   
   return unreachable;
@@ -586,32 +586,32 @@ std::vector<std::string> get_duplicate_files()
   std::vector<std::string> duplicates;
   std::map<std::string, std::vector<std::string>> file_hashes;
   
-  // Scan all files in the repository
+  // scan all files in the repository
   for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
   {
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
-    {
-      try {
-        std::string file_hash = hash_file(entry.path().string());
-        file_hashes[file_hash].push_back(entry.path().string());
-      } catch (...) {
-        // Skip files that can't be hashed
-        continue;
-      }
-    }
+  if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
+  {
+  try {
+  std::string file_hash = hash_file(entry.path().string());
+  file_hashes[file_hash].push_back(entry.path().string());
+  } catch (...) {
+  // skip files that can't be hashed
+  continue;
+  }
+  }
   }
   
-  // Find files with duplicate hashes
+  // find files with duplicate hashes
   for (const auto& pair : file_hashes)
   {
-    if (pair.second.size() > 1)
-    {
-      // Add all but the first file as duplicates
-      for (size_t i = 1; i < pair.second.size(); ++i)
-      {
-        duplicates.push_back(pair.second[i]);
-      }
-    }
+  if (pair.second.size() > 1)
+  {
+  // add all but the first file as duplicates
+  for (size_t i = 1; i < pair.second.size(); ++i)
+  {
+  duplicates.push_back(pair.second[i]);
+  }
+  }
   }
   
   return duplicates;
@@ -625,8 +625,8 @@ std::string format_size(size_t bytes)
   
   while (size >= 1024 && unit < 4)
   {
-    size /= 1024;
-    unit++;
+  size /= 1024;
+  unit++;
   }
   
   std::ostringstream oss;
@@ -640,10 +640,10 @@ std::string get_repository_size()
   
   for (const auto& entry : std::filesystem::recursive_directory_iterator(".bittrack"))
   {
-    if (entry.is_regular_file())
-    {
-      total_size += std::filesystem::file_size(entry.path());
-    }
+  if (entry.is_regular_file())
+  {
+  total_size += std::filesystem::file_size(entry.path());
+  }
   }
   
   return format_size(total_size);
