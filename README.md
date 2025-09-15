@@ -269,15 +269,9 @@ make clean
 5. Ensure all tests pass
 6. Submit a pull request
 
-```
-
-## License
+### License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Support
 
