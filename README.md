@@ -4,7 +4,7 @@ A comprehensive, lightweight version control system built from scratch in C++—
 
 ## Features
 
-### Core VCS Functionality
+### Core Functionality
 - **Repository Management**: Initialize, clone, and manage BitTrack repositories
 - **Branching**: Create, switch, merge, and delete branches
 - **Staging**: Add, remove, and manage staged files
@@ -21,12 +21,6 @@ A comprehensive, lightweight version control system built from scratch in C++—
 - **Error Handling**: Comprehensive error reporting and validation
 - **Remote Operations**: Push/pull to remote repositories
 - **Configuration Management**: User and repository-specific settings
-
-### Testing & Quality
-- **Comprehensive Test Suite**: 69 passing unit tests
-- **Build System**: Automated compilation with external scripts
-- **Code Quality**: Linting and style checking tools
-- **Documentation**: Extensive inline documentation
 
 ## Requirements
 
@@ -220,13 +214,6 @@ make test
 ./build/run_tests --gtest_verbose
 ```
 
-### Test Coverage
-The test suite includes:
-- **Unit Tests**: Individual function testing
-- **Integration Tests**: End-to-end workflow testing
-- **Error Handling Tests**: Edge case and error condition testing
-- **Performance Tests**: Benchmarking and optimization validation
-
 ## Project Structure
 
 ```
@@ -282,44 +269,6 @@ make clean
 5. Ensure all tests pass
 6. Submit a pull request
 
-## Performance
-
-BitTrack is designed for performance and efficiency:
-- **Fast Operations**: Optimized algorithms for common VCS operations
-- **Memory Efficient**: Minimal memory footprint
-- **Scalable**: Handles large repositories efficiently
-- **Cross-Platform**: Works on macOS, Linux, and Windows
-
-## Troubleshooting
-
-### Common Issues
-
-#### Build Errors
-```bash
-# Ensure dependencies are installed
-brew install openssl curl zlib
-
-# Clean and rebuild
-make clean
-make compile
-```
-
-#### Test Failures
-```bash
-# Run tests with verbose output
-./build/run_tests --gtest_verbose
-
-# Check for missing dependencies
-ldd ./build/run_tests
-```
-
-#### Permission Issues
-```bash
-# Make scripts executable
-chmod +x bin/*.sh
-
-# Fix file permissions
-chmod +x build/bittrack
 ```
 
 ## License
