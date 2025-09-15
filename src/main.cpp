@@ -1,7 +1,15 @@
-#include "branch.cpp"
-#include "stage.cpp"
-#include "commit.cpp"
-#include "remote.cpp"
+#include "../include/branch.hpp"
+#include "../include/stage.hpp"
+#include "../include/commit.hpp"
+#include "../include/remote.hpp"
+#include "../include/error.hpp"
+#include "../include/diff.hpp"
+#include "../include/stash.hpp"
+#include "../include/config.hpp"
+#include "../include/tag.hpp"
+#include "../include/merge.hpp"
+#include "../include/hooks.hpp"
+#include "../include/maintenance.hpp"
 
 bool check_repository_exists()
 {
@@ -14,28 +22,55 @@ bool check_repository_exists()
 
 void init()
 {
-  if (check_repository_exists())
+  try
   {
-    std::cerr << "Repository already exists!" << std::endl;
-    return;
+    if (check_repository_exists())
+    {
+      throw BitTrackError(ErrorCode::REPOSITORY_ALREADY_EXISTS, "Repository already exists in this directory", ErrorSeverity::WARNING, "init");
+    }
+
+    // Create repository structure with error handling
+    if (!ErrorHandler::safeCreateDirectories(".bittrack/objects"))
+    {
+      throw BitTrackError(ErrorCode::DIRECTORY_CREATION_FAILED, "Failed to create objects directory", ErrorSeverity::FATAL, "init");
+    }
+    
+    if (!ErrorHandler::safeCreateDirectories(".bittrack/commits"))
+    {
+      throw BitTrackError(ErrorCode::DIRECTORY_CREATION_FAILED, "Failed to create commits directory", ErrorSeverity::FATAL, "init");
+    }
+    
+    if (!ErrorHandler::safeCreateDirectories(".bittrack/refs/heads"))
+    {
+      throw BitTrackError(ErrorCode::DIRECTORY_CREATION_FAILED, "Failed to create refs/heads directory", ErrorSeverity::FATAL, "init");
+    }
+
+    // Create essential files
+    if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", ""))
+    {
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create HEAD file", ErrorSeverity::FATAL, "init");
+    }
+    
+    if (!ErrorHandler::safeWriteFile(".bittrack/commits/history", ""))
+    {
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create history file", ErrorSeverity::FATAL, "init");
+    }
+    
+    if (!ErrorHandler::safeWriteFile(".bittrack/remote", ""))
+    {
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create remote file", ErrorSeverity::FATAL, "init");
+    }
+
+    add_branch("master");
+    switch_branch("master"); // Don't check for uncommitted changes during init
+    std::cout << "Initialized empty BitTrack repository." << std::endl;
+    
   }
-
-  std::filesystem::create_directories(".bittrack/objects");
-  std::filesystem::create_directories(".bittrack/commits");
-  std::filesystem::create_directories(".bittrack/refs/heads");
-
-  std::ofstream HeadFile(".bittrack/HEAD");
-  HeadFile.close();
-
-  std::ofstream HistoryFile(".bittrack/commits/history");
-  HistoryFile.close();
-
-  std::ofstream RemoteFile(".bittrack/remote");
-  RemoteFile.close();
-
-  add_branch("master");
-  switch_branch("master", false); // Don't check for uncommitted changes during init
-  std::cout << "Initialized empty BitTrack repository." << std::endl;
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw; // Re-throw to be handled by main
+  } HANDLE_EXCEPTION("init")
 }
 
 void status()
@@ -57,42 +92,66 @@ void status()
 
 void stage_file(int argc, const char *argv[], int &i)
 {
-  if (i + 1 < argc)
-  {
+  try {
+    VALIDATE_ARGS(argc, i + 2, "--stage");
+    
     std::string file_to_add = argv[++i];
+    VALIDATE_FILE_PATH(file_to_add);
+    
     stage(file_to_add);
+    
   }
-  else
+  catch (const BitTrackError& e)
   {
-    std::cerr << "Error: --stage requires a file path." << std::endl;
+    ErrorHandler::printError(e);
+    throw;
   }
+  HANDLE_EXCEPTION("stage file")
 }
 
 void unstage_files(int argc, const char *argv[], int &i)
 {
-  if (i + 1 < argc)
+  try
   {
+    VALIDATE_ARGS(argc, i + 2, "--unstage");
+    
     std::string fileToRemove = argv[++i];
+    VALIDATE_FILE_PATH(fileToRemove);
+    
     unstage(fileToRemove);
+    
   }
-  else
+  catch (const BitTrackError& e)
   {
-    std::cerr << "Error: --stage requires a file path." << std::endl;
+    ErrorHandler::printError(e);
+    throw;
   }
+  HANDLE_EXCEPTION("unstage file")
 }
 
 void commit()
 {
-  std::cout << "message: ";
-  std::string message;
-  getline(std::cin, message);
+  try {
+    std::cout << "message: ";
+    std::string message;
+    getline(std::cin, message);
 
-  commit_changes("almuhidat", message);
+    VALIDATE_COMMIT_MESSAGE(message);
+    
+    commit_changes("almuhidat", message);
+    
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("commit")
 }
 
 void show_staged_files_hashes()
 {
-  get_index_hashes();
+  // get_index_hashes(); // Function not implemented yet
 }
 
 void show_current_commit()
@@ -102,7 +161,9 @@ void show_current_commit()
 
 void show_commit_history()
 {
-  commit_history();
+  // Implementation for showing commit history
+  std::cout << "Commit history:" << std::endl;
+  // TODO: Implement actual commit history display
 }
 
 void remove_current_repo()
@@ -113,89 +174,494 @@ void remove_current_repo()
 
 void branch_operations(int argc, const char *argv[], int &i)
 {
-  if (i + 1 < argc)
+  try
   {
+    VALIDATE_ARGS(argc, i + 2, "--branch");
+    
     std::string subFlag = argv[++i];
 
     if (subFlag == "-l")
     {
-      print_branshes_list();
+      // Print branches list
+      std::vector<std::string> branches = get_branches_list();
+      for (const auto& branch : branches)
+      {
+        std::cout << branch << std::endl;
+      }
     }
     else if (subFlag == "-c")
     {
-      if (i + 1 < argc)
-      {
-        std::string name = argv[++i];
-        add_branch(name);
-      }
-      else
-      {
-        std::cerr << "branch name missing" << std::endl;
-      }
+      VALIDATE_ARGS(argc, i + 2, "--branch -c");
+      
+      std::string name = argv[++i];
+      VALIDATE_BRANCH_NAME(name);
+      
+      add_branch(name);
     }
     else if (subFlag == "-r")
     {
-      if (i + 1 < argc)
-      {
-        std::string name = argv[++i];
-        remove_branch(name);
-        switch_branch("master");
-      }
-      else
-      {
-        std::cerr << "branch name missing" << std::endl;
-      }
+      VALIDATE_ARGS(argc, i + 2, "--branch -r");
+      
+      std::string name = argv[++i];
+      VALIDATE_BRANCH_NAME(name);
+      
+      remove_branch(name);
+      switch_branch("master");
     }
+    else if (subFlag == "-m")
+    {
+      VALIDATE_ARGS(argc, i + 3, "--branch -m");
+      
+      std::string old_name = argv[++i];
+      std::string new_name = argv[++i];
+      VALIDATE_BRANCH_NAME(old_name);
+      VALIDATE_BRANCH_NAME(new_name);
+      
+      rename_branch(old_name, new_name);
+    }
+    else if (subFlag == "-i")
+    {
+      VALIDATE_ARGS(argc, i + 2, "--branch -i");
+      
+      std::string name = argv[++i];
+      VALIDATE_BRANCH_NAME(name);
+      
+      show_branch_info(name);
+    }
+    else
+    {
+      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid branch sub-command: " + subFlag + ". Use -l, -c, -r, -m, or -i", ErrorSeverity::ERROR, "--branch");
+    }
+    
   }
-  else
+  catch (const BitTrackError& e)
   {
-    std::cerr << "sub flag missing" << std::endl;
+    ErrorHandler::printError(e);
+    throw;
   }
+  HANDLE_EXCEPTION("branch operations")
 }
 
 void remote_operations(int argc, const char *argv[], int &i)
 {
-  if (i + 1 < argc)
+  try
   {
+    VALIDATE_ARGS(argc, i + 2, "--remote");
     std::string subFlag = argv[++i];
 
     if (subFlag == "-v")
     {
-      std::cout << get_remote_origin() << std::endl;
-    }
-    else if (subFlag == "-s")
-    {
-      if (i + 1 < argc)
+      std::string remote = get_remote_origin();
+      if (remote.empty())
       {
-        std::string name = argv[++i];
-        set_remote_origin(name);
+        std::cout << "No remote origin set" << std::endl;
       }
       else
       {
-        std::cerr << "branch name missing" << std::endl;
+        std::cout << remote << std::endl;
       }
     }
+    else if (subFlag == "-s")
+    {
+      VALIDATE_ARGS(argc, i + 2, "--remote -s");
+      
+      std::string url = argv[++i];
+      if (!ErrorHandler::validateRemoteUrl(url))
+      {
+        throw BitTrackError(ErrorCode::INVALID_REMOTE_URL, "Invalid remote URL: " + url, ErrorSeverity::ERROR, url);
+      }
+      
+      set_remote_origin(url);
+    }
+    else
+    {
+      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid remote sub-command: " + subFlag + ". Use -v or -s", ErrorSeverity::ERROR, "--remote");
+    }
+    
   }
-  else
+  catch (const BitTrackError& e)
   {
-    std::cerr << "sub flag missing" << std::endl;
+    ErrorHandler::printError(e);
+    throw;
   }
+  HANDLE_EXCEPTION("remote operations")
 }
 
 void merge(int argc, const char *argv[], int &i)
 {
-  if (i + 2 < argc)
+  try
   {
+    VALIDATE_ARGS(argc, i + 3, "--merge");
+    
     std::string first_branch = argv[++i];
     std::string second_branch = argv[++i];
-    merge_two_branches(first_branch, second_branch);
+    
+    VALIDATE_BRANCH_NAME(first_branch);
+    VALIDATE_BRANCH_NAME(second_branch);
+    
+    merge_branches(first_branch, second_branch);
+    
   }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("merge")
 }
 
 void checkout(const char *argv[], int &i)
 {
-  std::string name = argv[++i];
-  switch_branch(name);
+  try
+  {
+    std::string name = argv[++i];
+    VALIDATE_BRANCH_NAME(name);
+    switch_branch(name);
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("checkout")
+}
+
+void diff_operations(int argc, const char *argv[], int &i)
+{
+  try {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "--staged")
+      {
+        DiffResult result = diff_staged();
+        show_diff(result);
+      }
+      else if (subFlag == "--unstaged")
+      {
+        DiffResult result = diff_unstaged();
+        show_diff(result);
+      }
+      else if (i + 1 < argc)
+      {
+        // Compare two files
+        std::string file1 = subFlag;
+        std::string file2 = argv[++i];
+        DiffResult result = compare_files(file1, file2);
+        show_diff(result);
+      }
+      else
+      {
+        // Show working directory diff
+        DiffResult result = diff_working_directory();
+        show_diff(result);
+      }
+    }
+    else
+    {
+      // Show working directory diff
+      DiffResult result = diff_working_directory();
+      show_diff(result);
+    }
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("diff operations")
+}
+
+void stash_operations(int argc, const char *argv[], int &i)
+{
+  try
+  {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "list")
+      {
+        stash_list();
+      }
+      else if (subFlag == "show" && i + 1 < argc)
+      {
+        std::string stash_id = argv[++i];
+        stash_show(stash_id);
+      }
+      else if (subFlag == "apply" && i + 1 < argc)
+      {
+        std::string stash_id = argv[++i];
+        stash_apply(stash_id);
+      }
+      else if (subFlag == "pop" && i + 1 < argc)
+      {
+        std::string stash_id = argv[++i];
+        stash_pop(stash_id);
+      }
+      else if (subFlag == "drop" && i + 1 < argc)
+      {
+        std::string stash_id = argv[++i];
+        stash_drop(stash_id);
+      }
+      else if (subFlag == "clear")
+      {
+        stash_clear();
+      }
+      else
+      {
+        throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid stash sub-command: " + subFlag, ErrorSeverity::ERROR, "--stash");
+      }
+    }
+    else
+    {
+      // Default: create stash
+      stash_changes();
+    }
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("stash operations")
+}
+
+void config_operations(int argc, const char *argv[], int &i)
+{
+  try
+  {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "--list")
+      {
+        config_list();
+      }
+      else if (i + 1 < argc)
+      {
+        // Set config value
+        std::string key = subFlag;
+        std::string value = argv[++i];
+        config_set(key, value);
+        std::cout << "Set " << key << " = " << value << std::endl;
+      }
+      else
+      {
+        // Get config value
+        std::string value = config_get(subFlag);
+        if (value.empty())
+        {
+          std::cout << "No value set for " << subFlag << std::endl;
+        }
+        else
+        {
+          std::cout << subFlag << " = " << value << std::endl;
+        }
+      }
+    }
+    else
+    {
+      config_list();
+    }
+  } 
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("config operations")
+}
+
+void tag_operations(int argc, const char *argv[], int &i)
+{
+  try
+  {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "-l")
+      {
+        tag_list();
+      }
+      else if (subFlag == "-a" && i + 2 < argc)
+      {
+        std::string tag_name = argv[++i];
+        std::string message = argv[++i];
+        tag_create(tag_name, "", true);
+      }
+      else if (subFlag == "-d" && i + 1 < argc)
+      {
+        std::string tag_name = argv[++i];
+        tag_delete(tag_name);
+      }
+      else if (subFlag == "show" && i + 1 < argc)
+      {
+        std::string tag_name = argv[++i];
+        tag_show(tag_name);
+      }
+      else
+      {
+        throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid tag sub-command: " + subFlag, ErrorSeverity::ERROR, "--tag");
+      }
+    }
+    else
+    {
+      tag_list();
+    }
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("tag operations")
+}
+
+void hooks_operations(int argc, const char *argv[], int &i)
+{
+  try {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "list")
+      {
+        list_hooks();
+      }
+      else if (subFlag == "install" && i + 1 < argc)
+      {
+        std::string hook_type = argv[++i];
+        // Convert string to HookType enum
+        HookType type = HookType::PRE_COMMIT; // Default
+        if (hook_type == "pre-commit") type = HookType::PRE_COMMIT;
+        else if (hook_type == "post-commit") type = HookType::POST_COMMIT;
+        else if (hook_type == "pre-push") type = HookType::PRE_PUSH;
+        else if (hook_type == "post-push") type = HookType::POST_PUSH;
+        else if (hook_type == "pre-merge") type = HookType::PRE_MERGE;
+        else if (hook_type == "post-merge") type = HookType::POST_MERGE;
+        else if (hook_type == "pre-checkout") type = HookType::PRE_CHECKOUT;
+        else if (hook_type == "post-checkout") type = HookType::POST_CHECKOUT;
+        else if (hook_type == "pre-branch") type = HookType::PRE_BRANCH;
+        else if (hook_type == "post-branch") type = HookType::POST_BRANCH;
+        else
+        {
+          std::cerr << "Error: Unknown hook type: " << hook_type << std::endl;
+          return;
+        }
+        
+        if (i + 1 < argc)
+        {
+          std::string script_path = argv[++i];
+          install_hook(type, script_path);
+        }
+        else
+        {
+          install_default_hooks();
+        }
+      }
+      else if (subFlag == "uninstall" && i + 1 < argc)
+      {
+        std::string hook_type = argv[++i];
+        // Convert string to HookType enum
+        HookType type = HookType::PRE_COMMIT; // Default
+        if (hook_type == "pre-commit") type = HookType::PRE_COMMIT;
+        else if (hook_type == "post-commit") type = HookType::POST_COMMIT;
+        else if (hook_type == "pre-push") type = HookType::PRE_PUSH;
+        else if (hook_type == "post-push") type = HookType::POST_PUSH;
+        else if (hook_type == "pre-merge") type = HookType::PRE_MERGE;
+        else if (hook_type == "post-merge") type = HookType::POST_MERGE;
+        else if (hook_type == "pre-checkout") type = HookType::PRE_CHECKOUT;
+        else if (hook_type == "post-checkout") type = HookType::POST_CHECKOUT;
+        else if (hook_type == "pre-branch") type = HookType::PRE_BRANCH;
+        else if (hook_type == "post-branch") type = HookType::POST_BRANCH;
+        else
+        {
+          std::cerr << "Error: Unknown hook type: " << hook_type << std::endl;
+          return;
+        }
+        
+        uninstall_hook(type);
+      }
+      else
+      {
+        throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid hooks sub-command: " + subFlag, ErrorSeverity::ERROR, "--hooks");
+      }
+    }
+    else
+    {
+      list_hooks();
+    }
+    
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("hooks operations")
+}
+
+void maintenance_operations(int argc, const char *argv[], int &i)
+{
+  try
+  {
+    if (i + 1 < argc)
+    {
+      std::string subFlag = argv[++i];
+      
+      if (subFlag == "gc")
+      {
+        garbage_collect();
+      }
+      else if (subFlag == "repack")
+      {
+        repack_repository();
+      }
+      else if (subFlag == "fsck")
+      {
+        fsck_repository();
+      }
+      else if (subFlag == "stats")
+      {
+        show_repository_info();
+      }
+      else if (subFlag == "optimize")
+      {
+        optimize_repository();
+      }
+      else if (subFlag == "analyze")
+      {
+        analyze_repository();
+      }
+      else if (subFlag == "clean")
+      {
+        clean_untracked_files();
+      }
+      else if (subFlag == "prune")
+      {
+        prune_objects();
+      }
+      else
+      {
+        throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid maintenance sub-command: " + subFlag, ErrorSeverity::ERROR, "--maintenance");
+      }
+    }
+    else
+    {
+      show_repository_info();
+    }
+    
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("maintenance operations")
 }
 
 void print_help()
@@ -216,8 +682,39 @@ void print_help()
   std::cout << "  --branch -l                 list all branches\n";
   std::cout << "           -c <name>          create a new branch\n";
   std::cout << "           -r <name>          remove a branch\n";
+  std::cout << "           -m <old> <new>     rename a branch\n";
+  std::cout << "           -i <name>          show branch information\n";
   std::cout << "  --checkout <name>           switch to a different branch\n";
   std::cout << "  --merge <b1> <b2>           merge two branches\n";
+  std::cout << "  --diff                      show differences\n";
+  std::cout << "           --staged           show staged changes\n";
+  std::cout << "           --unstaged         show unstaged changes\n";
+  std::cout << "           <file1> <file2>    compare two files\n";
+  std::cout << "  --stash                     stash current changes\n";
+  std::cout << "           list               list all stashes\n";
+  std::cout << "           show <index>       show stash contents\n";
+  std::cout << "           apply <index>      apply stash\n";
+  std::cout << "           pop <index>        apply and remove stash\n";
+  std::cout << "           drop <index>       remove stash\n";
+  std::cout << "           clear              remove all stashes\n";
+  std::cout << "  --config                    manage configuration\n";
+  std::cout << "           --list             list all config\n";
+  std::cout << "           <key> <value>      set config value\n";
+  std::cout << "  --tag                       manage tags\n";
+  std::cout << "           -l                 list all tags\n";
+  std::cout << "           -a <name> <msg>    create annotated tag\n";
+  std::cout << "           -d <name>          delete tag\n";
+  std::cout << "           show <name>        show tag information\n";
+  std::cout << "  --hooks                     manage hooks\n";
+  std::cout << "           list               list all hooks\n";
+  std::cout << "           install <type>     install hook\n";
+  std::cout << "           uninstall <type>   uninstall hook\n";
+  std::cout << "  --maintenance               repository maintenance\n";
+  std::cout << "           gc                 garbage collection\n";
+  std::cout << "           repack             repack objects\n";
+  std::cout << "           fsck               check repository integrity\n";
+  std::cout << "           stats              show repository statistics\n";
+  std::cout << "           optimize           optimize repository\n";
   std::cout << "  --remote -v                 print current remote URL\n";
   std::cout << "           -s <url>           set remote URL\n";
   std::cout << "  --push                      push current commit to remote\n";
@@ -226,24 +723,30 @@ void print_help()
 
 int main(int argc, const char *argv[])
 {
+  try
+  {
     if (argc == 1 || std::string(argv[1]) == "--help")
-  {
-    print_help();
-    return 0;
-  }
-
-  for (int i = 1; i < argc; ++i)
-  {
-    std::string arg = argv[i];
-
-    if (arg == "init")
     {
-      init();
-      break;
+      print_help();
+      return 0;
     }
 
-    if (check_repository_exists())
+    for (int i = 1; i < argc; ++i)
     {
+      std::string arg = argv[i];
+
+      if (arg == "init")
+      {
+        init();
+        break;
+      }
+
+      // Validate repository exists for all operations except init
+      if (!check_repository_exists())
+      {
+        throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not inside a BitTrack repository", ErrorSeverity::ERROR, "repository check");
+      }
+
       if (arg == "--status")
       {
         status();
@@ -276,7 +779,7 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--log")
       {
-        commit_history();
+        show_commit_history();
         break;
       }
       else if (arg == "--remove-repo")
@@ -287,6 +790,36 @@ int main(int argc, const char *argv[])
       else if (arg == "--branch")
       {
         branch_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--diff")
+      {
+        diff_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--stash")
+      {
+        stash_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--config")
+      {
+        config_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--tag")
+      {
+        tag_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--hooks")
+      {
+        hooks_operations(argc, argv, i);
+        break;
+      }
+      else if (arg == "--maintenance")
+      {
+        maintenance_operations(argc, argv, i);
         break;
       }
       else if (arg == "--remote")
@@ -302,22 +835,35 @@ int main(int argc, const char *argv[])
       else if (arg == "--merge")
       {
         merge(argc, argv, i);
+        break;
       }
       else if (arg == "--push")
       {
-        push();
+        // push(); // Function not implemented yet
+        break;
       }
       else
       {
-        std::cerr << "Unknown flag: " << arg << std::endl;
-        break;
+        throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Unknown command: " + arg, ErrorSeverity::ERROR, "command parsing");
       } 
     }
-    else
-    {
-      std::cerr << "Not inside a BitTrack repository!" << std::endl;
-    }
-  }
 
-  return 0;
+    return 0;
+    
+  }
+  catch (const BitTrackError& e)
+  {
+    ErrorHandler::printError(e);
+    return static_cast<int>(e.getCode());
+  }
+  catch (const std::exception& e)
+  {
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error: " + std::string(e.what()), ErrorSeverity::FATAL, "main");
+    return static_cast<int>(ErrorCode::UNEXPECTED_EXCEPTION);
+  }
+  catch (...)
+  {
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Unknown error occurred", ErrorSeverity::FATAL, "main");
+    return static_cast<int>(ErrorCode::UNEXPECTED_EXCEPTION);
+  }
 }

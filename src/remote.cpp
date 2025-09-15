@@ -1,4 +1,13 @@
 #include "../include/remote.hpp"
+#include "../include/branch.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <vector>
+#include <string>
+#include <curl/curl.h>
+#include "../libs/miniz/miniz.h"
 
 void set_remote_origin(const std::string &url)
 {
@@ -163,12 +172,10 @@ void push()
 
     response = curl_easy_perform(curl);
 
-    if (response != CURLE_OK)
-    {
+    if (response != CURLE_OK) {
       std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
     }
-    else
-    {
+    else {
       std::cout << "File uploaded successfully!" << std::endl;
     }
 
@@ -199,7 +206,8 @@ void pull()
   if (curl)
   {
     std::ofstream outfile(".bittrack/remote_pull_folder.zip", std::ios::binary);
-    if (!outfile.is_open()) {
+    if (!outfile.is_open())
+    {
       std::cerr << "Error: Could not open .bittrack/remote_pull_folder.zip for writing.\n";
       curl_easy_cleanup(curl);
       return;

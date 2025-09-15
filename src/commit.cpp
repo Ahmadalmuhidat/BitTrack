@@ -1,6 +1,18 @@
 #include "../include/commit.hpp"
+#include "../include/hash.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
-void insert_commit_to_history(const std::string& last_commit_hash, const std::string& new_branch_name) {
+void insert_commit_to_history(const std::string& last_commit_hash, const std::string& new_branch_name)
+{
   const std::string history_path = ".bittrack/commits/history";
 
   // Read existing content
@@ -39,8 +51,7 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
 
   // Write the buffer content to the snapshot file
   std::ofstream snapshotFile(snapshot_path, std::ios::binary);
-  if (!snapshotFile)
-  {
+  if (!snapshotFile) {
     std::cerr << "Error: Unable to create snapshot file: " << snapshot_path << std::endl;
   }
   snapshotFile << buffer.str();
@@ -119,7 +130,8 @@ void commit_changes(const std::string &author, const std::string &message)
   }
 
   std::unordered_map<std::string, std::string> file_hashes;
-  std::string commit_hash = generate_commit_hash(author, message, file_hashes); // generate hash for the current commit
+  std::string timestamp = std::to_string(std::time(nullptr));
+  std::string commit_hash = generate_commit_hash(author, message, timestamp);
   std::string line;
 
   while (std::getline(staging_file, line))
@@ -171,4 +183,37 @@ void commit_history()
     commit_log.close();
   }
   file_path.close();
+}
+
+std::string generate_commit_hash(const std::string& author, const std::string& message, const std::string& timestamp)
+{
+  // Create a simple hash based on author, message, and timestamp
+  std::string combined = author + message + timestamp;
+  return sha256_hash(combined);
+}
+
+std::string get_current_commit()
+{
+  // Read the current commit from .bittrack/HEAD
+  std::ifstream head_file(".bittrack/HEAD");
+  std::string commit_hash;
+  if (head_file.is_open()) {
+    std::getline(head_file, commit_hash);
+    head_file.close();
+  }
+  return commit_hash;
+}
+
+std::string get_staged_file_content(const std::string& file_path)
+{
+  std::ifstream file(file_path);
+  std::string content;
+  if (file.is_open()) {
+    std::string line;
+    while (std::getline(file, line)) {
+      content += line + "\n";
+    }
+    file.close();
+  }
+  return content;
 }

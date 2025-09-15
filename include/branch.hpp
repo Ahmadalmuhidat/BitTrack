@@ -1,31 +1,28 @@
 #ifndef BRANCH_HPP
 #define BRANCH_HPP
 
-#include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <filesystem>
-#include <algorithm>
-#include <cstdio>
-
-#include "stage.hpp"
-#include "hash.hpp"
-#include "commit.hpp"
 
 std::string get_current_branch();
 std::vector<std::string> get_branches_list();
-void print_branshes_list();
-void add_branch(std::string name);
-void switch_branch(std::string name, bool check_uncommitted = true);
-void copy_current_commit_to_branch(std::string new_branch);
-void remove_branch(std::string branch_name);
-void merge_two_branches(const std::string& first_branch, const std::string& second_branch);
-bool compare_files_contents(const std::filesystem::path& first_file, const std::filesystem::path& second_file);
-bool has_uncommitted_changes();
-void update_working_directory(const std::string& target_branch);
-void restore_files_from_commit(const std::string& commit_path);
-void backup_untracked_files();
-void restore_untracked_files();
+std::vector<std::string> list_branches();
+void add_branch(const std::string& branch_name);
+void remove_branch(const std::string& branch_name);
+void switch_branch(const std::string& branch_name);
+void create_branch(const std::string& branch_name);
+void delete_branch(const std::string& branch_name);
+void rename_branch(const std::string& old_name, const std::string& new_name);
+void show_branch_info(const std::string& branch_name);
+bool branch_exists(const std::string& branch_name);
+std::string get_branch_commit(const std::string& branch_name);
+std::string get_current_commit();
+std::vector<std::string> get_staged_files();
+std::vector<std::string> get_unstaged_files();
+void insert_commit_to_history(const std::string& commit_hash, const std::string& branch_name);
+void merge_branch(const std::string& source_branch, const std::string& target_branch);
+void rebase_branch(const std::string& source_branch, const std::string& target_branch);
+void show_branch_history(const std::string& branch_name);
+void compare_branches(const std::string& branch1, const std::string& branch2);
 
 #endif

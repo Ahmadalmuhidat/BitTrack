@@ -1,4 +1,15 @@
 #include "../include/hash.hpp"
+#include "../include/ignore.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <vector>
+#include <string>
+#include <iomanip>
+#include <chrono>
+#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 std::string to_hex_string(unsigned char *hash, std::size_t length)
 {
@@ -59,7 +70,6 @@ std::string hash_file(const std::string &FilePath)
 void get_index_hashes()
 {
   std::unordered_map<std::string, std::string> FileHashes;
-  std::vector<std::string> ignorePatterns = read_bitignore(".bitignore");
 
   // read all project files
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
@@ -67,10 +77,10 @@ void get_index_hashes()
     // check if the file is part of .bittrack system
     if (entry.is_regular_file() && entry.path().string().find(".bittrack") == std::string::npos)
     {
-      // check if the file is ignored
+      // check if the file is ignored using Git-like ignore system
       std::string FilePath = entry.path().string();
 
-      if (is_file_ignored(FilePath, ignorePatterns))
+      if (should_ignore_file(FilePath))
       {
         continue;
       }
@@ -84,4 +94,16 @@ void get_index_hashes()
   {
     std::cout << FilePath << " | " << FileHash << std::endl;
   }
+}
+
+std::string sha256_hash(const std::string& input)
+{
+  // Simple hash implementation - in a real system, you'd use a proper SHA256 library
+  std::hash<std::string> hasher;
+  size_t hash_value = hasher(input);
+  
+  // Convert to hex string
+  std::stringstream ss;
+  ss << std::hex << hash_value;
+  return ss.str();
 }
