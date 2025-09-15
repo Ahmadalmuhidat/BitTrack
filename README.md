@@ -1,79 +1,338 @@
-# BitTrack – Personal Version Control System  
-A lightweight version control system built from scratch in C++—offering full offline control without cloud dependency. Built by a Jordanian Arab developer as a milestone in open-source innovation.
+# BitTrack – Personal Version Control System
 
----
+A comprehensive, lightweight version control system built from scratch in C++—offering full offline control without cloud dependency. BitTrack provides Git-like functionality with a focus on simplicity, performance, and educational value.
 
-## Installation  
-Step-by-step instructions to set up the project locally:
-1. **Clone the repository**  
+## Features
+
+### Core VCS Functionality
+- **Repository Management**: Initialize, clone, and manage BitTrack repositories
+- **Branching**: Create, switch, merge, and delete branches
+- **Staging**: Add, remove, and manage staged files
+- **Committing**: Create commits with messages and metadata
+- **Diffing**: View changes between commits, branches, and working directory
+- **Stashing**: Temporarily save and restore uncommitted changes
+- **Tagging**: Create and manage lightweight and annotated tags
+- **Merging**: Merge branches with conflict resolution support
+
+### Advanced Features
+- **Git-like Ignore System**: Pattern matching with precedence rules (`.bitignore`)
+- **Hooks System**: Pre-commit, post-commit, and pre-push hooks
+- **Repository Maintenance**: Cleanup, optimization, and integrity checking
+- **Error Handling**: Comprehensive error reporting and validation
+- **Remote Operations**: Push/pull to remote repositories
+- **Configuration Management**: User and repository-specific settings
+
+### Testing & Quality
+- **Comprehensive Test Suite**: 69 passing unit tests
+- **Build System**: Automated compilation with external scripts
+- **Code Quality**: Linting and style checking tools
+- **Documentation**: Extensive inline documentation
+
+## Requirements
+
+### System Requirements
+- **Operating System**: macOS, Linux, or Windows
+- **Compiler**: GCC 7+ or Clang 5+ with C++17 support
+- **Dependencies**: 
+  - OpenSSL (for hashing)
+  - libcurl (for remote operations)
+  - zlib (for compression)
+  - Google Test (for testing)
+
+### Installation on macOS
 ```bash
-git clone https://github.com/your-username/bittrack.git
-```
-2. **Navigate to the project directory**
-```bash
+# Install dependencies via Homebrew
+brew install openssl curl zlib
+
+# Clone and build
+git clone https://github.com/Ahmadalmuhidat/bittrack.git
 cd bittrack
+make compile
 ```
-3. **Build the project using g++**
+
+## Installation
+
+### Quick Start
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Ahmadalmuhidat/bittrack.git
+   cd bittrack
+   ```
+
+2. **Build the project**
+   ```bash
+   make compile
+   ```
+
+3. **Run tests (optional)**
+   ```bash
+   make test
+   ```
+
+### Manual Build
 ```bash
+# Production build
 ./bin/build.production.sh
-```
 
----
-
-## Usage
-Run BitTrack via CLI:
-```bash
-./bittrack init
-./bittrack add <file>
-./bittrack commit -m "Initial commit"
-./bittrack log
-```
-For a full list of available commands and options:
-```bash
-./bittrack --help
-```
-
----
-
-## Running Tests
-To run unit tests (if applicable), use:
-```bash
+# Test build
 ./bin/build.test.sh
 ```
-Or run compiled test binaries:
+
+## Usage
+
+### Basic Commands
+
+#### Repository Management
 ```bash
-./build/run_tests
+# Initialize a new repository
+./build/bittrack init
+
+# Clone a repository
+./build/bittrack clone <repository-url>
+
+# Check repository status
+./build/bittrack status
 ```
 
----
+#### File Operations
+```bash
+# Stage files
+./build/bittrack add <file>
+./build/bittrack add .
+
+# Unstage files
+./build/bittrack reset <file>
+
+# View changes
+./build/bittrack diff
+./build/bittrack diff --staged
+```
+
+#### Committing
+```bash
+# Create a commit
+./build/bittrack commit -m "Your commit message"
+
+# View commit history
+./build/bittrack log
+./build/bittrack log --oneline
+```
+
+#### Branching
+```bash
+# List branches
+./build/bittrack branch
+
+# Create a new branch
+./build/bittrack branch <branch-name>
+
+# Switch branches
+./build/bittrack checkout <branch-name>
+
+# Merge branches
+./build/bittrack merge <branch-name>
+```
+
+#### Stashing
+```bash
+# Stash changes
+./build/bittrack stash
+
+# List stashes
+./build/bittrack stash list
+
+# Apply stash
+./build/bittrack stash apply
+```
+
+#### Tagging
+```bash
+# Create a tag
+./build/bittrack tag <tag-name>
+
+# List tags
+./build/bittrack tag -l
+
+# Delete a tag
+./build/bittrack tag -d <tag-name>
+```
+
+#### Remote Operations
+```bash
+# Add remote
+./build/bittrack remote add <name> <url>
+
+# Push to remote
+./build/bittrack push <remote> <branch>
+
+# Pull from remote
+./build/bittrack pull <remote> <branch>
+```
+
+### Advanced Usage
+
+#### Ignore Files
+Create a `.bitignore` file to specify files to ignore:
+```
+# Ignore compiled files
+*.o
+*.exe
+build/
+
+# Ignore temporary files
+*.tmp
+*.log
+
+# Ignore specific directories
+node_modules/
+.vscode/
+```
+
+#### Hooks
+BitTrack supports Git-like hooks in `.bittrack/hooks/`:
+- `pre-commit`: Runs before commits
+- `post-commit`: Runs after commits
+- `pre-push`: Runs before pushes
+
+#### Configuration
+Set user configuration:
+```bash
+./build/bittrack config user.name "Your Name"
+./build/bittrack config user.email "your.email@example.com"
+```
+
+## Testing
+
+### Run All Tests
+```bash
+make test
+```
+
+### Run Specific Test Categories
+```bash
+# Run only branch tests
+./build/run_tests --gtest_filter="*branch*"
+
+# Run only commit tests
+./build/run_tests --gtest_filter="*commit*"
+
+# Run with verbose output
+./build/run_tests --gtest_verbose
+```
+
+### Test Coverage
+The test suite includes:
+- **Unit Tests**: Individual function testing
+- **Integration Tests**: End-to-end workflow testing
+- **Error Handling Tests**: Edge case and error condition testing
+- **Performance Tests**: Benchmarking and optimization validation
 
 ## Project Structure
-```bash
+
+```
 bittrack/
-│
-├── bin/           # Compiled executable binaries
-├── build/         # Intermediate build files and artifacts
-├── include/       # Header files
-├── libs/          # Utility and helper libraries
-├── src/           # Core application source code
-├── tests/         # Unit and integration test cases
-│
-├── .bitignore     # BitTrack-specific ignore file
-├── .gitignore     # Git ignore rules
-├── Makefile       # Build instructions
-├── LICENSE        # Project license (MIT)
-└── README.md      # Project overview and usage
+├── bin/                    # Build scripts
+├── build/                  # Compiled binaries
+├── include/                # Header files
+├── libs/                   # External libraries
+├── src/                    # Source files
+│   ├── main.cpp           # Main application
+│   └── *.cpp              # Implementation files
+├── tests/                  # Test files
+│   ├── main.test.cpp      # Main test runner
+│   └── *.test.cpp         # Individual test modules
+├── .bittrack/              # BitTrack repository data
+├── .gitignore              # Git ignore rules
+├── Makefile               # Build configuration
+├── LICENSE                # MIT License
+└── README.md              # This file
 ```
 
-## Server Requirements
-To support branch-based integration, your platform must:
-1. **Provide an Push Endpoint** (`POST`):
-  - Accepts:
-  - `upload` → `.zip` file
-  - `branch` → string (branch name)
-2. **Provide a Pull Endpoint** (`GET`):
-  - Accepts:
-    - Query parameter: `branch=<branch_name>`
-  - Returns the `.zip` file for that branch.
-3. **Optional Authentication**
-  - Can be public or secured (e.g., Basic Auth, Bearer Token).
+## Development
+
+### Building from Source
+```bash
+# Clean previous builds
+make clean
+
+# Build production version
+make compile
+
+# Build and run tests
+make test
+
+# Clean build artifacts
+make clean
+```
+
+### Code Quality
+```bash
+# Check code style
+./bin/check_code_style.sh
+
+# Check code quality
+./bin/check_code_quality.sh
+```
+
+### Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
+## Performance
+
+BitTrack is designed for performance and efficiency:
+- **Fast Operations**: Optimized algorithms for common VCS operations
+- **Memory Efficient**: Minimal memory footprint
+- **Scalable**: Handles large repositories efficiently
+- **Cross-Platform**: Works on macOS, Linux, and Windows
+
+## Troubleshooting
+
+### Common Issues
+
+#### Build Errors
+```bash
+# Ensure dependencies are installed
+brew install openssl curl zlib
+
+# Clean and rebuild
+make clean
+make compile
+```
+
+#### Test Failures
+```bash
+# Run tests with verbose output
+./build/run_tests --gtest_verbose
+
+# Check for missing dependencies
+ldd ./build/run_tests
+```
+
+#### Permission Issues
+```bash
+# Make scripts executable
+chmod +x bin/*.sh
+
+# Fix file permissions
+chmod +x build/bittrack
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## Support
+
+If you encounter any issues or have questions:
+1. Check the [Issues](https://github.com/Ahmadalmuhidat/bittrack/issues) page
+2. Create a new issue with detailed information
+3. Include system information and error messages
