@@ -1,9 +1,18 @@
 #ifndef COMMIT_HPP
 #define COMMIT_HPP
 
-#include <string>
-#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 #include <unordered_map>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
+
+#include "hash.hpp"
 
 void commit_changes(const std::string& author, const std::string& message);
 void insert_commit_to_history(const std::string& last_commit_hash, const std::string& new_branch_name);

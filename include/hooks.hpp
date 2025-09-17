@@ -1,9 +1,14 @@
 #ifndef HOOKS_HPP
 #define HOOKS_HPP
 
-#include <string>
-#include <vector>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <cstdlib>
+#include <iostream>
 #include <map>
+#include <vector>
+#include <string>
 
 enum class HookType
 {
@@ -28,6 +33,8 @@ struct HookResult
   
   HookResult(): success(true), exit_code(0) {}
 };
+
+static std::map<HookType, std::string> hook_names;
 
 void install_hook(HookType type, const std::string& script_path);
 void uninstall_hook(HookType type);

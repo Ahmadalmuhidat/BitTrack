@@ -1,13 +1,4 @@
 #include "../include/remote.hpp"
-#include "../include/branch.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <curl/curl.h>
-#include "../libs/miniz/miniz.h"
 
 void set_remote_origin(const std::string &url)
 {

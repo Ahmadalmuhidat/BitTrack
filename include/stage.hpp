@@ -1,13 +1,22 @@
 #ifndef STAGE_HPP
 #define STAGE_HPP
 
-#include <string>
-#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <string>
+
+#include "error.hpp"
+#include "ignore.hpp"
+#include "hash.hpp"
 
 void stage(const std::string& file_path);
 void unstage(const std::string& file_path);
-void stage_all();
 void unstage_all();
 std::vector<std::string> get_staged_files();
 std::vector<std::string> get_unstaged_files();

@@ -1,9 +1,14 @@
 #ifndef ERROR_HPP
 #define ERROR_HPP
 
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <regex>
+#include <filesystem>
 #include <string>
 #include <exception>
-#include <filesystem>
 
 enum class ErrorCode
 {

@@ -1,15 +1,4 @@
 #include "../include/hash.hpp"
-#include "../include/ignore.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <iomanip>
-#include <chrono>
-#include <openssl/sha.h>
-#include <openssl/evp.h>
 
 std::string to_hex_string(unsigned char *hash, std::size_t length)
 {
@@ -17,16 +6,12 @@ std::string to_hex_string(unsigned char *hash, std::size_t length)
 
   for (std::size_t i = 0; i < length; ++i)
   {
-  hexStream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    hexStream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
   return hexStream.str();
 }
 
-std::string generate_commit_hash(
-  const std::string &author,
-  const std::string &commitMessage,
-  const std::unordered_map<std::string, std::string> &fileHashes
-)
+std::string generate_commit_hash(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
 {
   // get the current time
   auto now = std::chrono::system_clock::now();
@@ -42,9 +27,9 @@ std::string generate_commit_hash(
   commitDataStream << "Message: " << commitMessage << "\n";
   commitDataStream << "File Hashes: \n";
 
-  for (const auto &[file, fileHash]: fileHashes)
+  for (const auto &[file, fileHash] : fileHashes)
   {
-  commitDataStream << file << " " << fileHash << "\n";
+    commitDataStream << file << " " << fileHash << "\n";
   }
   // hash the commit log information
   std::string commitData = commitDataStream.str();
@@ -74,34 +59,34 @@ void get_index_hashes()
   // read all project files
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
-  // check if the file is part of .bittrack system
-  if (entry.is_regular_file() && entry.path().string().find(".bittrack") == std::string::npos)
-  {
-  // check if the file is ignored using Git-like ignore system
-  std::string FilePath = entry.path().string();
+    // check if the file is part of .bittrack system
+    if (entry.is_regular_file() && entry.path().string().find(".bittrack") == std::string::npos)
+    {
+      // check if the file is ignored using Git-like ignore system
+      std::string FilePath = entry.path().string();
 
-  if (should_ignore_file(FilePath))
-  {
-  continue;
-  }
-  // hash the file and store it in {key: value} array
-  std::string FileHash = hash_file(FilePath);
-  FileHashes[FilePath] = FileHash;
-  }
+      if (should_ignore_file(FilePath))
+      {
+        continue;
+      }
+      // hash the file and store it in {key: value} array
+      std::string FileHash = hash_file(FilePath);
+      FileHashes[FilePath] = FileHash;
+    }
   }
   // print the files along with their hashes
   for (const auto &[FilePath, FileHash] : FileHashes)
   {
-  std::cout << FilePath << " | " << FileHash << std::endl;
+    std::cout << FilePath << " | " << FileHash << std::endl;
   }
 }
 
-std::string sha256_hash(const std::string& input)
+std::string sha256_hash(const std::string &input)
 {
   // simple hash implementation - in a real system, you'd use a proper SHA256 library
   std::hash<std::string> hasher;
   size_t hash_value = hasher(input);
-  
+
   // convert to hex string
   std::stringstream ss;
   ss << std::hex << hash_value;

@@ -1,8 +1,14 @@
 #ifndef IGNORE_HPP
 #define IGNORE_HPP
 
-#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 #include <vector>
+#include <string>
+#include <algorithm>
+#include <cctype>
 #include <regex>
 
 struct IgnorePattern {

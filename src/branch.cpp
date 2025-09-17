@@ -1,12 +1,7 @@
 #include "../include/branch.hpp"
+#include "../include/stage.hpp"
+#include "../include/commit.hpp"
 #include "../include/remote.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <algorithm>
 
 std::string get_current_branch()
 {
@@ -15,8 +10,8 @@ std::string get_current_branch()
 
   if (!headFile.is_open())
   {
-  std::cerr << "Error: Could not open HEAD file." << std::endl;
-  return "";
+    std::cerr << "Error: Could not open HEAD file." << std::endl;
+    return "";
   }
   // read the first line in HEAD file and return it
   std::string line;
@@ -29,21 +24,21 @@ std::vector<std::string> get_branches_list()
 {
   std::vector<std::string> branchesList;
   const std::string prefix = ".bittrack/refs/heads/";
-  
+
   // check if the heads directory exists
   if (!std::filesystem::exists(".bittrack/refs/heads"))
   {
-  return branchesList; // lReturn empty list if directory doesn't exist
+    return branchesList; // return empty list if directory doesn't exist
   }
-  
+
   // get the names of the files inside the heads folder and store them in the branchesList array
-  for (const auto &entry: std::filesystem::recursive_directory_iterator(".bittrack/refs/heads"))
+  for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack/refs/heads"))
   {
-  if (entry.is_regular_file())
-  {
-  std::string branch = entry.path().string(); // get the file path
-  branchesList.push_back(branch.substr(prefix.length())); // sustract the file name from the path
-  }
+    if (entry.is_regular_file())
+    {
+      std::string branch = entry.path().string();             // get the file path
+      branchesList.push_back(branch.substr(prefix.length())); // sustract the file name from the path
+    }
   }
   return branchesList;
 }
@@ -55,15 +50,17 @@ void print_branshes_list()
 
   for (int i = 0; i < branchesList.size(); i++)
   {
-  std::string branch = branchesList[i];
+    std::string branch = branchesList[i];
 
-  if (branch == head) {
-  // if the branch is the current head print it in green color
-  std::cout << "\033[32m" << branch << "\033[0m" << std::endl;
-  }
-  else {
-  std::cout << branch << std::endl;
-  }
+    if (branch == head)
+    {
+      // if the branch is the current head print it in green color
+      std::cout << "\033[32m" << branch << "\033[0m" << std::endl;
+    }
+    else
+    {
+      std::cout << branch << std::endl;
+    }
   }
 }
 
@@ -75,10 +72,10 @@ void copy_current_commit_to_branch(std::string new_branch_name)
   // copy the content of the current branch to the new branch
   if (current_branch != "" && last_commit_hash != "")
   {
-  std::string parent_path = ".bittrack/objects/";
-  std::string source = parent_path + current_branch  + "/" + last_commit_hash;
-  std::string destination = parent_path + new_branch_name  + "/" + last_commit_hash;
-  std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+    std::string parent_path = ".bittrack/objects/";
+    std::string source = parent_path + current_branch + "/" + last_commit_hash;
+    std::string destination = parent_path + new_branch_name + "/" + last_commit_hash;
+    std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
   }
 
   // store the commit hash in the history
@@ -92,73 +89,34 @@ void add_branch_impl(std::string name)
   // check if the branch not exist
   if (std::find(branches.begin(), branches.end(), name) == branches.end())
   {
-  // create a file with the new branch name
-  std::ofstream newBranch(".bittrack/refs/heads/" + name);
-  newBranch.close();
+    // create a file with the new branch name
+    std::ofstream newBranch(".bittrack/refs/heads/" + name);
+    newBranch.close();
 
-  // create a directory with the new branch name
-  std::filesystem::create_directory(".bittrack/objects/" + name);
+    // create a directory with the new branch name
+    std::filesystem::create_directory(".bittrack/objects/" + name);
 
-  copy_current_commit_to_branch(name);
+    copy_current_commit_to_branch(name);
 
-  // insert in the head file the random hash as last commit
-  std::ofstream headFile(".bittrack/refs/heads/" + name, std::ios::trunc);
-  headFile << get_branch_commit(get_current_branch()) << std::endl;
-  headFile.close();
+    // insert in the head file the random hash as last commit
+    std::ofstream headFile(".bittrack/refs/heads/" + name, std::ios::trunc);
+    headFile << get_branch_commit(get_current_branch()) << std::endl;
+    headFile.close();
   }
-  else {
-  std::cout << name << " is already there" << std::endl;
+  else
+  {
+    std::cout << name << " is already there" << std::endl;
   }
 }
 
-void remove_branch(std::string branch_name)
-{
-  std::vector<std::string> branches = get_branches_list();
-
-  // check if the branch exists
-  if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
-  {
-  std::cout << branch_name << " is not found there" << std::endl;
-  return;
-  }
-
-  // check if it is the current branch
-  std::string current_branch = get_current_branch();
-
-  if (current_branch != branch_name)
-  {
-  std::cout << "You must be in the " << branch_name << " branch first" << std::endl;
-  return;
-  }
-
-  // check if there are staged files
-  std::vector<std::string> staged_files = get_staged_files();
-
-  if (!staged_files.empty())
-  {
-  std::cout << "Please unstage all files before removing the branch." << std::endl;
-  return;
-  }
-
-  std::string branch_file = ".bittrack/refs/heads/" + branch_name;
-  if (std::remove(branch_file.c_str()) != 0)
-  {
-  std::perror("Error deleting branch file");
-  return;
-  }
-
-  std::string branch_dir = ".bittrack/objects/" + branch_name;
-  std::filesystem::remove_all(branch_dir);
-}
-
-bool compare_files_contents(const std::filesystem::path& first_file, const std::filesystem::path& second_file)
+bool compare_files_contents(const std::filesystem::path &first_file, const std::filesystem::path &second_file)
 {
   std::ifstream first_file_stream(first_file, std::ios::binary);
   std::ifstream second_file_stream(second_file, std::ios::binary);
 
   if (!first_file_stream || !second_file_stream)
   {
-  return false;
+    return false;
   }
 
   std::istreambuf_iterator<char> begin1(first_file_stream), end1;
@@ -166,50 +124,285 @@ bool compare_files_contents(const std::filesystem::path& first_file, const std::
   return std::equal(begin1, end1, begin2, end2);
 }
 
-void merge_two_branches(const std::string& first_branch, const std::string& second_branch)
+bool attempt_automatic_merge(const std::filesystem::path &first_file, const std::filesystem::path &second_file, const std::string &target_path)
 {
-  std::vector<std::string> branches = get_branches_list();
+  try
+  {
+    std::ifstream first_stream(first_file);
+    std::ifstream second_stream(second_file);
 
-  // validate branches
-  if (std::find(branches.begin(), branches.end(), first_branch) == branches.end() || std::find(branches.begin(), branches.end(), second_branch) == branches.end())
-  {
-  std::cout << "[ERROR] One of the branches was not found.\n";
-  return;
-  }
+    if (!first_stream.is_open() || !second_stream.is_open())
+    {
+      return false;
+    }
 
-  // construct full paths to both branch's last commit directories
-  std::filesystem::path first_path = ".bittrack/objects/" + first_branch + "/" + get_branch_commit(first_branch);
-  std::filesystem::path second_path = ".bittrack/objects/" + second_branch + "/" + get_branch_commit(second_branch);
+    std::string first_content((std::istreambuf_iterator<char>(first_stream)), std::istreambuf_iterator<char>());
+    std::string second_content((std::istreambuf_iterator<char>(second_stream)), std::istreambuf_iterator<char>());
 
-  // compare directory contents
-  for (const auto& entry : std::filesystem::recursive_directory_iterator(first_path))
-  {
-  if (!std::filesystem::is_regular_file(entry))
-  {
-  continue;
-  }
+    first_stream.close();
+    second_stream.close();
 
-  std::filesystem::path relative = std::filesystem::relative(entry.path(), first_path);
-  std::filesystem::path second_file = second_path / relative;
+    if (first_content.empty() && !second_content.empty())
+    {
+      std::ofstream target_stream(target_path);
+      if (target_stream.is_open())
+      {
+        target_stream << second_content;
+        target_stream.close();
+        return true;
+      }
+    }
+    else if (!first_content.empty() && second_content.empty())
+    {
+      std::ofstream target_stream(target_path);
+      if (target_stream.is_open())
+      {
+        target_stream << first_content;
+        target_stream.close();
+        return true;
+      }
+    }
+    else if (!first_content.empty() && !second_content.empty())
+    {
+      std::istringstream first_lines(first_content);
+      std::istringstream second_lines(second_content);
 
-  if (!std::filesystem::exists(second_file))
+      std::vector<std::string> first_lines_vec;
+      std::vector<std::string> second_lines_vec;
+
+      std::string line;
+      while (std::getline(first_lines, line))
+      {
+        first_lines_vec.push_back(line);
+      }
+      while (std::getline(second_lines, line))
+      {
+        second_lines_vec.push_back(line);
+      }
+
+      if (first_lines_vec.size() == second_lines_vec.size())
+      {
+        bool identical = true;
+        for (size_t i = 0; i < first_lines_vec.size(); ++i)
+        {
+          std::string trimmed1 = first_lines_vec[i];
+          std::string trimmed2 = second_lines_vec[i];
+
+          trimmed1.erase(0, trimmed1.find_first_not_of(" \t\r\n"));
+          trimmed1.erase(trimmed1.find_last_not_of(" \t\r\n") + 1);
+          trimmed2.erase(0, trimmed2.find_first_not_of(" \t\r\n"));
+          trimmed2.erase(trimmed2.find_last_not_of(" \t\r\n") + 1);
+
+          if (trimmed1 != trimmed2)
+          {
+            identical = false;
+            break;
+          }
+        }
+
+        if (identical)
+        {
+          std::ofstream target_stream(target_path);
+          if (target_stream.is_open())
+          {
+            target_stream << first_content;
+            target_stream.close();
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+  catch (const std::exception &)
   {
-  std::filesystem::create_directories(second_file.parent_path());
-  std::filesystem::copy_file(entry.path(), second_file);
-  std::cout << "[ADDED] " << relative << " to " << second_branch << "\n";
+    return false;
   }
-  else
+}
+
+void merge_two_branches(const std::string &first_branch, const std::string &second_branch)
+{
+  try
   {
-  if (!compare_files_contents(entry.path(), second_file))
+    if (first_branch.empty() || second_branch.empty())
+    {
+      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Branch names cannot be empty", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    if (first_branch == second_branch)
+    {
+      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Cannot merge branch with itself", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    if (!std::filesystem::exists(".bittrack"))
+    {
+      throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not in a BitTrack repository", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    if (has_uncommitted_changes())
+    {
+      throw BitTrackError(ErrorCode::UNCOMMITTED_CHANGES, "Cannot merge with uncommitted changes. Please commit or stash your changes first.", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::vector<std::string> branches = get_branches_list();
+
+    if (std::find(branches.begin(), branches.end(), first_branch) == branches.end())
+    {
+      throw BitTrackError(ErrorCode::BRANCH_NOT_FOUND, "Branch '" + first_branch + "' not found", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    if (std::find(branches.begin(), branches.end(), second_branch) == branches.end())
+    {
+      throw BitTrackError(ErrorCode::BRANCH_NOT_FOUND, "Branch '" + second_branch + "' not found", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::string current_branch = get_current_branch();
+    if (current_branch != first_branch)
+    {
+      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Must be on the target branch (" + first_branch + ") to perform merge", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::cout << "Merging branch '" << second_branch << "' into '" << first_branch << "'..." << std::endl;
+
+    std::string first_commit = get_branch_commit(first_branch);
+    std::string second_commit = get_branch_commit(second_branch);
+
+    if (first_commit.empty() || second_commit.empty())
+    {
+      throw BitTrackError(ErrorCode::NO_COMMITS_FOUND, "One or both branches have no commits", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::filesystem::path first_path = ".bittrack/objects/" + first_branch + "/" + first_commit;
+    std::filesystem::path second_path = ".bittrack/objects/" + second_branch + "/" + second_commit;
+
+    if (!std::filesystem::exists(first_path) || !std::filesystem::exists(second_path))
+    {
+      throw BitTrackError(ErrorCode::REPOSITORY_CORRUPTED, "Branch commit directories not found", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::unordered_set<std::string> all_files;
+    std::unordered_map<std::string, std::filesystem::path> first_files;
+    std::unordered_map<std::string, std::filesystem::path> second_files;
+
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(first_path))
+    {
+      if (entry.is_regular_file())
+      {
+        std::filesystem::path relative = std::filesystem::relative(entry.path(), first_path);
+        std::string relative_str = relative.string();
+        all_files.insert(relative_str);
+        first_files[relative_str] = entry.path();
+      }
+    }
+
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(second_path))
+    {
+      if (entry.is_regular_file())
+      {
+        std::filesystem::path relative = std::filesystem::relative(entry.path(), second_path);
+        std::string relative_str = relative.string();
+        all_files.insert(relative_str);
+        second_files[relative_str] = entry.path();
+      }
+    }
+
+    std::vector<std::string> added_files;
+    std::vector<std::string> modified_files;
+    std::vector<std::string> conflicted_files;
+    std::vector<std::string> unchanged_files;
+
+    for (const auto &file_path : all_files)
+    {
+      bool in_first = first_files.find(file_path) != first_files.end();
+      bool in_second = second_files.find(file_path) != second_files.end();
+
+      if (in_first && in_second)
+      {
+        try
+        {
+          if (compare_files_contents(first_files[file_path], second_files[file_path]))
+          {
+            unchanged_files.push_back(file_path);
+          }
+          else
+          {
+            // Files differ - attempt automatic merge
+            if (attempt_automatic_merge(first_files[file_path], second_files[file_path], file_path))
+            {
+              modified_files.push_back(file_path);
+              std::cout << "[MERGED] " << file_path << " - automatically merged" << std::endl;
+            }
+            else
+            {
+              conflicted_files.push_back(file_path);
+              std::cout << "[CONFLICT] " << file_path << " - manual resolution required" << std::endl;
+            }
+          }
+        }
+        catch (const std::exception &e)
+        {
+          conflicted_files.push_back(file_path);
+          std::cout << "[CONFLICT] " << file_path << " - error during comparison: " << e.what() << std::endl;
+        }
+      }
+      else if (in_first && !in_second)
+      {
+        unchanged_files.push_back(file_path);
+      }
+      else if (!in_first && in_second)
+      {
+        try
+        {
+          std::filesystem::path target_path = first_path / file_path;
+          std::filesystem::create_directories(target_path.parent_path());
+          std::filesystem::copy_file(second_files[file_path], target_path);
+          added_files.push_back(file_path);
+          std::cout << "[ADDED] " << file_path << " from " << second_branch << std::endl;
+        }
+        catch (const std::exception &e)
+        {
+          std::cerr << "[ERROR] Failed to add " << file_path << ": " << e.what() << std::endl;
+        }
+      }
+    }
+
+    if (!conflicted_files.empty())
+    {
+      std::cout << "\nMerge conflicts detected in " << conflicted_files.size() << " file(s):" << std::endl;
+      for (const auto &file : conflicted_files)
+      {
+        std::cout << "  - " << file << std::endl;
+      }
+      std::cout << "\nPlease resolve conflicts manually and then commit the changes." << std::endl;
+      throw BitTrackError(ErrorCode::MERGE_CONFLICT, "Merge conflicts detected in " + std::to_string(conflicted_files.size()) + " file(s)", ErrorSeverity::ERROR, "merge_two_branches");
+    }
+
+    std::cout << "\nStaging changes..." << std::endl;
+    for (const auto &file : added_files)
+    {
+      stage(file);
+    }
+    for (const auto &file : modified_files)
+    {
+      stage(file);
+    }
+
+    std::cout << "Creating merge commit..." << std::endl;
+    std::string commit_message = "Merge branch '" + second_branch + "' into " + first_branch;
+    commit_changes("BitTrack", commit_message);
+
+    std::cout << "\nMerge completed successfully!" << std::endl;
+    std::cout << "  - Added: " << added_files.size() << " file(s)" << std::endl;
+    std::cout << "  - Modified: " << modified_files.size() << " file(s)" << std::endl;
+    std::cout << "  - Unchanged: " << unchanged_files.size() << " file(s)" << std::endl;
+  }
+  catch (const BitTrackError &e)
   {
-  std::cout << "[CONFLICT] " << relative << " differs between branches.\n";
+    ErrorHandler::printError(e);
+    throw;
   }
-  else
-  {
-  std::cout << "[UNCHANGED] " << relative << "\n";
-  }
-  }
-  }
+  HANDLE_EXCEPTION("merge_two_branches")
 }
 
 bool has_uncommitted_changes()
@@ -218,14 +411,14 @@ bool has_uncommitted_changes()
   std::vector<std::string> staged_files = get_staged_files();
   if (!staged_files.empty())
   {
-  return true;
+    return true;
   }
 
   // check for unstaged files
   std::vector<std::string> unstaged_files = get_unstaged_files();
   if (!unstaged_files.empty())
   {
-  return true;
+    return true;
   }
 
   return false;
@@ -235,50 +428,52 @@ void backup_untracked_files()
 {
   // create a temporary directory for untracked files
   std::filesystem::create_directories(".bittrack/untracked_backup");
-  
+
   // get all files in working directory
-  for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
+  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
-  if (entry.is_regular_file()) {
-  std::string file_path = entry.path().string();
-  
-  // skip .bittrack directory, build directory, and other system files
-  if (file_path.find(".bittrack") != std::string::npos || file_path.find("build/") != std::string::npos || file_path.find(".git/") != std::string::npos || file_path.find(".DS_Store") != std::string::npos || file_path.find(".github/") != std::string::npos)
-  {
-  continue;
-  }
-  
-  // check if file is tracked in current branch
-  std::string current_commit = get_branch_commit(get_current_branch());
-  if (current_commit.empty())
-  {
-  continue;
-  }
-  
-  std::string tracked_file_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit + "/" + file_path;
-  if (std::filesystem::exists(tracked_file_path))
-  {
-  continue;
-  }
-  
-  // this is an untracked file, backup it
-  try
-  {
-  std::filesystem::path relative_path = std::filesystem::relative(file_path, ".");
-  std::filesystem::path backup_path = ".bittrack/untracked_backup" / relative_path;
-  
-  // only create directories if the parent path is not empty
-  if (!backup_path.parent_path().empty()) {
-  std::filesystem::create_directories(backup_path.parent_path());
-  }
-  std::filesystem::copy_file(file_path, backup_path, std::filesystem::copy_options::overwrite_existing);
-  }
-  catch (const std::filesystem::filesystem_error& e)
-  {
-  // skip files that can't be copied (permissions, etc.)
-  continue;
-  }
-  }
+    if (entry.is_regular_file())
+    {
+      std::string file_path = entry.path().string();
+
+      // skip .bittrack directory, build directory, and other system files
+      if (file_path.find(".bittrack") != std::string::npos || file_path.find("build/") != std::string::npos || file_path.find(".git/") != std::string::npos || file_path.find(".DS_Store") != std::string::npos || file_path.find(".github/") != std::string::npos)
+      {
+        continue;
+      }
+
+      // check if file is tracked in current branch
+      std::string current_commit = get_branch_commit(get_current_branch());
+      if (current_commit.empty())
+      {
+        continue;
+      }
+
+      std::string tracked_file_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit + "/" + file_path;
+      if (std::filesystem::exists(tracked_file_path))
+      {
+        continue;
+      }
+
+      // this is an untracked file, backup it
+      try
+      {
+        std::filesystem::path relative_path = std::filesystem::relative(file_path, ".");
+        std::filesystem::path backup_path = ".bittrack/untracked_backup" / relative_path;
+
+        // only create directories if the parent path is not empty
+        if (!backup_path.parent_path().empty())
+        {
+          std::filesystem::create_directories(backup_path.parent_path());
+        }
+        std::filesystem::copy_file(file_path, backup_path, std::filesystem::copy_options::overwrite_existing);
+      }
+      catch (const std::filesystem::filesystem_error &e)
+      {
+        // skip files that can't be copied (permissions, etc.)
+        continue;
+      }
+    }
   }
 }
 
@@ -287,113 +482,113 @@ void restore_untracked_files()
   // restore untracked files from backup
   if (std::filesystem::exists(".bittrack/untracked_backup"))
   {
-  for (const auto& entry : std::filesystem::recursive_directory_iterator(".bittrack/untracked_backup"))
-  {
-  if (entry.is_regular_file())
-  {
-  std::filesystem::path relative_path = std::filesystem::relative(entry.path(), ".bittrack/untracked_backup");
-  std::filesystem::path restore_path = relative_path;
-  
-  // only create directories if the parent path is not empty
-  if (!restore_path.parent_path().empty())
-  {
-  std::filesystem::create_directories(restore_path.parent_path());
-  }
-  std::filesystem::copy_file(entry.path(), restore_path, std::filesystem::copy_options::overwrite_existing);
-  }
-  }
-  // clean up backup
-  std::filesystem::remove_all(".bittrack/untracked_backup");
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack/untracked_backup"))
+    {
+      if (entry.is_regular_file())
+      {
+        std::filesystem::path relative_path = std::filesystem::relative(entry.path(), ".bittrack/untracked_backup");
+        std::filesystem::path restore_path = relative_path;
+
+        // only create directories if the parent path is not empty
+        if (!restore_path.parent_path().empty())
+        {
+          std::filesystem::create_directories(restore_path.parent_path());
+        }
+        std::filesystem::copy_file(entry.path(), restore_path, std::filesystem::copy_options::overwrite_existing);
+      }
+    }
+    // clean up backup
+    std::filesystem::remove_all(".bittrack/untracked_backup");
   }
 }
 
-void restore_files_from_commit(const std::string& commit_path)
+void restore_files_from_commit(const std::string &commit_path)
 {
   if (!std::filesystem::exists(commit_path))
   {
-  std::cerr << "Error: Commit snapshot not found: " << commit_path << std::endl;
-  return;
+    std::cerr << "Error: Commit snapshot not found: " << commit_path << std::endl;
+    return;
   }
 
   // remove all tracked files from working directory
   std::string current_commit = get_branch_commit(get_current_branch());
   if (!current_commit.empty())
   {
-  std::string current_commit_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit;
-  if (std::filesystem::exists(current_commit_path))
-  {
-  for (const auto& entry : std::filesystem::recursive_directory_iterator(current_commit_path))
-  {
-  if (entry.is_regular_file())
-  {
-  std::filesystem::path relative_path = std::filesystem::relative(entry.path(), current_commit_path);
-  std::filesystem::path working_file = relative_path;
-  
-  if (std::filesystem::exists(working_file))
-  {
-  std::filesystem::remove(working_file);
-  }
-  }
-  }
-  }
+    std::string current_commit_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit;
+    if (std::filesystem::exists(current_commit_path))
+    {
+      for (const auto &entry : std::filesystem::recursive_directory_iterator(current_commit_path))
+      {
+        if (entry.is_regular_file())
+        {
+          std::filesystem::path relative_path = std::filesystem::relative(entry.path(), current_commit_path);
+          std::filesystem::path working_file = relative_path;
+
+          if (std::filesystem::exists(working_file))
+          {
+            std::filesystem::remove(working_file);
+          }
+        }
+      }
+    }
   }
 
   // copy files from target commit to working directory
-  for (const auto& entry : std::filesystem::recursive_directory_iterator(commit_path))
+  for (const auto &entry : std::filesystem::recursive_directory_iterator(commit_path))
   {
-  if (entry.is_regular_file())
-  {
-  std::filesystem::path relative_path = std::filesystem::relative(entry.path(), commit_path);
-  std::filesystem::path working_file = relative_path;
-  
-  // only create directories if the parent path is not empty
-  if (!working_file.parent_path().empty())
-  {
-  std::filesystem::create_directories(working_file.parent_path());
-  }
-  std::filesystem::copy_file(entry.path(), working_file, std::filesystem::copy_options::overwrite_existing);
-  }
+    if (entry.is_regular_file())
+    {
+      std::filesystem::path relative_path = std::filesystem::relative(entry.path(), commit_path);
+      std::filesystem::path working_file = relative_path;
+
+      // only create directories if the parent path is not empty
+      if (!working_file.parent_path().empty())
+      {
+        std::filesystem::create_directories(working_file.parent_path());
+      }
+      std::filesystem::copy_file(entry.path(), working_file, std::filesystem::copy_options::overwrite_existing);
+    }
   }
 }
 
-void update_working_directory(const std::string& target_branch)
+void update_working_directory(const std::string &target_branch)
 {
   std::string target_commit = get_branch_commit(target_branch);
   if (target_commit.empty())
   {
-  std::cerr << "Error: No commits found in target branch: " << target_branch << std::endl;
-  return;
+    std::cerr << "Error: No commits found in target branch: " << target_branch << std::endl;
+    return;
   }
 
   std::string commit_path = ".bittrack/objects/" + target_branch + "/" + target_commit;
-  
+
   // only backup untracked files if there are any
   bool has_untracked = false;
-  for (const auto& entry : std::filesystem::recursive_directory_iterator("."))
+  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
-  if (entry.is_regular_file())
-  {
-  std::string file_path = entry.path().string();
-  if (file_path.find(".bittrack") == std::string::npos && file_path.find("build/") == std::string::npos && file_path.find(".git/") == std::string::npos && file_path.find(".DS_Store") == std::string::npos && file_path.find(".github/") == std::string::npos)
-  {
-  has_untracked = true;
-  break;
+    if (entry.is_regular_file())
+    {
+      std::string file_path = entry.path().string();
+      if (file_path.find(".bittrack") == std::string::npos && file_path.find("build/") == std::string::npos && file_path.find(".git/") == std::string::npos && file_path.find(".DS_Store") == std::string::npos && file_path.find(".github/") == std::string::npos)
+      {
+        has_untracked = true;
+        break;
+      }
+    }
   }
-  }
-  }
-  
+
   if (has_untracked)
   {
-  backup_untracked_files();
+    backup_untracked_files();
   }
-  
+
   // restore files from target branch commit
   restore_files_from_commit(commit_path);
-  
+
   // restore untracked files if we backed them up
   if (has_untracked)
   {
-  restore_untracked_files();
+    restore_untracked_files();
   }
 }
 
@@ -403,43 +598,43 @@ void switch_branch(std::string name, bool check_uncommitted)
 
   if (std::find(branches.begin(), branches.end(), name) == branches.end())
   { // check if the branch exist
-  std::cout << "you must create the branch first" << std::endl;
-  return;
+    std::cout << "you must create the branch first" << std::endl;
+    return;
   }
   else if (get_current_branch() == name)
   { // check if it is not already the head branch
-  std::cout << "you are already in " << name << std::endl;
-  return;
+    std::cout << "you are already in " << name << std::endl;
+    return;
   }
 
   // check for uncommitted changes
   if (has_uncommitted_changes())
   {
-  std::cout << "Warning: You have uncommitted changes. Switching branches may overwrite your changes." << std::endl;
-  std::cout << "Staged files: ";
-  std::vector<std::string> staged = get_staged_files();
-  for (const auto& file : staged)
-  {
-  std::cout << file << " ";
-  }
-  std::cout << std::endl;
-  
-  std::cout << "Unstaged files: ";
-  std::vector<std::string> unstaged = get_unstaged_files();
-  for (const auto& file : unstaged)
-  {
-  std::cout << file << " ";
-  }
-  std::cout << std::endl;
-  
-  std::cout << "Do you want to continue? (y/N): ";
-  std::string response;
-  std::getline(std::cin, response);
-  if (response != "y" && response != "Y")
-  {
-  std::cout << "Branch switch cancelled." << std::endl;
-  return;
-  }
+    std::cout << "Warning: You have uncommitted changes. Switching branches may overwrite your changes." << std::endl;
+    std::cout << "Staged files: ";
+    std::vector<std::string> staged = get_staged_files();
+    for (const auto &file : staged)
+    {
+      std::cout << file << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Unstaged files: ";
+    std::vector<std::string> unstaged = get_unstaged_files();
+    for (const auto &file : unstaged)
+    {
+      std::cout << file << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Do you want to continue? (y/N): ";
+    std::string response;
+    std::getline(std::cin, response);
+    if (response != "y" && response != "Y")
+    {
+      std::cout << "Branch switch cancelled." << std::endl;
+      return;
+    }
   }
 
   // update working directory to match target branch
@@ -449,56 +644,56 @@ void switch_branch(std::string name, bool check_uncommitted)
   std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
   HeadFile << name << std::endl;
   HeadFile.close();
-  
+
   std::cout << "Switched to branch: " << name << std::endl;
 }
 
 // enhanced branch management functions
-void rename_branch(const std::string& old_name, const std::string& new_name)
+void rename_branch(const std::string &old_name, const std::string &new_name)
 {
   std::vector<std::string> branches = get_branches_list();
-  
+
   // check if old branch exists
   if (std::find(branches.begin(), branches.end(), old_name) == branches.end())
   {
-  std::cerr << "Error: Branch '" << old_name << "' does not exist." << std::endl;
-  return;
+    std::cerr << "Error: Branch '" << old_name << "' does not exist." << std::endl;
+    return;
   }
-  
+
   // check if new branch already exists
   if (std::find(branches.begin(), branches.end(), new_name) != branches.end())
   {
-  std::cerr << "Error: Branch '" << new_name << "' already exists." << std::endl;
-  return;
+    std::cerr << "Error: Branch '" << new_name << "' already exists." << std::endl;
+    return;
   }
-  
+
   // rename branch file
   std::string old_file = ".bittrack/refs/heads/" + old_name;
   std::string new_file = ".bittrack/refs/heads/" + new_name;
-  
+
   if (std::rename(old_file.c_str(), new_file.c_str()) != 0)
   {
-  std::cerr << "Error: Failed to rename branch file." << std::endl;
-  return;
+    std::cerr << "Error: Failed to rename branch file." << std::endl;
+    return;
   }
-  
+
   // rename branch directory
   std::string old_dir = ".bittrack/objects/" + old_name;
   std::string new_dir = ".bittrack/objects/" + new_name;
-  
+
   if (std::filesystem::exists(old_dir))
   {
-  std::filesystem::rename(old_dir, new_dir);
+    std::filesystem::rename(old_dir, new_dir);
   }
-  
+
   // update head if we're on the renamed branch
   if (get_current_branch() == old_name)
   {
-  std::ofstream headFile(".bittrack/HEAD", std::ios::trunc);
-  headFile << new_name << std::endl;
-  headFile.close();
+    std::ofstream headFile(".bittrack/HEAD", std::ios::trunc);
+    headFile << new_name << std::endl;
+    headFile.close();
   }
-  
+
   std::cout << "Renamed branch '" << old_name << "' to '" << new_name << "'" << std::endl;
 }
 
@@ -507,143 +702,177 @@ void list_remote_branches()
   std::string remote_url = get_remote_origin();
   if (remote_url.empty())
   {
-  std::cout << "No remote origin set." << std::endl;
-  return;
+    std::cout << "No remote origin set." << std::endl;
+    return;
   }
-  
+
   std::cout << "Remote branches for " << remote_url << ":" << std::endl;
   std::cout << "  (Remote branch listing not implemented yet)" << std::endl;
   std::cout << "  This would require server-side API support." << std::endl;
 }
 
-void track_remote_branch(const std::string& remote_branch)
+void track_remote_branch(const std::string &remote_branch)
 {
   std::string remote_url = get_remote_origin();
   if (remote_url.empty())
   {
-  std::cerr << "Error: No remote origin set." << std::endl;
-  return;
+    std::cerr << "Error: No remote origin set." << std::endl;
+    return;
   }
-  
+
   // create local branch tracking remote
   create_branch(remote_branch);
   std::cout << "Created local branch '" << remote_branch << "' tracking remote branch." << std::endl;
 }
 
-void delete_remote_branch(const std::string& branch_name)
+void delete_remote_branch(const std::string &branch_name)
 {
   std::string remote_url = get_remote_origin();
   if (remote_url.empty())
   {
-  std::cerr << "Error: No remote origin set." << std::endl;
-  return;
+    std::cerr << "Error: No remote origin set." << std::endl;
+    return;
   }
-  
+
   std::cout << "Remote branch deletion not implemented yet." << std::endl;
   std::cout << "This would require server-side API support." << std::endl;
 }
 
-void show_branch_info(const std::string& branch_name)
+void show_branch_info(const std::string &branch_name)
 {
   std::vector<std::string> branches = get_branches_list();
-  
+
   if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
-  std::cerr << "Error: Branch '" << branch_name << "' does not exist." << std::endl;
-  return;
+    std::cerr << "Error: Branch '" << branch_name << "' does not exist." << std::endl;
+    return;
   }
-  
+
   std::string current_branch = get_current_branch();
   std::string last_commit = get_branch_commit(branch_name);
-  
+
   std::cout << "Branch: " << branch_name << std::endl;
   std::cout << "  Current: " << (branch_name == current_branch ? "Yes" : "No") << std::endl;
   std::cout << "  Last commit: " << (last_commit.empty() ? "None" : last_commit) << std::endl;
-  
+
   // count commits in branch
   int commit_count = 0;
   std::ifstream history_file(".bittrack/commits/history");
   std::string line;
   while (std::getline(history_file, line))
   {
-  std::istringstream iss(line);
-  std::string commit_hash, branch;
-  if (iss >> commit_hash >> branch && branch == branch_name)
-  {
-  commit_count++;
-  }
+    std::istringstream iss(line);
+    std::string commit_hash, branch;
+    if (iss >> commit_hash >> branch && branch == branch_name)
+    {
+      commit_count++;
+    }
   }
   history_file.close();
-  
+
   std::cout << "  Commits: " << commit_count << std::endl;
 }
 
-void compare_branches(const std::string& branch1, const std::string& branch2)
+void compare_branches(const std::string &branch1, const std::string &branch2)
 {
   std::vector<std::string> branches = get_branches_list();
-  
+
   if (std::find(branches.begin(), branches.end(), branch1) == branches.end())
   {
-  std::cerr << "Error: Branch '" << branch1 << "' does not exist." << std::endl;
-  return;
+    std::cerr << "Error: Branch '" << branch1 << "' does not exist." << std::endl;
+    return;
   }
-  
+
   if (std::find(branches.begin(), branches.end(), branch2) == branches.end())
   {
-  std::cerr << "Error: Branch '" << branch2 << "' does not exist." << std::endl;
-  return;
+    std::cerr << "Error: Branch '" << branch2 << "' does not exist." << std::endl;
+    return;
   }
-  
+
   std::string commit1 = get_branch_commit(branch1);
   std::string commit2 = get_branch_commit(branch2);
-  
+
   if (commit1.empty() || commit2.empty())
   {
-  std::cout << "Cannot compare branches - one or both have no commits." << std::endl;
-  return;
+    std::cout << "Cannot compare branches - one or both have no commits." << std::endl;
+    return;
   }
-  
+
   std::cout << "Comparing branches:" << std::endl;
   std::cout << "  " << branch1 << " (" << commit1 << ")" << std::endl;
   std::cout << "  " << branch2 << " (" << commit2 << ")" << std::endl;
-  
+
   std::cout << "  (Detailed comparison not implemented yet)" << std::endl;
 }
 
-
-void add_branch(const std::string& branch_name)
+void add_branch(const std::string &branch_name)
 {
   // call the existing implementation that takes std::string by value
   add_branch_impl(std::string(branch_name));
 }
 
-void create_branch(const std::string& branch_name)
+void create_branch(const std::string &branch_name)
 {
   add_branch(branch_name);
 }
 
-void remove_branch(const std::string& branch_name)
+void remove_branch(const std::string &branch_name)
 {
-  delete_branch(branch_name);
+  std::vector<std::string> branches = get_branches_list();
+
+  // check if the branch exists
+  if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
+  {
+    std::cout << branch_name << " is not found there" << std::endl;
+    return;
+  }
+
+  // check if it is the current branch
+  std::string current_branch = get_current_branch();
+
+  if (current_branch != branch_name)
+  {
+    std::cout << "You must be in the " << branch_name << " branch first" << std::endl;
+    return;
+  }
+
+  // check if there are staged files
+  std::vector<std::string> staged_files = get_staged_files();
+
+  if (!staged_files.empty())
+  {
+    std::cout << "Please unstage all files before removing the branch." << std::endl;
+    return;
+  }
+
+  std::string branch_file = ".bittrack/refs/heads/" + branch_name;
+  if (std::remove(branch_file.c_str()) != 0)
+  {
+    std::perror("Error deleting branch file");
+    return;
+  }
+
+  std::string branch_dir = ".bittrack/objects/" + branch_name;
+  std::filesystem::remove_all(branch_dir);
 }
 
-void switch_branch(const std::string& branch_name)
+void switch_branch(const std::string &branch_name)
 {
   // implementation for switching branches
   if (!branch_exists(branch_name))
   {
-  std::cerr << "Branch '" << branch_name << "' does not exist." << std::endl;
-  return;
+    std::cerr << "Branch '" << branch_name << "' does not exist." << std::endl;
+    return;
   }
-  
+
   // update HEAD to point to the new branch
   std::ofstream head_file(".bittrack/HEAD", std::ios::trunc);
   head_file << branch_name << std::endl;
   head_file.close();
-  
+
   // update working directory
   update_working_directory(branch_name);
-  
+
   std::cout << "Switched to branch '" << branch_name << "'" << std::endl;
 }
 
@@ -652,41 +881,155 @@ std::vector<std::string> list_branches()
   return get_branches_list();
 }
 
-bool branch_exists(const std::string& branch_name)
+bool branch_exists(const std::string &branch_name)
 {
   std::vector<std::string> branches = get_branches_list();
   return std::find(branches.begin(), branches.end(), branch_name) != branches.end();
 }
 
-void delete_branch(const std::string& branch_name)
-{
-  if (!branch_exists(branch_name))
-  {
-  std::cerr << "Branch '" << branch_name << "' does not exist." << std::endl;
-  return;
-  }
-  
-  std::string branch_path = ".bittrack/refs/heads/" + branch_name;
-  if (std::filesystem::exists(branch_path))
-  {
-  std::filesystem::remove(branch_path);
-  std::cout << "Deleted branch '" << branch_name << "'" << std::endl;
-  }
-}
-
-std::string get_branch_commit(const std::string& branch_name)
+std::string get_branch_commit(const std::string &branch_name)
 {
   std::string branch_path = ".bittrack/refs/heads/" + branch_name;
   if (!std::filesystem::exists(branch_path))
   {
-  return "";
+    return "";
   }
-  
+
   std::ifstream file(branch_path);
   std::string commit_hash;
   if (std::getline(file, commit_hash))
   {
-  return commit_hash;
+    return commit_hash;
   }
   return "";
+}
+
+void merge_branch(const std::string& source_branch, const std::string& target_branch)
+{
+  try
+  {
+    // Check if both branches exist
+    if (!branch_exists(source_branch))
+    {
+      std::cout << "Error: Source branch '" << source_branch << "' does not exist." << std::endl;
+      return;
+    }
+    
+    if (!branch_exists(target_branch))
+    {
+      std::cout << "Error: Target branch '" << target_branch << "' does not exist." << std::endl;
+      return;
+    }
+    
+    // Check for uncommitted changes
+    if (has_uncommitted_changes())
+    {
+      std::cout << "Error: You have uncommitted changes. Please commit or stash them before merging." << std::endl;
+      return;
+    }
+    
+    // Switch to target branch
+    std::string current_branch = get_current_branch();
+    if (current_branch != target_branch)
+    {
+      switch_branch(target_branch);
+    }
+    
+    // Perform the merge using the existing merge_two_branches function
+    merge_two_branches(source_branch, target_branch);
+    
+    std::cout << "Successfully merged branch '" << source_branch << "' into '" << target_branch << "'" << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "Error during merge: " << e.what() << std::endl;
+  }
+}
+
+void rebase_branch(const std::string& source_branch, const std::string& target_branch)
+{
+  try
+  {
+    // Check if both branches exist
+    if (!branch_exists(source_branch))
+    {
+      std::cout << "Error: Source branch '" << source_branch << "' does not exist." << std::endl;
+      return;
+    }
+    
+    if (!branch_exists(target_branch))
+    {
+      std::cout << "Error: Target branch '" << target_branch << "' does not exist." << std::endl;
+      return;
+    }
+    
+    // Check for uncommitted changes
+    if (has_uncommitted_changes())
+    {
+      std::cout << "Error: You have uncommitted changes. Please commit or stash them before rebasing." << std::endl;
+      return;
+    }
+    
+    std::cout << "Rebase functionality is not yet fully implemented." << std::endl;
+    std::cout << "This would rebase '" << source_branch << "' onto '" << target_branch << "'" << std::endl;
+    
+    // TODO: Implement actual rebase logic
+    // Rebase is a complex operation that involves:
+    // 1. Finding the common ancestor
+    // 2. Creating new commits for each commit in source_branch
+    // 3. Applying changes from target_branch
+    // 4. Updating branch references
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "Error during rebase: " << e.what() << std::endl;
+  }
+}
+
+void show_branch_history(const std::string& branch_name)
+{
+  try
+  {
+    // Check if branch exists
+    if (!branch_exists(branch_name))
+    {
+      std::cout << "Error: Branch '" << branch_name << "' does not exist." << std::endl;
+      return;
+    }
+    
+    std::cout << "History for branch '" << branch_name << "':" << std::endl;
+    
+    // Read the commit history file
+    std::ifstream history_file(".bittrack/commits/history");
+    if (!history_file.is_open())
+    {
+      std::cout << "No commit history found." << std::endl;
+      return;
+    }
+    
+    std::string line;
+    bool found_branch = false;
+    while (std::getline(history_file, line))
+    {
+      // Check if line ends with the branch name (format: "commit_hash branch_name")
+      if (line.length() > branch_name.length() && 
+          line.substr(line.length() - branch_name.length()) == branch_name)
+      {
+        found_branch = true;
+        // Print the commit info
+        std::cout << line << std::endl;
+      }
+    }
+    
+    if (!found_branch)
+    {
+      std::cout << "No commits found for branch '" << branch_name << "'" << std::endl;
+    }
+    
+    history_file.close();
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "Error reading branch history: " << e.what() << std::endl;
+  }
 }

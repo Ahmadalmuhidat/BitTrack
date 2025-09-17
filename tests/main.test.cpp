@@ -2,18 +2,79 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <sstream>
+#include <vector>
+#include <algorithm>
 
-#include "diff.test.cpp"
-#include "stash.test.cpp"
-#include "config.test.cpp"
-#include "tag.test.cpp"
-#include "merge.test.cpp"
-#include "hooks.test.cpp"
-#include "maintenance.test.cpp"
-#include "error.test.cpp"
-#include "stage.test.cpp"
-#include "commit.test.cpp"
-#include "branch.test.cpp"
+// Include test function declarations
+extern bool test_branch_master();
+extern bool test_list_branches();
+extern bool test_checkout_new_branch();
+extern bool test_remove_branch();
+extern bool test_untracked_file_preservation();
+extern bool test_switch_to_nonexistent_branch();
+extern bool test_switch_to_same_branch();
+extern bool test_diff_file_comparison();
+extern bool test_diff_identical_files();
+extern bool test_diff_binary_file_detection();
+extern bool test_config_set_and_get();
+extern bool test_config_user_name();
+extern bool test_config_user_email();
+extern bool test_config_list();
+extern bool test_config_unset();
+extern bool test_config_repository_config();
+extern bool test_config_default_configs();
+extern bool test_merge_show_conflicts();
+extern bool test_merge_has_conflicts();
+extern bool test_merge_get_conflicted_files();
+extern bool test_merge_three_way();
+extern bool test_hooks_install_default();
+extern bool test_hooks_list();
+extern bool test_hooks_uninstall();
+extern bool test_hooks_run();
+extern bool test_hooks_run_all();
+extern bool test_hooks_get_path();
+extern bool test_hooks_get_name();
+extern bool test_hooks_is_executable();
+extern bool test_hooks_create_pre_commit();
+extern bool test_hooks_create_post_commit();
+extern bool test_hooks_create_pre_push();
+extern bool test_maintenance_garbage_collect();
+extern bool test_maintenance_repack();
+extern bool test_maintenance_prune();
+extern bool test_maintenance_fsck();
+extern bool test_maintenance_stats();
+extern bool test_maintenance_show_info();
+extern bool test_maintenance_analyze();
+extern bool test_maintenance_find_large_files();
+extern bool test_maintenance_find_duplicates();
+extern bool test_maintenance_clean_untracked();
+extern bool test_maintenance_clean_ignored();
+extern bool test_maintenance_remove_empty_dirs();
+extern bool test_maintenance_compact();
+extern bool test_maintenance_backup();
+extern bool test_maintenance_list_backups();
+extern bool test_maintenance_benchmark();
+extern bool test_maintenance_profile();
+extern bool test_maintenance_check_integrity();
+extern bool test_maintenance_optimize();
+extern bool test_error_handler_print_error();
+extern bool test_error_handler_print_error_code();
+extern bool test_error_handler_is_fatal();
+extern bool test_error_handler_get_message();
+extern bool test_error_handler_validate_arguments();
+extern bool test_error_handler_validate_file_path();
+extern bool test_error_handler_validate_branch_name();
+extern bool test_error_handler_validate_commit_message();
+extern bool test_error_handler_validate_remote_url();
+extern bool test_error_handler_safe_create_directories();
+extern bool test_error_handler_safe_copy_file();
+extern bool test_error_handler_safe_remove_file();
+extern bool test_error_handler_safe_write_file();
+extern bool test_error_handler_safe_read_file();
+extern bool test_error_handler_validate_repository();
+extern bool test_error_handler_validate_branch_exists();
+extern bool test_error_handler_validate_no_uncommitted();
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

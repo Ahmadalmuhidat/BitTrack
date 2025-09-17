@@ -1,9 +1,24 @@
 #ifndef MAINTENANCE_HPP
 #define MAINTENANCE_HPP
 
-#include <string>
-#include <vector>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <set>
 #include <map>
+#include <ctime>
+#include <vector>
+#include <string>
+
+#include "commit.hpp"
+#include "branch.hpp"
+#include "tag.hpp"
+#include "stage.hpp"
+#include "hash.hpp"
+#include "ignore.hpp"
 
 struct RepoStats
 {

@@ -1,9 +1,17 @@
 #ifndef MERGE_HPP
 #define MERGE_HPP
 
-#include <string>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <iostream>
 #include <vector>
-#include <set>
+#include <string>
+
+#include "commit.hpp"
+#include "branch.hpp"
+#include "stage.hpp"
 
 struct MergeResult
 {

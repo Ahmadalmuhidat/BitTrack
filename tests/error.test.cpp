@@ -61,7 +61,7 @@ bool test_error_handler_validate_commit_message()
 
 bool test_error_handler_validate_remote_url()
 {
-  ErrorHandler::validateRemoteUrl("https:
+  ErrorHandler::validateRemoteUrl("https://github.com/user/repo.git");
   
   return true; 
 }

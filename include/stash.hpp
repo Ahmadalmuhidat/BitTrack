@@ -1,9 +1,19 @@
 #ifndef STASH_HPP
 #define STASH_HPP
 
-#include <string>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
+#include <iostream>
 #include <vector>
+#include <string>
 #include <ctime>
+
+#include "stage.hpp"
+#include "commit.hpp"
+#include "branch.hpp"
 
 struct StashEntry
 {

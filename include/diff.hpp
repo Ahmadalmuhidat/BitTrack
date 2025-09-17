@@ -1,10 +1,18 @@
 #ifndef DIFF_HPP
 #define DIFF_HPP
 
-#include <string>
+#include <algorithm>
+#include <sstream>
+#include <fstream>
+#include <set>
+#include <iomanip>
 #include <vector>
+#include <string>
 #include <iostream>
-#include <filesystem>
+
+#include "stage.hpp"
+#include "commit.hpp"
+#include "branch.hpp"
 
 enum class DiffLineType
 {

@@ -1,6 +1,7 @@
 #include "../include/merge.hpp"
 #include "../include/branch.hpp"
 #include "../include/commit.hpp"
+#include "../include/stage.hpp"
 #include <fstream>
 #include <filesystem>
 

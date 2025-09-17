@@ -1,9 +1,17 @@
 #ifndef TAG_HPP
 #define TAG_HPP
 
-#include <string>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
 #include <vector>
+#include <string>
 #include <ctime>
+
+#include "commit.hpp"
+#include "branch.hpp"
 
 enum class TagType
 {

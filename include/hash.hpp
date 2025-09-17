@@ -1,8 +1,19 @@
 #ifndef HASH_HPP
 #define HASH_HPP
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <vector>
 #include <string>
+#include <iomanip>
+#include <chrono>
 #include <unordered_map>
+#include <openssl/sha.h>
+#include <openssl/evp.h>
+
+#include "ignore.hpp"
 
 std::string to_hex_string(unsigned char* hash, std::size_t length);
 std::string generate_commit_hash(const std::string& author, const std::string& commitMessage, const std::unordered_map<std::string, std::string>& fileHashes);

@@ -1,8 +1,16 @@
 #ifndef REMOTE_HPP
 #define REMOTE_HPP
 
-#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 #include <vector>
+#include <string>
+#include <curl/curl.h>
+
+#include "branch.hpp"
+#include "../libs/miniz/miniz.h"
 
 void set_remote_origin(const std::string& url);
 std::string get_remote_origin();

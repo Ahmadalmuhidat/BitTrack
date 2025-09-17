@@ -1,17 +1,6 @@
 #include "../include/commit.hpp"
-#include "../include/hash.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <chrono>
-#include <iomanip>
-#include <ctime>
 
-void insert_commit_to_history(const std::string& last_commit_hash, const std::string& new_branch_name)
+void insert_commit_to_history(const std::string &last_commit_hash, const std::string &new_branch_name)
 {
   const std::string history_path = ".bittrack/commits/history";
 
@@ -43,7 +32,7 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
   std::ifstream inputFile(file_path, std::ios::binary);
   if (!inputFile)
   {
-  std::cerr << "Error: Unable to open file: " << file_path << std::endl;
+    std::cerr << "Error: Unable to open file: " << file_path << std::endl;
   }
   std::stringstream buffer;
   buffer << inputFile.rdbuf();
@@ -51,8 +40,9 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
 
   // write the buffer content to the snapshot file
   std::ofstream snapshotFile(snapshot_path, std::ios::binary);
-  if (!snapshotFile) {
-  std::cerr << "Error: Unable to create snapshot file: " << snapshot_path << std::endl;
+  if (!snapshotFile)
+  {
+    std::cerr << "Error: Unable to create snapshot file: " << snapshot_path << std::endl;
   }
   snapshotFile << buffer.str();
   snapshotFile.close();
@@ -61,16 +51,15 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
 void create_commit_log(const std::string &author, const std::string &message, const std::unordered_map<std::string, std::string> &file_hashes, const std::string &commit_hash)
 {
   std::string log_file = ".bittrack/commits/" + commit_hash;
-  
+
   // get & store the current time
   std::time_t currentTime = std::time(nullptr);
   char formatedTimestamp[80];
   std::strftime(
-  formatedTimestamp,
-  sizeof(formatedTimestamp),
-  "%Y-%m-%d %H:%M:%S",
-  std::localtime(&currentTime)
-  );
+      formatedTimestamp,
+      sizeof(formatedTimestamp),
+      "%Y-%m-%d %H:%M:%S",
+      std::localtime(&currentTime));
 
   // write the commit information in the log file
   std::ofstream commitFile(log_file);
@@ -83,7 +72,7 @@ void create_commit_log(const std::string &author, const std::string &message, co
   // write the commit files in the log information
   for (const auto &[filePath, fileHash] : file_hashes)
   {
-  commitFile << filePath << " " << fileHash << std::endl;
+    commitFile << filePath << " " << fileHash << std::endl;
   }
   commitFile.close();
 
@@ -96,26 +85,26 @@ void create_commit_log(const std::string &author, const std::string &message, co
   head_file.close();
 }
 
-std::string get_last_commit(const std::string& branch)
+std::string get_last_commit(const std::string &branch)
 {
   std::ifstream history_file(".bittrack/commits/history");
   std::string line;
 
   while (std::getline(history_file, line))
   {
-  std::istringstream iss(line);
-  std::string commit_file_hash;
-  std::string commit_branch;
+    std::istringstream iss(line);
+    std::string commit_file_hash;
+    std::string commit_branch;
 
-  if (!(iss >> commit_file_hash >> commit_branch))
-  {
-  continue;
-  }
+    if (!(iss >> commit_file_hash >> commit_branch))
+    {
+      continue;
+    }
 
-  if (commit_branch == branch)
-  {
-  return commit_file_hash;
-  }
+    if (commit_branch == branch)
+    {
+      return commit_file_hash;
+    }
   }
   return "";
 }
@@ -125,8 +114,8 @@ void commit_changes(const std::string &author, const std::string &message)
   std::ifstream staging_file(".bittrack/index");
   if (!staging_file)
   {
-  std::cerr << "no files staged for commit!" << std::endl;
-  return;
+    std::cerr << "no files staged for commit!" << std::endl;
+    return;
   }
 
   std::unordered_map<std::string, std::string> file_hashes;
@@ -136,13 +125,13 @@ void commit_changes(const std::string &author, const std::string &message)
 
   while (std::getline(staging_file, line))
   {
-  // get each file and hash it
-  std::string filePath = line.substr(0, line.find(" "));
-  std::string fileHash = hash_file(filePath);
+    // get each file and hash it
+    std::string filePath = line.substr(0, line.find(" "));
+    std::string fileHash = hash_file(filePath);
 
-  // store a copy of the modified file
-  store_snapshot(filePath, commit_hash);
-  file_hashes[filePath] = fileHash;
+    // store a copy of the modified file
+    store_snapshot(filePath, commit_hash);
+    file_hashes[filePath] = fileHash;
   }
   staging_file.close();
 
@@ -162,30 +151,31 @@ void commit_history()
 
   while (std::getline(file_path, line))
   {
-  std::istringstream iss(line);
-  std::string commit_file_hash;
-  std::string commit_branch;
+    std::istringstream iss(line);
+    std::string commit_file_hash;
+    std::string commit_branch;
 
-  if (!(iss >> commit_file_hash >> commit_branch))
-  {
-  continue;
-  }
+    if (!(iss >> commit_file_hash >> commit_branch))
+    {
+      continue;
+    }
 
-  std::ifstream commit_log (".bittrack/commits/" + commit_file_hash);
-  std::string line;
+    std::ifstream commit_log(".bittrack/commits/" + commit_file_hash);
+    std::string line;
 
-  // print the commit file content
-  while (std::getline(commit_log, line))
-  {
-  std::cout << line << std::endl;
-  }
-  std::cout << "\n" << std::endl;
-  commit_log.close();
+    // print the commit file content
+    while (std::getline(commit_log, line))
+    {
+      std::cout << line << std::endl;
+    }
+    std::cout << "\n"
+              << std::endl;
+    commit_log.close();
   }
   file_path.close();
 }
 
-std::string generate_commit_hash(const std::string& author, const std::string& message, const std::string& timestamp)
+std::string generate_commit_hash(const std::string &author, const std::string &message, const std::string &timestamp)
 {
   // create a simple hash based on author, message, and timestamp
   std::string combined = author + message + timestamp;
@@ -197,23 +187,153 @@ std::string get_current_commit()
   // read the current commit from .bittrack/HEAD
   std::ifstream head_file(".bittrack/HEAD");
   std::string commit_hash;
-  if (head_file.is_open()) {
-  std::getline(head_file, commit_hash);
-  head_file.close();
+  if (head_file.is_open())
+  {
+    std::getline(head_file, commit_hash);
+    head_file.close();
   }
   return commit_hash;
 }
 
-std::string get_staged_file_content(const std::string& file_path)
+void show_commit_details(const std::string& commit_hash)
+{
+  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  
+  if (!std::filesystem::exists(commit_path))
+  {
+    std::cout << "Commit not found: " << commit_hash << std::endl;
+    return;
+  }
+  
+  std::ifstream commit_file(commit_path);
+  if (!commit_file.is_open())
+  {
+    std::cout << "Error reading commit file." << std::endl;
+    return;
+  }
+  
+  std::string line;
+  while (std::getline(commit_file, line))
+  {
+    std::cout << line << std::endl;
+  }
+  commit_file.close();
+}
+
+std::vector<std::string> get_commit_files(const std::string& commit_hash)
+{
+  std::vector<std::string> files;
+  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  
+  if (!std::filesystem::exists(commit_path))
+  {
+    return files;
+  }
+  
+  for (const auto& entry : std::filesystem::directory_iterator(commit_path))
+  {
+    if (entry.is_regular_file())
+    {
+      files.push_back(entry.path().filename().string());
+    }
+  }
+  
+  return files;
+}
+
+std::string get_commit_message(const std::string& commit_hash)
+{
+  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  
+  if (!std::filesystem::exists(commit_path))
+  {
+    return "";
+  }
+  
+  std::ifstream commit_file(commit_path);
+  if (!commit_file.is_open())
+  {
+    return "";
+  }
+  
+  std::string line;
+  while (std::getline(commit_file, line))
+  {
+    if (line.find("Message: ") == 0)
+    {
+      return line.substr(9); // Remove "Message: " prefix
+    }
+  }
+  
+  return "";
+}
+
+std::string get_commit_author(const std::string& commit_hash)
+{
+  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  
+  if (!std::filesystem::exists(commit_path))
+  {
+    return "";
+  }
+  
+  std::ifstream commit_file(commit_path);
+  if (!commit_file.is_open())
+  {
+    return "";
+  }
+  
+  std::string line;
+  while (std::getline(commit_file, line))
+  {
+    if (line.find("Author: ") == 0)
+    {
+      return line.substr(8); // Remove "Author: " prefix
+    }
+  }
+  
+  return "";
+}
+
+std::string get_commit_timestamp(const std::string& commit_hash)
+{
+  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  
+  if (!std::filesystem::exists(commit_path))
+  {
+    return "";
+  }
+  
+  std::ifstream commit_file(commit_path);
+  if (!commit_file.is_open())
+  {
+    return "";
+  }
+  
+  std::string line;
+  while (std::getline(commit_file, line))
+  {
+    if (line.find("Timestamp: ") == 0)
+    {
+      return line.substr(11); // Remove "Timestamp: " prefix
+    }
+  }
+  
+  return "";
+}
+
+std::string get_staged_file_content(const std::string &file_path)
 {
   std::ifstream file(file_path);
   std::string content;
-  if (file.is_open()) {
-  std::string line;
-  while (std::getline(file, line)) {
-  content += line + "\n";
-  }
-  file.close();
+  if (file.is_open())
+  {
+    std::string line;
+    while (std::getline(file, line))
+    {
+      content += line + "\n";
+    }
+    file.close();
   }
   return content;
 }
