@@ -70,7 +70,7 @@ void tag_delete(const std::string &name)
   std::cout << "Deleted tag: " << name << std::endl;
 }
 
-void tag_show(const std::string &name)
+void tag_details(const std::string &name)
 {
   Tag tag = get_tag(name);
   if (tag.name.empty())

@@ -1,4 +1,5 @@
 #include "../include/merge.hpp"
+#include "../include/utils.hpp"
 #include <set>
 
 MergeResult merge_branches(const std::string &source_branch, const std::string &target_branch)
@@ -6,8 +7,8 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
   MergeResult result;
 
   // lCheck if branches exist
-  std::string source_commit = get_branch_commit(source_branch);
-  std::string target_commit = get_branch_commit(target_branch);
+  std::string source_commit = get_branch_last_commit_hash(source_branch);
+  std::string target_commit = get_branch_last_commit_hash(target_branch);
 
   if (source_commit.empty() || target_commit.empty())
   {
@@ -350,40 +351,83 @@ bool is_merge_in_progress()
   return std::filesystem::exists(".bittrack/MERGE_HEAD");
 }
 
-std::string get_merge_base_commit(const std::string &branch1, const std::string &branch2)
-{
-  return find_merge_base(get_last_commit(branch1), get_last_commit(branch2));
-}
-
-
-std::string get_file_content(const std::string &file_path)
-{
-  if (!std::filesystem::exists(file_path))
-  {
-    return "";
-  }
-
-  std::ifstream file(file_path);
-  std::stringstream buffer;
-  buffer << file.rdbuf();
-  file.close();
-
-  return buffer.str();
-}
-
 void create_merge_commit(const std::string &message, const std::vector<std::string> &parents)
 {
-  // lThis would integrate with the commit system
-  std::cout << "Creating merge commit: " << message << std::endl;
+  // Create merge commit directory
+  std::string commit_hash = generate_commit_hash(get_current_user(), message, get_current_timestamp());
+  std::string commit_dir = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::filesystem::create_directories(commit_dir);
+  
+  // Create commit file
+  std::string commit_file = commit_dir + "/commit.txt";
+  std::ofstream file(commit_file);
+  
+  if (!file.is_open())
+  {
+    std::cerr << "Error: Could not create merge commit file" << std::endl;
+    return;
+  }
+  
+  // Write commit metadata
+  file << "commit " << commit_hash << std::endl;
+  file << "message " << message << std::endl;
+  file << "timestamp " << get_current_timestamp() << std::endl;
+  file << "author " << get_current_user() << std::endl;
+  
+  // Write parent commits
+  for (const auto& parent : parents)
+  {
+    file << "parent " << parent << std::endl;
+  }
+  
+  file.close();
+  
+  // Update branch head
+  std::ofstream head_file(".bittrack/refs/heads/" + get_current_branch());
+  head_file << commit_hash << std::endl;
+  head_file.close();
+  
+  // Add to commit history
+  insert_commit_record_to_history(commit_hash, get_current_branch());
+  
+  std::cout << "Created merge commit: " << commit_hash << std::endl;
 }
 
-void create_conflict_file(const std::string &file_path, const std::string &our_content, const std::string &their_content)
+std::vector<std::string> get_commit_files(const std::string &commit_hash)
 {
-  std::ofstream file(file_path);
-  file << "<<<<<<< HEAD" << std::endl;
-  file << our_content << std::endl;
-  file << "=======" << std::endl;
-  file << their_content << std::endl;
-  file << ">>>>>>> " << "theirs" << std::endl;
-  file.close();
+  std::vector<std::string> files;
+  
+  // Look for commit in all branches
+  std::string objects_dir = ".bittrack/objects";
+  if (!std::filesystem::exists(objects_dir))
+  {
+    return files;
+  }
+  
+  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+  {
+    if (branch_entry.is_directory())
+    {
+      std::string commit_dir = branch_entry.path().string() + "/" + commit_hash;
+      if (std::filesystem::exists(commit_dir))
+      {
+        // Get all files in the commit directory
+        for (const auto& file_entry : std::filesystem::directory_iterator(commit_dir))
+        {
+          if (file_entry.is_regular_file())
+          {
+            std::string filename = file_entry.path().filename().string();
+            if (filename != "commit.txt") // Exclude commit metadata file
+            {
+              files.push_back(filename);
+            }
+          }
+        }
+        break; // Found the commit, no need to search other branches
+      }
+    }
+  }
+  
+  return files;
 }
+

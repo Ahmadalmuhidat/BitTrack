@@ -74,5 +74,7 @@ void show_file_history(const std::string& file_path);
 void show_file_blame(const std::string& file_path);
 void show_file_log(const std::string& file_path, int max_entries = 10);
 std::string get_staged_file_content(const std::string& file_path);
+std::vector<std::string> get_commits_containing_file(const std::string& file_path);
+std::string find_line_commit(const std::string& file_path, int line_number, const std::vector<std::string>& commits);
 
 #endif

@@ -49,9 +49,7 @@ void save_merge_state(const MergeResult& result);
 MergeResult load_merge_state();
 void clear_merge_state();
 bool is_merge_in_progress();
-std::string get_merge_base_commit(const std::string& branch1, const std::string& branch2);
 std::vector<std::string> get_commit_files(const std::string& commit_hash);
-std::string get_file_content(const std::string& file_path);
 void create_merge_commit(const std::string& message, const std::vector<std::string>& parents);
 
 #endif

@@ -28,7 +28,9 @@ void stage(const std::string &file_path)
       while (std::getline(staging_file, line))
       {
         if (line.empty())
+        {
           continue;
+        }
 
         std::istringstream iss(line);
         std::string staged_file_path, staged_file_hash;
@@ -84,7 +86,6 @@ void stage(const std::string &file_path)
       }
     };
 
-    // Stage files
     if (file_path == ".")
     {
       for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
@@ -289,43 +290,6 @@ std::vector<std::string> get_unstaged_files()
   return std::vector<std::string>(unstagedFiles.begin(), unstagedFiles.end());
 }
 
-void unstage_all()
-{
-  try
-  {
-    if (!std::filesystem::exists(".bittrack"))
-    {
-      throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not in a BitTrack repository", ErrorSeverity::ERROR, "unstage_all");
-    }
-
-    if (!std::filesystem::exists(".bittrack/index"))
-    {
-      std::cout << "No staged files to unstage" << std::endl;
-      return;
-    }
-
-    std::vector<std::string> stagedFiles = get_staged_files();
-    int fileCount = stagedFiles.size();
-
-    std::filesystem::remove(".bittrack/index");
-
-    if (fileCount > 0)
-    {
-      std::cout << "Unstaged " << fileCount << " file(s)" << std::endl;
-    }
-    else
-    {
-      std::cout << "No files were staged" << std::endl;
-    }
-  }
-  catch (const BitTrackError &e)
-  {
-    ErrorHandler::printError(e);
-    throw;
-  }
-  HANDLE_EXCEPTION("unstage_all")
-}
-
 bool is_staged(const std::string &file_path)
 {
   try
@@ -342,110 +306,6 @@ bool is_staged(const std::string &file_path)
   {
     std::cerr << "Error checking if file is staged: " << e.what() << std::endl;
     return false;
-  }
-}
-
-void clear_staging_area()
-{
-  try
-  {
-    if (!std::filesystem::exists(".bittrack"))
-    {
-      throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not in a BitTrack repository", ErrorSeverity::ERROR, "clear_staging_area");
-    }
-
-    int fileCount = 0;
-    if (std::filesystem::exists(".bittrack/index"))
-    {
-      std::vector<std::string> stagedFiles = get_staged_files();
-      fileCount = stagedFiles.size();
-    }
-
-    if (std::filesystem::exists(".bittrack/index"))
-    {
-      std::filesystem::remove(".bittrack/index");
-    }
-
-    if (std::filesystem::exists(".bittrack/index.tmp"))
-    {
-      std::filesystem::remove(".bittrack/index.tmp");
-    }
-
-    for (const auto &entry : std::filesystem::directory_iterator(".bittrack"))
-    {
-      if (entry.is_regular_file() &&
-          (entry.path().filename().string().find("staging") != std::string::npos ||
-           entry.path().filename().string().find("index") != std::string::npos))
-      {
-        if (entry.path().filename() != "index") // Don't remove if it's the main index
-        {
-          std::filesystem::remove(entry.path());
-        }
-      }
-    }
-
-    if (fileCount > 0)
-    {
-      std::cout << "Staging area cleared (" << fileCount << " file(s) removed)" << std::endl;
-    }
-    else
-    {
-      std::cout << "Staging area cleared (was already empty)" << std::endl;
-    }
-  }
-  catch (const BitTrackError &e)
-  {
-    ErrorHandler::printError(e);
-    throw;
-  }
-  HANDLE_EXCEPTION("clear_staging_area")
-}
-
-void show_staged_files()
-{
-  try
-  {
-    std::vector<std::string> stagedFiles = get_staged_files();
-
-    if (stagedFiles.empty())
-    {
-      std::cout << "No staged files" << std::endl;
-      return;
-    }
-
-    std::cout << "Staged files:" << std::endl;
-    for (const auto &file : stagedFiles)
-    {
-      std::cout << "  " << file << std::endl;
-    }
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error showing staged files: " << e.what() << std::endl;
-  }
-}
-
-void show_unstaged_files()
-{
-  try
-  {
-    std::vector<std::string> unstagedFiles = get_unstaged_files();
-
-    if (unstagedFiles.empty())
-    {
-      std::cout << "No unstaged files" << std::endl;
-      return;
-    }
-
-    std::cout << "Unstaged files:" << std::endl;
-    for (const auto &file : unstagedFiles)
-    {
-      std::cout << "  " << file << std::endl;
-    }
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error showing unstaged files: " << e.what() << std::endl;
   }
 }
 
@@ -467,25 +327,7 @@ std::string get_file_hash(const std::string &file_path)
   }
 }
 
-void update_staging_index()
-{
-  try
-  {
-    if (!std::filesystem::exists(".bittrack/index"))
-    {
-      std::cout << "No staging index to update" << std::endl;
-      return;
-    }
-
-    std::cout << "Staging index is up to date" << std::endl;
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error updating staging index: " << e.what() << std::endl;
-  }
-}
-
-bool is_file_ignored(const std::string &file_path, const std::vector<std::string> &patterns)
+bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector<std::string> &patterns)
 {
   try
   {
@@ -503,7 +345,7 @@ bool is_file_ignored(const std::string &file_path, const std::vector<std::string
       }
     }
 
-    return ::is_file_ignored(file_path, ignorePatterns);
+    return ::is_file_ignored_by_patterns(file_path, ignorePatterns);
   }
   catch (const std::exception &e)
   {
@@ -512,57 +354,3 @@ bool is_file_ignored(const std::string &file_path, const std::vector<std::string
   }
 }
 
-std::string normalize_file_path(const std::string &path)
-{
-  try
-  {
-    return normalize_path(path);
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error normalizing file path: " << e.what() << std::endl;
-    return path;
-  }
-}
-
-bool compare_with_current_version(const std::string &current_file, const std::string &current_branch)
-{
-  try
-  {
-    std::cout << "Comparing " << current_file << " with branch " << current_branch << std::endl;
-    return true;
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error comparing with current version: " << e.what() << std::endl;
-    return false;
-  }
-}
-
-std::string read_file_content(const std::string &file_path)
-{
-  try
-  {
-    if (file_path.empty() || !std::filesystem::exists(file_path))
-    {
-      return "";
-    }
-
-    std::ifstream file(file_path);
-    if (!file.is_open())
-    {
-      return "";
-    }
-
-    std::ostringstream content;
-    content << file.rdbuf();
-    file.close();
-
-    return content.str();
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error reading file content: " << e.what() << std::endl;
-    return "";
-  }
-}

@@ -625,22 +625,6 @@ std::vector<std::string> get_duplicate_files()
   return duplicates;
 }
 
-std::string format_size(size_t bytes)
-{
-  const char *units[] = {"B", "KB", "MB", "GB", "TB"};
-  int unit = 0;
-  double size = bytes;
-
-  while (size >= 1024 && unit < 4)
-  {
-    size /= 1024;
-    unit++;
-  }
-
-  std::ostringstream oss;
-  oss << std::fixed << std::setprecision(2) << size << " " << units[unit];
-  return oss.str();
-}
 
 std::string get_repository_size()
 {
@@ -655,5 +639,138 @@ std::string get_repository_size()
   }
 
   return format_size(total_size);
+}
+
+std::vector<std::string> get_unreachable_objects()
+{
+  std::vector<std::string> unreachable;
+  
+  // Get all objects in the repository
+  std::set<std::string> all_objects;
+  std::string objects_dir = ".bittrack/objects";
+  
+  if (std::filesystem::exists(objects_dir))
+  {
+    for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+    {
+      if (branch_entry.is_directory())
+      {
+        for (const auto& commit_entry : std::filesystem::directory_iterator(branch_entry.path()))
+        {
+          if (commit_entry.is_directory())
+          {
+            for (const auto& file_entry : std::filesystem::directory_iterator(commit_entry.path()))
+            {
+              if (file_entry.is_regular_file())
+              {
+                all_objects.insert(file_entry.path().filename().string());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Get referenced objects (simplified - in reality would trace from HEAD)
+  std::set<std::string> referenced;
+  std::string current_branch = get_current_branch();
+  std::string current_commit = get_branch_last_commit_hash(current_branch);
+  
+  if (!current_commit.empty())
+  {
+    std::string commit_dir = ".bittrack/objects/" + current_branch + "/" + current_commit;
+    if (std::filesystem::exists(commit_dir))
+    {
+      for (const auto& file_entry : std::filesystem::directory_iterator(commit_dir))
+      {
+        if (file_entry.is_regular_file())
+        {
+          referenced.insert(file_entry.path().filename().string());
+        }
+      }
+    }
+  }
+  
+  // Find unreachable objects
+  for (const auto& obj : all_objects)
+  {
+    if (referenced.find(obj) == referenced.end())
+    {
+      unreachable.push_back(obj);
+    }
+  }
+  
+  return unreachable;
+}
+
+std::vector<std::string> get_duplicate_files()
+{
+  std::vector<std::string> duplicates;
+  std::unordered_map<std::string, std::vector<std::string>> file_hashes;
+  
+  std::string objects_dir = ".bittrack/objects";
+  if (!std::filesystem::exists(objects_dir))
+  {
+    return duplicates;
+  }
+  
+  // Collect all files and their hashes
+  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+  {
+    if (branch_entry.is_directory())
+    {
+      for (const auto& commit_entry : std::filesystem::directory_iterator(branch_entry.path()))
+      {
+        if (commit_entry.is_directory())
+        {
+          for (const auto& file_entry : std::filesystem::directory_iterator(commit_entry.path()))
+          {
+            if (file_entry.is_regular_file())
+            {
+              std::string file_path = file_entry.path().string();
+              std::string hash = hash_file(file_path);
+              
+              if (!hash.empty())
+              {
+                file_hashes[hash].push_back(file_path);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Find duplicates
+  for (const auto& pair : file_hashes)
+  {
+    if (pair.second.size() > 1)
+    {
+      for (const auto& file : pair.second)
+      {
+        duplicates.push_back(file);
+      }
+    }
+  }
+  
+  return duplicates;
+}
+
+std::string format_size(size_t bytes)
+{
+  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
+  int unit_index = 0;
+  double size = static_cast<double>(bytes);
+  
+  while (size >= 1024.0 && unit_index < 4)
+  {
+    size /= 1024.0;
+    unit_index++;
+  }
+  
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(2) << size << " " << units[unit_index];
+  return oss.str();
 }
 

@@ -11,7 +11,7 @@ std::string to_hex_string(unsigned char *hash, std::size_t length)
   return hexStream.str();
 }
 
-std::string generate_commit_hash(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
+std::string generate_commit_hash_with_files(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
 {
   // get the current time
   auto now = std::chrono::system_clock::now();
@@ -49,36 +49,8 @@ std::string hash_file(const std::string &FilePath)
   std::string FileContent = ss.str();
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256((unsigned char *)FileContent.c_str(), FileContent.size(), hash);
+
   return to_hex_string(hash, SHA256_DIGEST_LENGTH);
-}
-
-void get_index_hashes()
-{
-  std::unordered_map<std::string, std::string> FileHashes;
-
-  // read all project files
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
-  {
-    // check if the file is part of .bittrack system
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") == std::string::npos)
-    {
-      // check if the file is ignored using Git-like ignore system
-      std::string FilePath = entry.path().string();
-
-      if (should_ignore_file(FilePath))
-      {
-        continue;
-      }
-      // hash the file and store it in {key: value} array
-      std::string FileHash = hash_file(FilePath);
-      FileHashes[FilePath] = FileHash;
-    }
-  }
-  // print the files along with their hashes
-  for (const auto &[FilePath, FileHash] : FileHashes)
-  {
-    std::cout << FilePath << " | " << FileHash << std::endl;
-  }
 }
 
 std::string sha256_hash(const std::string &input)

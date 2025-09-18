@@ -558,7 +558,7 @@ void tag_operations(int argc, const char *argv[], int &i)
       else if (subFlag == "show" && i + 1 < argc)
       {
         std::string tag_name = argv[++i];
-        tag_show(tag_name);
+        tag_details(tag_name);
       }
       else
       {
@@ -918,7 +918,7 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--push")
       {
-        // push(); // function not implemented yet
+        push();
         break;
       }
       else

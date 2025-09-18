@@ -55,9 +55,8 @@ private:
 
 std::vector<std::string> read_bitignore(const std::string& filePath);
 std::vector<IgnorePattern> parse_ignore_patterns(const std::vector<std::string>& raw_patterns);
-bool is_file_ignored(const std::string& filePath, const std::vector<IgnorePattern>& patterns);
+bool is_file_ignored_by_ignore_patterns(const std::string& filePath, const std::vector<IgnorePattern>& patterns);
 bool should_ignore_file(const std::string& file_path);
-std::string get_file_extension(const std::string& filePath);
 std::string normalize_path(const std::string& path);
 bool matches_pattern(const std::string& filePath, const IgnorePattern& pattern);
 void create_default_bitignore();

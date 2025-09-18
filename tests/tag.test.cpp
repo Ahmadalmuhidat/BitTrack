@@ -98,7 +98,7 @@ bool test_tag_show()
   
   tag_create("v1.0", "", true);
   
-  tag_show("v1.0");
+  tag_details("v1.0");
   
   std::filesystem::remove("tag_show_test.txt");
   tag_delete("v1.0");

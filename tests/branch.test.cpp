@@ -6,7 +6,7 @@
 
 bool test_branch_master()
 {
-  std::vector<std::string> branches = list_branches();
+  std::vector<std::string> branches = get_branches_list();
   bool master_exists = std::find(branches.begin(), branches.end(), "master") != branches.end();
   
   return master_exists;
@@ -14,7 +14,7 @@ bool test_branch_master()
 
 bool test_list_branches()
 {
-  std::vector<std::string> branches = list_branches();
+  std::vector<std::string> branches = get_branches_list();
   
   return !branches.empty();
 }
@@ -23,7 +23,7 @@ bool test_checkout_new_branch()
 {
   add_branch("test_branch");
   
-  std::vector<std::string> branches = list_branches();
+  std::vector<std::string> branches = get_branches_list();
   bool branch_exists = std::find(branches.begin(), branches.end(), "test_branch") != branches.end();
   
   remove_branch("test_branch");
@@ -35,12 +35,12 @@ bool test_remove_branch()
 {
   add_branch("remove_test_branch");
   
-  std::vector<std::string> branches_before = list_branches();
+  std::vector<std::string> branches_before = get_branches_list();
   bool existed_before = std::find(branches_before.begin(), branches_before.end(), "remove_test_branch") != branches_before.end();
   
   remove_branch("remove_test_branch");
   
-  std::vector<std::string> branches_after = list_branches();
+  std::vector<std::string> branches_after = get_branches_list();
   bool exists_after = std::find(branches_after.begin(), branches_after.end(), "remove_test_branch") != branches_after.end();
   
   return existed_before && !exists_after;

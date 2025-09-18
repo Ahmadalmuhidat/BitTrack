@@ -76,10 +76,6 @@ std::string IgnorePattern::convert_git_pattern_to_regex(const std::string &git_p
   return regex_pattern;
 }
 
-std::string get_file_extension(const std::string &filePath)
-{
-  return std::filesystem::path(filePath).extension().string();
-}
 
 std::string normalize_path(const std::string &path)
 {
@@ -187,7 +183,7 @@ std::vector<IgnorePattern> parse_ignore_patterns(const std::vector<std::string> 
   return patterns;
 }
 
-bool is_file_ignored(const std::string &filePath, const std::vector<IgnorePattern> &patterns)
+bool is_file_ignored_by_ignore_patterns(const std::string &filePath, const std::vector<IgnorePattern> &patterns)
 {
   if (filePath.empty())
   {
@@ -243,7 +239,7 @@ bool should_ignore_file(const std::string &file_path)
   std::vector<std::string> raw_patterns = read_bitignore(bitignore_path);
   std::vector<IgnorePattern> patterns = parse_ignore_patterns(raw_patterns);
 
-  return is_file_ignored(file_path, patterns);
+  return is_file_ignored_by_ignore_patterns(file_path, patterns);
 }
 
 void create_default_bitignore()
@@ -346,9 +342,4 @@ void list_ignore_patterns()
     line_num++;
   }
   bitignore_file.close();
-}
-
-std::string get_file_extenion(const std::string &filePath)
-{
-  return get_file_extension(filePath);
 }

@@ -34,7 +34,7 @@ struct Tag
 void tag_create(const std::string& name, const std::string& commit_hash = "", bool annotated = false);
 void tag_list();
 void tag_delete(const std::string& name);
-void tag_show(const std::string& name);
+void tag_details(const std::string& name);
 void tag_checkout(const std::string& name);
 std::vector<Tag> get_all_tags();
 Tag get_tag(const std::string& name);

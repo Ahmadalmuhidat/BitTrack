@@ -527,17 +527,146 @@ std::string get_diff_line_prefix(DiffLineType type)
 void show_file_history(const std::string &file_path)
 {
   std::cout << "File history for: " << file_path << std::endl;
-  std::cout << "Not implemented yet" << std::endl;
+  std::cout << "=================================" << std::endl;
+  
+  // Get all commits that modified this file
+  std::vector<std::string> commits = get_commits_containing_file(file_path);
+  
+  if (commits.empty())
+  {
+    std::cout << "No commits found for this file." << std::endl;
+    return;
+  }
+  
+  // Show commit history
+  for (const auto& commit_hash : commits)
+  {
+    std::string commit_info = get_commit_info(commit_hash);
+    if (!commit_info.empty())
+    {
+      std::cout << commit_info << std::endl;
+    }
+  }
 }
 
 void show_file_blame(const std::string &file_path)
 {
   std::cout << "File blame for: " << file_path << std::endl;
-  std::cout << "Not implemented yet" << std::endl;
+  std::cout << "=================================" << std::endl;
+  
+  if (!std::filesystem::exists(file_path))
+  {
+    std::cout << "File does not exist." << std::endl;
+    return;
+  }
+  
+  // Read current file content
+  std::vector<std::string> current_lines = read_file_lines(file_path);
+  
+  // Get all commits that modified this file
+  std::vector<std::string> commits = get_commits_containing_file(file_path);
+  
+  if (commits.empty())
+  {
+    std::cout << "No commit history found for this file." << std::endl;
+    return;
+  }
+  
+  // For each line, find the last commit that modified it
+  for (size_t i = 0; i < current_lines.size(); ++i)
+  {
+    std::string line_commit = find_line_commit(file_path, i + 1, commits);
+    std::string commit_info = get_commit_info(line_commit);
+    
+    // Format: commit_hash author date line_number content
+    std::cout << std::setw(8) << line_commit.substr(0, 8) << " ";
+    std::cout << std::setw(20) << get_commit_author(line_commit) << " ";
+    std::cout << std::setw(4) << (i + 1) << " ";
+    std::cout << current_lines[i] << std::endl;
+  }
 }
 
 void show_file_log(const std::string &file_path, int max_entries)
 {
   std::cout << "File log for: " << file_path << " (max " << max_entries << " entries)" << std::endl;
-  std::cout << "Not implemented yet" << std::endl;
+  std::cout << "===============================================" << std::endl;
+  
+  // Get all commits that modified this file
+  std::vector<std::string> commits = get_commits_containing_file(file_path);
+  
+  if (commits.empty())
+  {
+    std::cout << "No commits found for this file." << std::endl;
+    return;
+  }
+  
+  // Limit to max_entries
+  int count = 0;
+  for (const auto& commit_hash : commits)
+  {
+    if (count >= max_entries)
+      break;
+      
+    std::string commit_info = get_commit_info(commit_hash);
+    if (!commit_info.empty())
+    {
+      std::cout << commit_info << std::endl;
+      count++;
+    }
+  }
+  
+  if (commits.size() > max_entries)
+  {
+    std::cout << "... and " << (commits.size() - max_entries) << " more commits" << std::endl;
+  }
+}
+
+// Helper functions for file history and blame
+std::vector<std::string> get_commits_containing_file(const std::string& file_path)
+{
+  std::vector<std::string> commits;
+  
+  // Search through all branches for commits containing this file
+  std::string objects_dir = ".bittrack/objects";
+  if (!std::filesystem::exists(objects_dir))
+  {
+    return commits;
+  }
+  
+  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+  {
+    if (branch_entry.is_directory())
+    {
+      std::string branch_name = branch_entry.path().filename().string();
+      
+      for (const auto& commit_entry : std::filesystem::directory_iterator(branch_entry.path()))
+      {
+        if (commit_entry.is_directory())
+        {
+          std::string commit_hash = commit_entry.path().filename().string();
+          std::string file_in_commit = commit_entry.path().string() + "/" + file_path;
+          
+          if (std::filesystem::exists(file_in_commit))
+          {
+            commits.push_back(commit_hash);
+          }
+        }
+      }
+    }
+  }
+  
+  return commits;
+}
+
+
+std::string find_line_commit(const std::string& file_path, int line_number, const std::vector<std::string>& commits)
+{
+  // Simple implementation - return the most recent commit
+  // In a real implementation, this would trace the line through commit history
+  if (commits.empty())
+  {
+    return "";
+  }
+  
+  return commits[0]; // Return first (most recent) commit
 }

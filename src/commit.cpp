@@ -1,6 +1,6 @@
 #include "../include/commit.hpp"
 
-void insert_commit_to_history(const std::string &last_commit_hash, const std::string &new_branch_name)
+void insert_commit_record_to_history(const std::string &last_commit_hash, const std::string &new_branch_name)
 {
   const std::string history_path = ".bittrack/commits/history";
 
@@ -55,11 +55,7 @@ void create_commit_log(const std::string &author, const std::string &message, co
   // get & store the current time
   std::time_t currentTime = std::time(nullptr);
   char formatedTimestamp[80];
-  std::strftime(
-      formatedTimestamp,
-      sizeof(formatedTimestamp),
-      "%Y-%m-%d %H:%M:%S",
-      std::localtime(&currentTime));
+  std::strftime(formatedTimestamp, sizeof(formatedTimestamp), "%Y-%m-%d %H:%M:%S", std::localtime(&currentTime));
 
   // write the commit information in the log file
   std::ofstream commitFile(log_file);
@@ -77,7 +73,7 @@ void create_commit_log(const std::string &author, const std::string &message, co
   commitFile.close();
 
   // store the commit hash in the history
-  insert_commit_to_history(commit_hash, get_current_branch());
+  insert_commit_record_to_history(commit_hash, get_current_branch());
 
   // write the commit hash in branch file as a lastest commit
   std::ofstream head_file(".bittrack/refs/heads/" + get_current_branch(), std::ios::trunc);
@@ -143,41 +139,9 @@ void commit_changes(const std::string &author, const std::string &message)
   clear_staging_file.close();
 }
 
-void commit_history()
-{
-  // read the history file contains commits logs in order
-  std::ifstream file_path(".bittrack/commits/history");
-  std::string line;
-
-  while (std::getline(file_path, line))
-  {
-    std::istringstream iss(line);
-    std::string commit_file_hash;
-    std::string commit_branch;
-
-    if (!(iss >> commit_file_hash >> commit_branch))
-    {
-      continue;
-    }
-
-    std::ifstream commit_log(".bittrack/commits/" + commit_file_hash);
-    std::string line;
-
-    // print the commit file content
-    while (std::getline(commit_log, line))
-    {
-      std::cout << line << std::endl;
-    }
-    std::cout << "\n"
-              << std::endl;
-    commit_log.close();
-  }
-  file_path.close();
-}
 
 std::string generate_commit_hash(const std::string &author, const std::string &message, const std::string &timestamp)
 {
-  // create a simple hash based on author, message, and timestamp
   std::string combined = author + message + timestamp;
   return sha256_hash(combined);
 }
@@ -198,20 +162,20 @@ std::string get_current_commit()
 void show_commit_details(const std::string& commit_hash)
 {
   std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
-  
+
   if (!std::filesystem::exists(commit_path))
   {
     std::cout << "Commit not found: " << commit_hash << std::endl;
     return;
   }
-  
+
   std::ifstream commit_file(commit_path);
   if (!commit_file.is_open())
   {
     std::cout << "Error reading commit file." << std::endl;
     return;
   }
-  
+
   std::string line;
   while (std::getline(commit_file, line))
   {
@@ -224,12 +188,12 @@ std::vector<std::string> get_commit_files(const std::string& commit_hash)
 {
   std::vector<std::string> files;
   std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
-  
+
   if (!std::filesystem::exists(commit_path))
   {
     return files;
   }
-  
+
   for (const auto& entry : std::filesystem::directory_iterator(commit_path))
   {
     if (entry.is_regular_file())
@@ -237,7 +201,6 @@ std::vector<std::string> get_commit_files(const std::string& commit_hash)
       files.push_back(entry.path().filename().string());
     }
   }
-  
   return files;
 }
 
@@ -336,4 +299,91 @@ std::string get_staged_file_content(const std::string &file_path)
     file.close();
   }
   return content;
+}
+
+std::string get_current_timestamp()
+{
+  auto now = std::chrono::system_clock::now();
+  auto time_t = std::chrono::system_clock::to_time_t(now);
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+  
+  std::stringstream ss;
+  ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+  ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+  
+  return ss.str();
+}
+
+std::string get_current_user()
+{
+  // Try to get user from environment variables
+  const char* user = std::getenv("USER");
+  if (user != nullptr)
+  {
+    return std::string(user);
+  }
+  
+  user = std::getenv("USERNAME");
+  if (user != nullptr)
+  {
+    return std::string(user);
+  }
+  
+  // Fallback to system call
+  char buffer[256];
+  if (getlogin_r(buffer, sizeof(buffer)) == 0)
+  {
+    return std::string(buffer);
+  }
+  
+  return "unknown";
+}
+
+std::string get_commit_info(const std::string& commit_hash)
+{
+  // Find commit in any branch
+  std::string objects_dir = ".bittrack/objects";
+  if (!std::filesystem::exists(objects_dir))
+  {
+    return "";
+  }
+  
+  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+  {
+    if (branch_entry.is_directory())
+    {
+      std::string commit_dir = branch_entry.path().string() + "/" + commit_hash;
+      if (std::filesystem::exists(commit_dir))
+      {
+        std::string commit_file = commit_dir + "/commit.txt";
+        if (std::filesystem::exists(commit_file))
+        {
+          std::ifstream file(commit_file);
+          std::string line;
+          std::string message, author, timestamp;
+          
+          while (std::getline(file, line))
+          {
+            if (line.find("message ") == 0)
+            {
+              message = line.substr(8);
+            }
+            else if (line.find("author ") == 0)
+            {
+              author = line.substr(7);
+            }
+            else if (line.find("timestamp ") == 0)
+            {
+              timestamp = line.substr(10);
+            }
+          }
+          file.close();
+          
+          return commit_hash.substr(0, 8) + " " + author + " " + timestamp + " " + message;
+        }
+      }
+    }
+  }
+  
+  return "";
 }

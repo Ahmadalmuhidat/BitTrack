@@ -31,12 +31,15 @@
 *.out
 *.app
 
-*.txt
-
 .bittrack/
 .vscode/
 .git/
 build/
+src/
+include/
+libs/
+tests/
+bin/
 
 CMakeFiles/
 cmake_install.cmake
