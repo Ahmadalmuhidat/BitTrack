@@ -2,7 +2,7 @@
 
 void stash_changes(const std::string &message)
 {
-  if (!stash_has_stashes() && get_staged_files().empty() && get_unstaged_files().empty())
+  if (get_staged_files().empty() && get_unstaged_files().empty())
   {
     std::cout << "No changes to stash" << std::endl;
     return;
@@ -18,6 +18,9 @@ void stash_changes(const std::string &message)
 
   // backup working directory
   backup_working_directory(entry.id);
+
+  // remove files from working directory
+  remove_tracked_files_from_working_directory();
 
   // save stash entry
   save_stash_entry(entry);
@@ -289,7 +292,14 @@ void restore_working_directory(const std::string &stash_id)
     if (entry.is_regular_file())
     {
       std::string rel_path = std::filesystem::relative(entry.path(), stash_dir).string();
-      std::filesystem::create_directories(std::filesystem::path(rel_path).parent_path());
+      std::filesystem::path parent_path = std::filesystem::path(rel_path).parent_path();
+      
+      // Only create directories if parent path is not empty
+      if (!parent_path.empty())
+      {
+        std::filesystem::create_directories(parent_path);
+      }
+      
       std::filesystem::copy_file(entry.path(), rel_path, std::filesystem::copy_options::overwrite_existing);
     }
   }
@@ -309,6 +319,19 @@ std::vector<std::string> get_tracked_files()
   files.erase(std::unique(files.begin(), files.end()), files.end());
 
   return files;
+}
+
+void remove_tracked_files_from_working_directory()
+{
+  std::vector<std::string> tracked_files = get_tracked_files();
+  
+  for (const auto &file : tracked_files)
+  {
+    if (std::filesystem::exists(file))
+    {
+      std::filesystem::remove(file);
+    }
+  }
 }
 
 std::string format_timestamp(std::time_t timestamp)

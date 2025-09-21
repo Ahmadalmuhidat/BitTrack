@@ -1,4 +1,5 @@
 #include "../include/commit.hpp"
+#include <unistd.h>
 
 void insert_commit_record_to_history(const std::string &last_commit_hash, const std::string &new_branch_name)
 {
@@ -19,7 +20,7 @@ void insert_commit_record_to_history(const std::string &last_commit_hash, const 
 void store_snapshot(const std::string &file_path, const std::string &commit_hash)
 {
   // base path for the snapshot
-  std::string newDirPath = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string newDirPath = ".bittrack/objects/" + commit_hash;
 
   // determine the relative path of the file
   std::filesystem::path relativePath = std::filesystem::relative(file_path, ".");
@@ -134,6 +135,14 @@ void commit_changes(const std::string &author, const std::string &message)
   // store the commit information in history
   create_commit_log(author, message, file_hashes, commit_hash);
 
+  // update branch ref to point to the new commit
+  std::ofstream branch_file(".bittrack/refs/heads/" + get_current_branch(), std::ios::trunc);
+  if (branch_file.is_open())
+  {
+    branch_file << commit_hash << std::endl;
+    branch_file.close();
+  }
+
   // clear the index file
   std::ofstream clear_staging_file(".bittrack/index", std::ios::trunc);
   clear_staging_file.close();
@@ -148,20 +157,26 @@ std::string generate_commit_hash(const std::string &author, const std::string &m
 
 std::string get_current_commit()
 {
-  // read the current commit from .bittrack/HEAD
-  std::ifstream head_file(".bittrack/HEAD");
-  std::string commit_hash;
-  if (head_file.is_open())
+  // read the current commit from the current branch ref file
+  std::string current_branch = get_current_branch();
+  if (current_branch.empty())
   {
-    std::getline(head_file, commit_hash);
-    head_file.close();
+    return "";
+  }
+  
+  std::ifstream branch_file(".bittrack/refs/heads/" + current_branch);
+  std::string commit_hash;
+  if (branch_file.is_open())
+  {
+    std::getline(branch_file, commit_hash);
+    branch_file.close();
   }
   return commit_hash;
 }
 
 void show_commit_details(const std::string& commit_hash)
 {
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
 
   if (!std::filesystem::exists(commit_path))
   {
@@ -187,7 +202,7 @@ void show_commit_details(const std::string& commit_hash)
 std::vector<std::string> get_commit_files(const std::string& commit_hash)
 {
   std::vector<std::string> files;
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
 
   if (!std::filesystem::exists(commit_path))
   {
@@ -206,7 +221,7 @@ std::vector<std::string> get_commit_files(const std::string& commit_hash)
 
 std::string get_commit_message(const std::string& commit_hash)
 {
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
   
   if (!std::filesystem::exists(commit_path))
   {
@@ -233,7 +248,7 @@ std::string get_commit_message(const std::string& commit_hash)
 
 std::string get_commit_author(const std::string& commit_hash)
 {
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
   
   if (!std::filesystem::exists(commit_path))
   {
@@ -260,7 +275,7 @@ std::string get_commit_author(const std::string& commit_hash)
 
 std::string get_commit_timestamp(const std::string& commit_hash)
 {
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
   
   if (!std::filesystem::exists(commit_path))
   {

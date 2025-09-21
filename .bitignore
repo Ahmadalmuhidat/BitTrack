@@ -43,3 +43,11 @@ bin/
 
 CMakeFiles/
 cmake_install.cmake
+
+
+.bitignore
+README.md
+USER_MANUAL.md
+.gitignore
+Makefile
+LICENSE

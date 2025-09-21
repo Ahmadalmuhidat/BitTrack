@@ -18,6 +18,10 @@ std::string get_current_branch()
   std::string line;
   std::getline(headFile, line);
   headFile.close();
+  
+  // Remove trailing whitespace and newlines
+  line.erase(line.find_last_not_of(" \t\r\n") + 1);
+  
   return line;
 }
 
@@ -48,16 +52,13 @@ void copy_current_commit_object_to_branch(std::string new_branch_name)
   std::string current_branch = get_current_branch();
   std::string last_commit_hash = get_branch_last_commit_hash(current_branch);
 
-  // copy the content of the current branch to the new branch
+  // With the new object structure, commits are stored directly in .bittrack/objects/
+  // No need to copy anything - the commit already exists
   if (current_branch != "" && last_commit_hash != "")
   {
-    std::string parent_path = ".bittrack/objects/";
-    std::string source = parent_path + current_branch + "/" + last_commit_hash;
-    std::string destination = parent_path + new_branch_name + "/" + last_commit_hash;
-    std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+    // Just store the commit hash in the history for the new branch
+    insert_commit_record_to_history(last_commit_hash, new_branch_name);
   }
-  // store the commit hash in the history
-  insert_commit_record_to_history(last_commit_hash, new_branch_name);
 }
 
 void add_branch_implementaion(std::string name)
@@ -67,19 +68,22 @@ void add_branch_implementaion(std::string name)
   // check if the branch not exist
   if (std::find(branches.begin(), branches.end(), name) == branches.end())
   {
-    // create a file with the new branch name
+    // Get the current commit hash to set as the new branch's HEAD
+    std::string current_commit = get_branch_last_commit_hash(get_current_branch());
+    
+    // Create the branch ref file with the current commit hash
     std::ofstream newBranchHeadFile(".bittrack/refs/heads/" + name);
-    newBranchHeadFile.close();
+    if (newBranchHeadFile.is_open())
+    {
+      newBranchHeadFile << current_commit << std::endl;
+      newBranchHeadFile.close();
+    }
 
-    // create a directory with the new branch name
-    std::filesystem::create_directory(".bittrack/objects/" + name);
-
-    copy_current_commit_object_to_branch(name);
-
-    // insert in the head file the random hash as last commit
-    std::ofstream headFile(".bittrack/refs/heads/" + name, std::ios::trunc);
-    headFile << get_branch_last_commit_hash(get_current_branch()) << std::endl;
-    headFile.close();
+    // Store the commit hash in the history for the new branch
+    if (!current_commit.empty())
+    {
+      insert_commit_record_to_history(current_commit, name);
+    }
   }
   else
   {
@@ -286,8 +290,8 @@ void merge_two_branches(const std::string &first_branch, const std::string &seco
       );
     }
 
-    std::filesystem::path first_path = ".bittrack/objects/" + first_branch + "/" + first_commit;
-    std::filesystem::path second_path = ".bittrack/objects/" + second_branch + "/" + second_commit;
+    std::filesystem::path first_path = ".bittrack/objects/" + first_commit;
+    std::filesystem::path second_path = ".bittrack/objects/" + second_commit;
 
     if (!std::filesystem::exists(first_path) || !std::filesystem::exists(second_path))
     {
@@ -372,9 +376,19 @@ void merge_two_branches(const std::string &first_branch, const std::string &seco
       {
         try
         {
+          // Copy to target commit directory
           std::filesystem::path target_path = first_path / file_path;
           std::filesystem::create_directories(target_path.parent_path());
           std::filesystem::copy_file(second_files[file_path], target_path);
+          
+          // Also copy to working directory so it can be staged
+          std::filesystem::path working_path = file_path;
+          if (!working_path.parent_path().empty())
+          {
+            std::filesystem::create_directories(working_path.parent_path());
+          }
+          std::filesystem::copy_file(second_files[file_path], working_path);
+          
           new_files.push_back(file_path);
           std::cout << "[ADDED] " << file_path << " from " << second_branch << std::endl;
         }
@@ -465,7 +479,7 @@ void backup_untracked_files()
         continue;
       }
 
-      std::string tracked_file_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit + "/" + file_path;
+      std::string tracked_file_path = ".bittrack/objects/" + current_commit + "/" + file_path;
       if (std::filesystem::exists(tracked_file_path))
       {
         continue;
@@ -524,26 +538,31 @@ void restore_files_from_commit(const std::string &commit_path)
     return;
   }
 
-  // remove all tracked files from working directory
-  std::string current_commit = get_branch_last_commit_hash(get_current_branch());
-  if (!current_commit.empty())
+  // Remove all tracked files from working directory
+  // Get all files that have ever been tracked in this repository
+  std::unordered_set<std::string> all_tracked_files;
+  for (const auto &entry : std::filesystem::directory_iterator(".bittrack/objects"))
   {
-    std::string current_commit_path = ".bittrack/objects/" + get_current_branch() + "/" + current_commit;
-    if (std::filesystem::exists(current_commit_path))
+    if (entry.is_directory())
     {
-      for (const auto &entry : std::filesystem::recursive_directory_iterator(current_commit_path))
+      std::string commit_dir = entry.path().string();
+      for (const auto &file_entry : std::filesystem::recursive_directory_iterator(commit_dir))
       {
-        if (entry.is_regular_file())
+        if (file_entry.is_regular_file())
         {
-          std::filesystem::path relative_path = std::filesystem::relative(entry.path(), current_commit_path);
-          std::filesystem::path working_file = relative_path;
-
-          if (std::filesystem::exists(working_file))
-          {
-            std::filesystem::remove(working_file);
-          }
+          std::filesystem::path relative_path = std::filesystem::relative(file_entry.path(), commit_dir);
+          all_tracked_files.insert(relative_path.string());
         }
       }
+    }
+  }
+
+  // Remove all tracked files from working directory
+  for (const auto &file_path : all_tracked_files)
+  {
+    if (std::filesystem::exists(file_path))
+    {
+      std::filesystem::remove(file_path);
     }
   }
 
@@ -574,7 +593,7 @@ void update_working_directory(const std::string &target_branch)
     return;
   }
 
-  std::string commit_path = ".bittrack/objects/" + target_branch + "/" + target_commit;
+  std::string commit_path = ".bittrack/objects/" + target_commit;
 
   // only backup untracked files if there are any
   bool has_untracked = false;
@@ -811,24 +830,16 @@ void remove_branch(const std::string &branch_name)
     return;
   }
 
-  // check if it is the current branch
+  // check if it is the current branch - if so, we need to switch first
   std::string current_branch = get_current_branch();
 
-  if (current_branch != branch_name)
+  if (current_branch == branch_name)
   {
-    std::cout << "You must be in the " << branch_name << " branch first" << std::endl;
+    std::cout << "Cannot delete the current branch. Please switch to another branch first." << std::endl;
     return;
   }
 
-  // check if there are staged files
-  std::vector<std::string> staged_files = get_staged_files();
-
-  if (!staged_files.empty())
-  {
-    std::cout << "Please unstage all files before removing the branch." << std::endl;
-    return;
-  }
-
+  // remove the branch ref file
   std::string branch_file = ".bittrack/refs/heads/" + branch_name;
   if (std::remove(branch_file.c_str()) != 0)
   {
@@ -836,22 +847,21 @@ void remove_branch(const std::string &branch_name)
     return;
   }
 
-  std::string branch_dir = ".bittrack/objects/" + branch_name;
-  std::filesystem::remove_all(branch_dir);
+  std::cout << "Branch '" << branch_name << "' has been removed." << std::endl;
 }
 
 void switch_branch(const std::string &branch_name)
 {
   std::vector<std::string> branches = get_branches_list();
 
-  if (std::find(branches.begin(), branches.end(), name) == branches.end())
+  if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   { // check if the branch exist
     std::cout << "you must create the branch first" << std::endl;
     return;
   }
-  else if (get_current_branch() == name)
+  else if (get_current_branch() == branch_name)
   { // check if it is not already the head branch
-    std::cout << "you are already in " << name << std::endl;
+    std::cout << "you are already in " << branch_name << std::endl;
     return;
   }
 
@@ -886,14 +896,14 @@ void switch_branch(const std::string &branch_name)
   }
 
   // update working directory to match target branch
-  update_working_directory(name);
+  update_working_directory(branch_name);
 
   // update HEAD to point to new branch
   std::ofstream HeadFile(".bittrack/HEAD", std::ios::trunc);
-  HeadFile << name << std::endl;
+  HeadFile << branch_name << std::endl;
   HeadFile.close();
 
-  std::cout << "Switched to branch: " << name << std::endl;
+  std::cout << "Switched to branch: " << branch_name << std::endl;
 }
 
 bool branch_exists(const std::string &branch_name)
@@ -944,15 +954,9 @@ void merge_branch(const std::string& source_branch, const std::string& target_br
       return;
     }
     
-    // Switch to target branch
-    std::string current_branch = get_current_branch();
-    if (current_branch != target_branch)
-    {
-      switch_branch(target_branch);
-    }
-    
     // Perform the merge using the existing merge_two_branches function
-    merge_two_branches(source_branch, target_branch);
+    // merge_two_branches will handle switching to the target branch
+    merge_two_branches(target_branch, source_branch);
     
     std::cout << "Successfully merged branch '" << source_branch << "' into '" << target_branch << "'" << std::endl;
   }

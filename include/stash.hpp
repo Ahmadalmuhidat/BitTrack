@@ -42,6 +42,7 @@ void delete_stash_entry(const std::string& stash_id);
 std::string generate_stash_id();
 void backup_working_directory(const std::string& stash_id);
 void restore_working_directory(const std::string& stash_id);
+void remove_tracked_files_from_working_directory();
 std::vector<std::string> get_tracked_files();
 std::string format_timestamp(std::time_t timestamp);
 std::string get_stash_dir();

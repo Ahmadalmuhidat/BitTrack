@@ -1,4 +1,5 @@
 #include "../include/stage.hpp"
+#include "../include/branch.hpp"
 
 void stage(const std::string &file_path)
 {
@@ -262,24 +263,128 @@ std::vector<std::string> get_unstaged_files()
 
   try
   {
+    // First, get all files that are tracked in the current branch's history
+    std::unordered_set<std::string> trackedFiles;
+    std::string currentCommit = get_current_commit();
+    if (!currentCommit.empty())
+    {
+      std::string commitDir = ".bittrack/objects/" + currentCommit;
+      if (std::filesystem::exists(commitDir))
+      {
+        for (const auto &entry : std::filesystem::directory_iterator(commitDir))
+        {
+          if (entry.is_regular_file())
+          {
+            std::string fileName = entry.path().filename().string();
+            trackedFiles.insert(fileName);
+          }
+        }
+      }
+    }
+
+    // Check all files in working directory
     for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
     {
       if (entry.is_regular_file())
       {
         std::string filePath = entry.path().string();
+        
+        // Normalize path by removing leading "./" if present
+        if (filePath.length() > 2 && filePath.substr(0, 2) == "./")
+        {
+          filePath = filePath.substr(2);
+        }
 
+        // Skip system files
         if (filePath.find(".bittrack") == std::string::npos && !should_ignore_file(filePath))
         {
-          unstagedFiles.insert(filePath);
+          // If no commits yet, consider all files as untracked
+          // If we have commits, consider files that are not in the current commit as unstaged
+          if (currentCommit.empty() || trackedFiles.find(filePath) == trackedFiles.end())
+          {
+            unstagedFiles.insert(filePath);
+          }
         }
       }
     }
 
-    std::vector<std::string> stagedFiles = get_staged_files();
-
-    for (const auto &stagedFile : stagedFiles)
+    // Get staged files and their hashes
+    std::unordered_map<std::string, std::string> stagedFilesWithHashes;
+    if (std::filesystem::exists(".bittrack/index"))
     {
-      unstagedFiles.erase(stagedFile);
+      std::ifstream index_file(".bittrack/index");
+      if (index_file.is_open())
+      {
+        std::string line;
+        while (std::getline(index_file, line))
+        {
+          if (line.empty())
+            continue;
+
+          std::istringstream iss(line);
+          std::string fileName, fileHash;
+          if (iss >> fileName >> fileHash)
+          {
+            stagedFilesWithHashes[fileName] = fileHash;
+          }
+        }
+        index_file.close();
+      }
+    }
+
+    // Remove staged files from unstaged list, but only if they haven't been modified
+    for (const auto &stagedFile : stagedFilesWithHashes)
+    {
+      const std::string &fileName = stagedFile.first;
+      const std::string &stagedHash = stagedFile.second;
+      
+      // Check if file exists and get its current hash
+      if (std::filesystem::exists(fileName))
+      {
+        std::string currentHash = hash_file(fileName);
+        // Only remove from unstaged if the hashes match (file unchanged)
+        if (currentHash == stagedHash)
+        {
+          unstagedFiles.erase(fileName);
+        }
+        // If hashes don't match, keep the file in unstaged (it's been modified)
+      }
+      else
+      {
+        // File doesn't exist anymore, remove from unstaged
+        unstagedFiles.erase(fileName);
+      }
+    }
+
+    // Remove files that match the current commit (unchanged files)
+    if (!currentCommit.empty())
+    {
+      std::string commitDir = ".bittrack/objects/" + currentCommit;
+      
+      if (std::filesystem::exists(commitDir))
+      {
+        for (const auto &entry : std::filesystem::directory_iterator(commitDir))
+        {
+          if (entry.is_regular_file())
+          {
+            std::string fileName = entry.path().filename().string();
+            
+            // Check if file exists in working directory
+            if (std::filesystem::exists(fileName))
+            {
+              std::string currentHash = hash_file(fileName);
+              std::string committedHash = hash_file(entry.path().string());
+              
+              // Only remove from unstaged if the hashes match (file unchanged since commit)
+              if (currentHash == committedHash)
+              {
+                unstagedFiles.erase(fileName);
+              }
+              // If hashes don't match, keep the file in unstaged (it's been modified since commit)
+            }
+          }
+        }
+      }
     }
   }
   catch (const std::exception &e)
@@ -345,7 +450,7 @@ bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector
       }
     }
 
-    return ::is_file_ignored_by_patterns(file_path, ignorePatterns);
+    return ::is_file_ignored_by_ignore_patterns(file_path, ignorePatterns);
   }
   catch (const std::exception &e)
   {

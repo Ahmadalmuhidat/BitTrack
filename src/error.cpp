@@ -180,8 +180,7 @@ bool ErrorHandler::validateArguments(int argc, int expected, const std::string &
 {
   if (argc < expected)
   {
-    printError(ErrorCode::MISSING_ARGUMENTS, "Missing required arguments for " + command + ". Expected " + std::to_string(expected) + " arguments, got " + std::to_string(argc), ErrorSeverity::ERROR, command);
-    return false;
+    throw BitTrackError(ErrorCode::MISSING_ARGUMENTS, "Missing required arguments for " + command + ". Expected " + std::to_string(expected) + " arguments, got " + std::to_string(argc), ErrorSeverity::ERROR, command);
   }
   return true;
 }
@@ -228,7 +227,7 @@ bool ErrorHandler::validateBranchName(const std::string &name)
   }
 
   // check for reserved names
-  if (name == "HEAD" || name == "master" || name == "main")
+  if (name == "HEAD")
   {
     printError(ErrorCode::INVALID_BRANCH_NAME, "Branch name '" + name + "' is reserved", ErrorSeverity::ERROR, name);
     return false;

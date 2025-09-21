@@ -46,11 +46,6 @@ void init()
     }
 
     // create essential files
-    if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", ""))
-    {
-      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create HEAD file", ErrorSeverity::FATAL, "init");
-    }
-
     if (!ErrorHandler::safeWriteFile(".bittrack/commits/history", ""))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create history file", ErrorSeverity::FATAL, "init");
@@ -61,8 +56,18 @@ void init()
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create remote file", ErrorSeverity::FATAL, "init");
     }
 
-    add_branch("master");
-    switch_branch("master"); // don't check for uncommitted changes during init
+    // Initialize master branch ref file (empty - no commits yet)
+    if (!ErrorHandler::safeWriteFile(".bittrack/refs/heads/master", ""))
+    {
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create master branch ref", ErrorSeverity::FATAL, "init");
+    }
+    
+    // Set HEAD to point to master branch
+    if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "master"))
+    {
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to master", ErrorSeverity::FATAL, "init");
+    }
+    
     std::cout << "Initialized empty BitTrack repository." << std::endl;
   }
   catch (const BitTrackError &e)
@@ -202,102 +207,103 @@ void remove_current_repo()
 
 void branch_operations(int argc, const char *argv[], int &i)
 {
-  try
+  VALIDATE_ARGS(argc, i + 2, "--branch");
+
+  std::string subFlag = argv[++i];
+
+  if (subFlag == "-l")
   {
-    VALIDATE_ARGS(argc, i + 2, "--branch");
-
-    std::string subFlag = argv[++i];
-
-    if (subFlag == "-l")
+    // print branches list
+    std::vector<std::string> branches = get_branches_list();
+    std::string current_branch = get_current_branch();
+    
+    for (const auto &branch : branches)
     {
-      // print branches list
-      std::vector<std::string> branches = get_branches_list();
-      for (const auto &branch : branches)
+      if (branch == current_branch)
       {
+        // Display current branch in green
+        std::cout << "\033[32m" << branch << "\033[0m" << std::endl;
+      }
+      else
+      {
+        // Display other branches in normal color
         std::cout << branch << std::endl;
       }
     }
-    else if (subFlag == "-c")
-    {
-      VALIDATE_ARGS(argc, i + 2, "--branch -c");
-
-      std::string name = argv[++i];
-      VALIDATE_BRANCH_NAME(name);
-
-      add_branch(name);
-    }
-    else if (subFlag == "-r")
-    {
-      VALIDATE_ARGS(argc, i + 2, "--branch -r");
-
-      std::string name = argv[++i];
-      VALIDATE_BRANCH_NAME(name);
-
-      remove_branch(name);
-      switch_branch("master");
-    }
-    else if (subFlag == "-m")
-    {
-      VALIDATE_ARGS(argc, i + 3, "--branch -m");
-
-      std::string old_name = argv[++i];
-      std::string new_name = argv[++i];
-      VALIDATE_BRANCH_NAME(old_name);
-      VALIDATE_BRANCH_NAME(new_name);
-
-      rename_branch(old_name, new_name);
-    }
-    else if (subFlag == "-i")
-    {
-      VALIDATE_ARGS(argc, i + 2, "--branch -i");
-
-      std::string name = argv[++i];
-      VALIDATE_BRANCH_NAME(name);
-
-      show_branch_info(name);
-    }
-    else if (subFlag == "-h")
-    {
-      VALIDATE_ARGS(argc, i + 2, "--branch -h");
-
-      std::string name = argv[++i];
-      VALIDATE_BRANCH_NAME(name);
-
-      show_branch_history(name);
-    }
-    else if (subFlag == "-merge")
-    {
-      VALIDATE_ARGS(argc, i + 3, "--branch -merge");
-
-      std::string source = argv[++i];
-      std::string target = argv[++i];
-      VALIDATE_BRANCH_NAME(source);
-      VALIDATE_BRANCH_NAME(target);
-
-      merge_branch(source, target);
-    }
-    else if (subFlag == "-rebase")
-    {
-      VALIDATE_ARGS(argc, i + 3, "--branch -rebase");
-
-      std::string source = argv[++i];
-      std::string target = argv[++i];
-      VALIDATE_BRANCH_NAME(source);
-      VALIDATE_BRANCH_NAME(target);
-
-      rebase_branch(source, target);
-    }
-    else
-    {
-      throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid branch sub-command: " + subFlag + ". Use -l, -c, -r, -m, -i, -h, -merge, or -rebase", ErrorSeverity::ERROR, "--branch");
-    }
   }
-  catch (const BitTrackError &e)
+  else if (subFlag == "-c")
   {
-    ErrorHandler::printError(e);
-    throw;
+    VALIDATE_ARGS(argc, i + 2, "--branch -c");
+
+    std::string name = argv[++i];
+    VALIDATE_BRANCH_NAME(name);
+
+    add_branch(name);
   }
-  HANDLE_EXCEPTION("branch operations")
+  else if (subFlag == "-r")
+  {
+    VALIDATE_ARGS(argc, i + 2, "--branch -r");
+
+    std::string name = argv[++i];
+    VALIDATE_BRANCH_NAME(name);
+
+    remove_branch(name);
+  }
+  else if (subFlag == "-m")
+  {
+    VALIDATE_ARGS(argc, i + 3, "--branch -m");
+
+    std::string old_name = argv[++i];
+    std::string new_name = argv[++i];
+    VALIDATE_BRANCH_NAME(old_name);
+    VALIDATE_BRANCH_NAME(new_name);
+
+    rename_branch(old_name, new_name);
+  }
+  else if (subFlag == "-i")
+  {
+    VALIDATE_ARGS(argc, i + 2, "--branch -i");
+
+    std::string name = argv[++i];
+    VALIDATE_BRANCH_NAME(name);
+
+    show_branch_info(name);
+  }
+  else if (subFlag == "-h")
+  {
+    VALIDATE_ARGS(argc, i + 2, "--branch -h");
+
+    std::string name = argv[++i];
+    VALIDATE_BRANCH_NAME(name);
+
+    show_branch_history(name);
+  }
+  else if (subFlag == "-merge")
+  {
+    VALIDATE_ARGS(argc, i + 3, "--branch -merge");
+
+    std::string source = argv[++i];
+    std::string target = argv[++i];
+    VALIDATE_BRANCH_NAME(source);
+    VALIDATE_BRANCH_NAME(target);
+
+    merge_branch(source, target);
+  }
+  else if (subFlag == "-rebase")
+  {
+    VALIDATE_ARGS(argc, i + 3, "--branch -rebase");
+
+    std::string source = argv[++i];
+    std::string target = argv[++i];
+    VALIDATE_BRANCH_NAME(source);
+    VALIDATE_BRANCH_NAME(target);
+
+    rebase_branch(source, target);
+  }
+  else
+  {
+    throw BitTrackError(ErrorCode::INVALID_ARGUMENTS, "Invalid branch sub-command: " + subFlag + ". Use -l, -c, -r, -m, -i, -h, -merge, or -rebase", ErrorSeverity::ERROR, "--branch");
+  }
 }
 
 void remote_operations(int argc, const char *argv[], int &i)
@@ -344,27 +350,6 @@ void remote_operations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("remote operations")
 }
 
-void merge(int argc, const char *argv[], int &i)
-{
-  try
-  {
-    VALIDATE_ARGS(argc, i + 3, "--merge");
-
-    std::string first_branch = argv[++i];
-    std::string second_branch = argv[++i];
-
-    VALIDATE_BRANCH_NAME(first_branch);
-    VALIDATE_BRANCH_NAME(second_branch);
-
-    merge_branches(first_branch, second_branch);
-  }
-  catch (const BitTrackError &e)
-  {
-    ErrorHandler::printError(e);
-    throw;
-  }
-  HANDLE_EXCEPTION("merge")
-}
 
 void checkout(const char *argv[], int &i)
 {
@@ -473,8 +458,11 @@ void stash_operations(int argc, const char *argv[], int &i)
     }
     else
     {
-      // lDefault: create stash
-      stash_changes();
+      // Default: create stash with message prompt
+      std::cout << "Enter stash message: ";
+      std::string message;
+      std::getline(std::cin, message);
+      stash_changes(message);
     }
   }
   catch (const BitTrackError &e)
@@ -764,7 +752,6 @@ void print_help()
   std::cout << "           -merge <src> <tgt> merge source into target branch\n";
   std::cout << "           -rebase <src> <tgt> rebase source onto target branch\n";
   std::cout << "  --checkout <name>           switch to a different branch\n";
-  std::cout << "  --merge <b1> <b2>           merge two branches\n";
   std::cout << "  --diff                      show differences\n";
   std::cout << "           --staged           show staged changes\n";
   std::cout << "           --unstaged         show unstaged changes\n";
@@ -909,11 +896,6 @@ int main(int argc, const char *argv[])
       else if (arg == "--checkout")
       {
         checkout(argv, i);
-        break;
-      }
-      else if (arg == "--merge")
-      {
-        merge(argc, argv, i);
         break;
       }
       else if (arg == "--push")

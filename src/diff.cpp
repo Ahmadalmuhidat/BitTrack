@@ -54,11 +54,50 @@ DiffResult compare_file_to_content(const std::string &file, const std::string &c
 
 DiffResult diff_staged()
 {
-  DiffResult result("staged", "working");
+  DiffResult result("last commit", "staged");
 
   std::vector<std::string> staged_files = get_staged_files();
   if (staged_files.empty())
   {
+    return result;
+  }
+
+  std::string current_commit = get_current_commit();
+  if (current_commit.empty())
+  {
+    // If no commits, show all staged files as additions
+    for (const auto &file : staged_files)
+    {
+      if (is_binary_file(file))
+      {
+        continue;
+      }
+
+      std::string staged_content = get_staged_file_content(file);
+      
+      // Split staged content into lines
+      std::vector<std::string> content_lines;
+      std::istringstream iss(staged_content);
+      std::string line;
+      while (std::getline(iss, line))
+      {
+        content_lines.push_back(line);
+      }
+      
+      // Create a hunk showing all lines as additions
+      if (!content_lines.empty())
+      {
+        DiffHunk hunk(0, 0, 1, content_lines.size(), file + ": @@ -0,0 +1," + std::to_string(content_lines.size()) + " @@");
+        
+        for (const auto &content_line : content_lines)
+        {
+          DiffLine diff_line(DiffLineType::ADDITION, 0, content_line);
+          hunk.lines.push_back(diff_line);
+        }
+        
+        result.hunks.push_back(hunk);
+      }
+    }
     return result;
   }
 
@@ -70,14 +109,56 @@ DiffResult diff_staged()
     }
 
     std::string staged_content = get_staged_file_content(file);
-    DiffResult file_diff = compare_file_to_content(file, staged_content);
-
-    // merge hunks from this file
-    for (const auto &hunk : file_diff.hunks)
+    std::string commit_file = ".bittrack/objects/" + current_commit + "/" + file;
+    
+    if (std::filesystem::exists(commit_file))
     {
-      DiffHunk file_hunk = hunk;
-      file_hunk.header = file + ": " + hunk.header;
-      result.hunks.push_back(file_hunk);
+      // File exists in commit, compare staged version to commit version
+      DiffResult file_diff = compare_files(commit_file, file);
+      
+      // merge hunks from this file
+      for (const auto &hunk : file_diff.hunks)
+      {
+        DiffHunk file_hunk = hunk;
+        file_hunk.header = file + ": " + hunk.header;
+        result.hunks.push_back(file_hunk);
+      }
+    }
+    else
+    {
+      // File doesn't exist in commit, show as addition
+      DiffResult file_diff("/dev/null", file);
+      
+      // Split staged content into lines
+      std::vector<std::string> content_lines;
+      std::istringstream iss(staged_content);
+      std::string line;
+      while (std::getline(iss, line))
+      {
+        content_lines.push_back(line);
+      }
+      
+      // Create a hunk showing all lines as additions
+      if (!content_lines.empty())
+      {
+        DiffHunk hunk(0, 0, 1, content_lines.size(), "@@ -0,0 +1," + std::to_string(content_lines.size()) + " @@");
+        
+        for (const auto &content_line : content_lines)
+        {
+          DiffLine diff_line(DiffLineType::ADDITION, 0, content_line);
+          hunk.lines.push_back(diff_line);
+        }
+        
+        file_diff.hunks.push_back(hunk);
+      }
+      
+      // merge hunks from this file
+      for (const auto &hunk : file_diff.hunks)
+      {
+        DiffHunk file_hunk = hunk;
+        file_hunk.header = file + ": " + hunk.header;
+        result.hunks.push_back(file_hunk);
+      }
     }
   }
 
@@ -126,13 +207,31 @@ DiffResult diff_working_directory()
     return result;
   }
 
-  // get all tracked files
-  std::vector<std::string> all_files;
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
+  // get all files that are tracked (staged or in commit)
+  std::vector<std::string> staged_files = get_staged_files();
+  std::vector<std::string> unstaged_files = get_unstaged_files();
+  
+  std::set<std::string> all_files;
+  for (const auto &file : staged_files)
   {
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
+    all_files.insert(file);
+  }
+  for (const auto &file : unstaged_files)
+  {
+    all_files.insert(file);
+  }
+  
+  // Also include files that exist in the current commit
+  std::string commit_dir = ".bittrack/objects/" + current_commit;
+  if (std::filesystem::exists(commit_dir))
+  {
+    for (const auto &entry : std::filesystem::recursive_directory_iterator(commit_dir))
     {
-      all_files.push_back(entry.path().string());
+      if (entry.is_regular_file())
+      {
+        std::string rel_path = std::filesystem::relative(entry.path(), commit_dir).string();
+        all_files.insert(rel_path);
+      }
     }
   }
 
@@ -144,7 +243,7 @@ DiffResult diff_working_directory()
     }
 
     // compare with last commit version
-    std::string commit_file = ".bittrack/objects/" + get_current_branch() + "/" + current_commit + "/" + file;
+    std::string commit_file = ".bittrack/objects/" + current_commit + "/" + file;
     if (std::filesystem::exists(commit_file))
     {
       DiffResult file_diff = compare_files(file, commit_file);
@@ -157,6 +256,24 @@ DiffResult diff_working_directory()
         result.hunks.push_back(file_hunk);
       }
     }
+    else
+    {
+      // File doesn't exist in commit, show as addition
+      std::vector<std::string> file_lines = read_file_lines(file);
+      
+      if (!file_lines.empty())
+      {
+        DiffHunk hunk(0, 0, 1, file_lines.size(), file + ": @@ -0,0 +1," + std::to_string(file_lines.size()) + " @@");
+        
+        for (const auto &file_line : file_lines)
+        {
+          DiffLine diff_line(DiffLineType::ADDITION, 0, file_line);
+          hunk.lines.push_back(diff_line);
+        }
+        
+        result.hunks.push_back(hunk);
+      }
+    }
   }
 
   return result;
@@ -166,8 +283,8 @@ DiffResult diff_commits(const std::string &commit1, const std::string &commit2)
 {
   DiffResult result(commit1, commit2);
 
-  std::string commit1_path = ".bittrack/objects/" + get_current_branch() + "/" + commit1;
-  std::string commit2_path = ".bittrack/objects/" + get_current_branch() + "/" + commit2;
+  std::string commit1_path = ".bittrack/objects/" + commit1;
+  std::string commit2_path = ".bittrack/objects/" + commit2;
 
   if (!std::filesystem::exists(commit1_path) || !std::filesystem::exists(commit2_path))
   {
@@ -219,7 +336,7 @@ DiffResult diff_commit_to_working(const std::string &commit)
 {
   DiffResult result(commit, "working");
 
-  std::string commit_path = ".bittrack/objects/" + get_current_branch() + "/" + commit;
+  std::string commit_path = ".bittrack/objects/" + commit;
   if (!std::filesystem::exists(commit_path))
   {
     return result;

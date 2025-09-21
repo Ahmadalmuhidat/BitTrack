@@ -355,7 +355,7 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
 {
   // Create merge commit directory
   std::string commit_hash = generate_commit_hash(get_current_user(), message, get_current_timestamp());
-  std::string commit_dir = ".bittrack/objects/" + get_current_branch() + "/" + commit_hash;
+  std::string commit_dir = ".bittrack/objects/" + commit_hash;
   std::filesystem::create_directories(commit_dir);
   
   // Create commit file
@@ -393,41 +393,4 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
   std::cout << "Created merge commit: " << commit_hash << std::endl;
 }
 
-std::vector<std::string> get_commit_files(const std::string &commit_hash)
-{
-  std::vector<std::string> files;
-  
-  // Look for commit in all branches
-  std::string objects_dir = ".bittrack/objects";
-  if (!std::filesystem::exists(objects_dir))
-  {
-    return files;
-  }
-  
-  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
-  {
-    if (branch_entry.is_directory())
-    {
-      std::string commit_dir = branch_entry.path().string() + "/" + commit_hash;
-      if (std::filesystem::exists(commit_dir))
-      {
-        // Get all files in the commit directory
-        for (const auto& file_entry : std::filesystem::directory_iterator(commit_dir))
-        {
-          if (file_entry.is_regular_file())
-          {
-            std::string filename = file_entry.path().filename().string();
-            if (filename != "commit.txt") // Exclude commit metadata file
-            {
-              files.push_back(filename);
-            }
-          }
-        }
-        break; // Found the commit, no need to search other branches
-      }
-    }
-  }
-  
-  return files;
-}
 
