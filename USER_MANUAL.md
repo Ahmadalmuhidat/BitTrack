@@ -162,7 +162,7 @@ This creates a `.bittrack/` directory with the following structure:
 ```
 - Creates a new BitTrack repository
 - Sets up directory structure
-- Creates initial "master" branch
+- Creates initial "main" branch
 - **Note**: Must be run in an empty directory
 
 #### Check Repository Status
@@ -239,14 +239,14 @@ BitTrack provides comprehensive branch management with Git-compatible operations
 - Displays detailed branch information
 - Shows commit hash, creation date
 - Lists associated files
-- **Example**: `./build/bittrack --branch -i master`
+- **Example**: `./build/bittrack --branch -i main`
 
 ### Delete Branch
 ```bash
 ./build/bittrack --branch -r <branch-name>
 ```
 - Removes specified branch
-- Automatically switches to master if deleting current branch
+- Automatically switches to main if deleting current branch
 - Prevents deletion of non-existent branches
 - **Example**: `./build/bittrack --branch -r feature-login`
 
@@ -503,7 +503,7 @@ BitTrack provides sophisticated merge functionality with conflict resolution.
 - Performs three-way merge when possible
 - Handles merge conflicts
 - Creates merge commit
-- **Example**: `./build/bittrack --merge feature-login master`
+- **Example**: `./build/bittrack --merge feature-login main`
 
 ### Merge Features
 
@@ -840,9 +840,9 @@ BitTrack attempts to recover from errors when possible:
 ./build/bittrack --stage src/auth.cpp
 ./build/bittrack --commit
 
-# Merge back to master
-./build/bittrack --checkout master
-./build/bittrack --merge feature-user-auth master
+# Merge back to main
+./build/bittrack --checkout main
+./build/bittrack --merge feature-user-auth main
 ```
 
 #### Hotfix Workflow
@@ -855,9 +855,9 @@ BitTrack attempts to recover from errors when possible:
 ./build/bittrack --stage src/bugfix.cpp
 ./build/bittrack --commit
 
-# Merge to master and tag
-./build/bittrack --checkout master
-./build/bittrack --merge hotfix-critical-bug master
+# Merge to main and tag
+./build/bittrack --checkout main
+./build/bittrack --merge hotfix-critical-bug main
 ./build/bittrack --tag -a v1.0.1 "Hotfix for critical bug"
 ```
 
@@ -1120,7 +1120,7 @@ Can span multiple lines.
 │   ├── <commit1>    # Commit files
 │   └── history      # Commit history
 ├── refs/heads/       # Branch references
-│   ├── master       # Master branch
+│   ├── main       # Master branch
 │   └── <branch>     # Other branches
 ├── tags/             # Tag storage
 │   └── <tag>        # Tag files

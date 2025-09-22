@@ -56,16 +56,16 @@ void init()
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create remote file", ErrorSeverity::FATAL, "init");
     }
 
-    // Initialize master branch ref file (empty - no commits yet)
-    if (!ErrorHandler::safeWriteFile(".bittrack/refs/heads/master", ""))
+    // Initialize main branch ref file (empty - no commits yet)
+    if (!ErrorHandler::safeWriteFile(".bittrack/refs/heads/main", ""))
     {
-      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create master branch ref", ErrorSeverity::FATAL, "init");
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create main branch ref", ErrorSeverity::FATAL, "init");
     }
     
-    // Set HEAD to point to master branch
-    if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "master"))
+    // Set HEAD to point to main branch
+    if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "main"))
     {
-      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to master", ErrorSeverity::FATAL, "init");
+      throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to main", ErrorSeverity::FATAL, "init");
     }
     
     std::cout << "Initialized empty BitTrack repository." << std::endl;
@@ -134,7 +134,6 @@ void unstage_files(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("unstage file")
 }
 
-
 void show_staged_files_hashes()
 {
   std::vector<std::string> staged_files = get_staged_files();
@@ -152,7 +151,6 @@ void show_staged_files_hashes()
     std::cout << file << ": " << hash << std::endl;
   }
 }
-
 
 void show_commit_history()
 {
@@ -331,7 +329,6 @@ void remote_operations(int argc, const char *argv[], int &i)
   }
   HANDLE_EXCEPTION("remote operations")
 }
-
 
 void checkout(const char *argv[], int &i)
 {

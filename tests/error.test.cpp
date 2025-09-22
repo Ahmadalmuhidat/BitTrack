@@ -140,7 +140,7 @@ bool test_error_handler_validate_repository()
 
 bool test_error_handler_validate_branch_exists()
 {
-  ErrorHandler::validateBranchExists("master");
+  ErrorHandler::validateBranchExists("main");
   
   return true; 
 }

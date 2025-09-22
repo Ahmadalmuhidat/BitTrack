@@ -8,11 +8,11 @@
 bool test_merge_branches()
 {
   std::ofstream master_file("merge_test.txt");
-  master_file << "master content" << std::endl;
+  master_file << "main content" << std::endl;
   master_file.close();
   
   stage("merge_test.txt");
-  commit_changes("test_user", "master commit");
+  commit_changes("test_user", "main commit");
   
   add_branch("merge_branch");
   switch_branch("merge_branch");
@@ -24,9 +24,9 @@ bool test_merge_branches()
   stage("merge_test.txt");
   commit_changes("test_user", "merge branch commit");
   
-  switch_branch("master");
+  switch_branch("main");
   
-  MergeResult result = merge_branches("merge_branch", "master");
+  MergeResult result = merge_branches("merge_branch", "main");
   
   std::filesystem::remove("merge_test.txt");
   remove_branch("merge_branch");
@@ -148,7 +148,7 @@ bool test_merge_fast_forward()
   
   add_branch("fast_forward_branch");
   
-  MergeResult result = merge_branches("fast_forward_branch", "master");
+  MergeResult result = merge_branches("fast_forward_branch", "main");
   
   std::filesystem::remove("fast_forward_test.txt");
   remove_branch("fast_forward_branch");

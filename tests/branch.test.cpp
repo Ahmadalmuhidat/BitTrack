@@ -7,7 +7,7 @@
 bool test_branch_master()
 {
   std::vector<std::string> branches = get_branches_list();
-  bool master_exists = std::find(branches.begin(), branches.end(), "master") != branches.end();
+  bool master_exists = std::find(branches.begin(), branches.end(), "main") != branches.end();
   
   return master_exists;
 }
@@ -49,11 +49,11 @@ bool test_remove_branch()
 bool test_working_directory_update()
 {
   std::ofstream file("test_master.txt");
-  file << "master content" << std::endl;
+  file << "main content" << std::endl;
   file.close();
   
   stage("test_master.txt");
-  commit_changes("test_user", "master commit");
+  commit_changes("test_user", "main commit");
   
   add_branch("working_dir_branch");
   switch_branch("working_dir_branch");
@@ -62,7 +62,7 @@ bool test_working_directory_update()
   return false;
   }
   
-  switch_branch("master");
+  switch_branch("main");
   remove_branch("working_dir_branch");
   std::filesystem::remove("test_master.txt");
   
@@ -80,7 +80,7 @@ bool test_untracked_file_preservation()
   
   bool preserved = std::filesystem::exists("untracked.txt");
   
-  switch_branch("master");
+  switch_branch("main");
   remove_branch("untracked_branch");
   if (std::filesystem::exists("untracked.txt")) {
   std::filesystem::remove("untracked.txt");
@@ -117,7 +117,7 @@ bool test_switch_to_nonexistent_branch()
 
 bool test_switch_to_same_branch()
 {
-  switch_branch("master");
+  switch_branch("main");
   
   return true; 
 }
