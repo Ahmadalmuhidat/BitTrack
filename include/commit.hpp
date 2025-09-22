@@ -11,6 +11,8 @@
 #include <chrono>
 #include <iomanip>
 #include <ctime>
+#include <unistd.h>
+#include <set>
 
 #include "hash.hpp"
 

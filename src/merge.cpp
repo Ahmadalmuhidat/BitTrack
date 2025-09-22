@@ -1,6 +1,4 @@
 #include "../include/merge.hpp"
-#include "../include/utils.hpp"
-#include <set>
 
 MergeResult merge_branches(const std::string &source_branch, const std::string &target_branch)
 {
@@ -172,47 +170,6 @@ std::vector<std::string> get_conflicted_files()
   return merge_state.conflicted_files;
 }
 
-void resolve_file_conflict(const std::string &file_path)
-{
-  // lRemove conflict markers and resolve
-  std::ifstream file(file_path);
-  std::string content;
-  std::string line;
-  bool in_conflict = false;
-  std::stringstream resolved;
-
-  while (std::getline(file, line))
-  {
-    if (line.find("<<<<<<<") == 0)
-    {
-      in_conflict = true;
-      continue;
-    }
-    else if (line.find("=======") == 0)
-    {
-      continue;
-    }
-    else if (line.find(">>>>>>>") == 0)
-    {
-      in_conflict = false;
-      continue;
-    }
-
-    if (!in_conflict)
-    {
-      resolved << line << std::endl;
-    }
-  }
-
-  file.close();
-
-  // lWrite resolved content
-  std::ofstream out_file(file_path);
-  out_file << resolved.str();
-  out_file.close();
-
-  std::cout << "Resolved conflict in " << file_path << std::endl;
-}
 
 void abort_merge()
 {

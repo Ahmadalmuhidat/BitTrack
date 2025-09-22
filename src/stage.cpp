@@ -1,5 +1,4 @@
 #include "../include/stage.hpp"
-#include "../include/branch.hpp"
 
 void stage(const std::string &file_path)
 {
@@ -47,39 +46,82 @@ void stage(const std::string &file_path)
     {
       try
       {
-        if (!std::filesystem::exists(path))
+        // Check if this is a deleted file (has "(deleted)" suffix)
+        bool is_deleted_file = false;
+        std::string actual_path = path;
+        if (path.length() > 10 && path.substr(path.length() - 10) == " (deleted)")
         {
-          std::cerr << "Warning: File does not exist: " << path << std::endl;
+          is_deleted_file = true;
+          actual_path = path.substr(0, path.length() - 10);
+        }
+
+        if (!is_deleted_file && !std::filesystem::exists(actual_path))
+        {
+          std::cerr << "Warning: File does not exist: " << actual_path << std::endl;
           return;
         }
 
-        if (std::filesystem::is_directory(path))
+        if (!is_deleted_file && std::filesystem::is_directory(actual_path))
         {
-          std::cerr << "Warning: Cannot stage directory: " << path << std::endl;
+          std::cerr << "Warning: Cannot stage directory: " << actual_path << std::endl;
           return;
         }
 
-        if (should_ignore_file(path))
+        if (!is_deleted_file && should_ignore_file(actual_path))
         {
-          std::cerr << "File ignored: " << path << std::endl;
           return;
         }
 
-        std::string fileHash = hash_file(path);
-        if (fileHash.empty())
+        std::string fileHash = "";
+        if (!is_deleted_file)
         {
-          std::cerr << "Warning: Could not generate hash for file: " << path << std::endl;
-          return;
+          fileHash = hash_file(actual_path);
+          if (fileHash.empty())
+          {
+            std::cerr << "Warning: Could not generate hash for file: " << actual_path << std::endl;
+            return;
+          }
         }
 
-        if (staged_files.find(path) != staged_files.end() && staged_files[path] == fileHash)
+        // Remove any existing staging entry for this file (both original and deleted versions)
+        staged_files.erase(actual_path);
+        staged_files.erase(actual_path + " (deleted)");
+        
+        // Check if file is already committed and unchanged (skip for deleted files)
+        if (!is_deleted_file)
         {
-          std::cout << "File already staged and unchanged: " << path << std::endl;
-          return;
+          std::string currentCommit = get_current_commit();
+          if (!currentCommit.empty())
+          {
+            std::string commitDir = ".bittrack/objects/" + currentCommit;
+            if (std::filesystem::exists(commitDir))
+            {
+              // Check if the exact same file path exists in the commit
+              std::string committedFilePath = commitDir + "/" + actual_path;
+              if (std::filesystem::exists(committedFilePath))
+              {
+                std::string committedHash = hash_file(committedFilePath);
+                if (fileHash == committedHash)
+                {
+                  std::cout << "File already committed and unchanged: " << actual_path << std::endl;
+                  return;
+                }
+              }
+            }
+          }
         }
 
-        staged_files[path] = fileHash;
-        std::cout << "Staged: " << path << std::endl;
+        // Store the file with (deleted) suffix if it's a deleted file
+        std::string stored_path = is_deleted_file ? actual_path + " (deleted)" : actual_path;
+        staged_files[stored_path] = fileHash;
+        if (is_deleted_file)
+        {
+          std::cout << "Staged deletion: " << actual_path << std::endl;
+        }
+        else
+        {
+          std::cout << "Staged: " << actual_path << std::endl;
+        }
       }
       catch (const std::exception &e)
       {
@@ -89,11 +131,83 @@ void stage(const std::string &file_path)
 
     if (file_path == ".")
     {
+      // First, stage all existing files
       for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
       {
         if (entry.is_regular_file())
         {
-          stage_single_file(entry.path().string());
+          std::string filePath = entry.path().string();
+          
+          // Normalize path by removing leading "./" if present
+          if (filePath.length() > 2 && filePath.substr(0, 2) == "./")
+          {
+            filePath = filePath.substr(2);
+          }
+          
+          stage_single_file(filePath);
+        }
+      }
+      
+      // Check for staged files that no longer exist and mark them as deleted
+      for (const auto& stagedFile : staged_files)
+      {
+        // Check if this is a regular file (not already marked as deleted)
+        if (stagedFile.first.length() < 10 || stagedFile.first.substr(stagedFile.first.length() - 10) != " (deleted)")
+        {
+          if (!std::filesystem::exists(stagedFile.first))
+          {
+            // File was staged but no longer exists, mark it as deleted
+            std::string deletedPath = stagedFile.first + " (deleted)";
+            staged_files[deletedPath] = ""; // Empty hash for deleted files
+            staged_files.erase(stagedFile.first); // Remove the original entry
+          }
+        }
+      }
+      
+      // Then, check for deleted files that were previously tracked
+      std::unordered_set<std::string> trackedFiles;
+      std::string currentBranch = get_current_branch();
+      
+      // Read commit history to get all tracked files
+      std::ifstream history_file(".bittrack/commits/history");
+      if (history_file.is_open())
+      {
+        std::string line;
+        while (std::getline(history_file, line))
+        {
+          if (line.empty()) continue;
+          
+          std::istringstream iss(line);
+          std::string commitHash, branch;
+          if (iss >> commitHash >> branch && branch == currentBranch)
+          {
+            // Get files from this commit
+            std::string commitDir = ".bittrack/objects/" + commitHash;
+            if (std::filesystem::exists(commitDir))
+            {
+              for (const auto &entry : std::filesystem::recursive_directory_iterator(commitDir))
+              {
+                if (entry.is_regular_file())
+                {
+                  std::string filePath = entry.path().string();
+                  // Get relative path from commit directory
+                  std::string relativePath = std::filesystem::relative(filePath, commitDir).string();
+                  trackedFiles.insert(relativePath);
+                }
+              }
+            }
+          }
+        }
+        history_file.close();
+      }
+      
+      // Check for deleted files (tracked files that no longer exist)
+      for (const auto& trackedFile : trackedFiles)
+      {
+        if (!std::filesystem::exists(trackedFile))
+        {
+          // This is a deleted file, stage it
+          stage_single_file(trackedFile + " (deleted)");
         }
       }
     }
@@ -149,8 +263,27 @@ void unstage(const std::string &filePath)
       return;
     }
 
+    // Handle deleted files - check both with and without (deleted) suffix
+    std::string actualFilePath = filePath;
+    bool is_deleted_file = false;
+    if (filePath.length() > 10 && filePath.substr(filePath.length() - 10) == " (deleted)")
+    {
+      is_deleted_file = true;
+      actualFilePath = filePath.substr(0, filePath.length() - 10);
+    }
+    
     std::vector<std::string> stagedFiles = get_staged_files();
-    if (std::find(stagedFiles.begin(), stagedFiles.end(), filePath) == stagedFiles.end())
+    bool found = false;
+    for (const auto& stagedFile : stagedFiles)
+    {
+      if (stagedFile == filePath)
+      {
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found)
     {
       std::cout << "File is not staged: " << filePath << std::endl;
       return;
@@ -181,7 +314,14 @@ void unstage(const std::string &filePath)
       std::string staged_file_path, staged_file_hash;
       if (iss >> staged_file_path >> staged_file_hash)
       {
-        if (staged_file_path != filePath)
+        // Check if this is the file we want to unstage
+        bool should_remove = false;
+        if (staged_file_path == actualFilePath)
+        {
+          should_remove = true;
+        }
+        
+        if (!should_remove)
         {
           tempFile << line << std::endl;
         }
@@ -205,8 +345,6 @@ void unstage(const std::string &filePath)
     // Atomic rename
     std::filesystem::remove(".bittrack/index");
     std::filesystem::rename(temp_index_path, ".bittrack/index");
-
-    std::cout << "Unstaged: " << filePath << std::endl;
   }
   catch (const BitTrackError &e)
   {
@@ -240,10 +378,28 @@ std::vector<std::string> get_staged_files()
       if (line.empty())
         continue;
 
-      std::istringstream iss(line);
-      std::string fileName, fileHash;
-      if (iss >> fileName >> fileHash)
+      // Parse the line manually to handle deleted files correctly
+      // Find the last space to separate filename from hash
+      size_t last_space_pos = line.find_last_of(' ');
+      if (last_space_pos != std::string::npos)
       {
+        std::string fileName = line.substr(0, last_space_pos);
+        std::string fileHash = line.substr(last_space_pos + 1);
+        
+        // Trim whitespace from hash
+        fileHash.erase(0, fileHash.find_first_not_of(" \t"));
+        fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
+        
+        // If the hash is empty or just whitespace, it means this is a deleted file
+        if (fileHash.empty())
+        {
+          // The filename should already have (deleted) suffix, but let's make sure
+          if (fileName.length() < 10 || fileName.substr(fileName.length() - 10) != " (deleted)")
+          {
+            fileName += " (deleted)";
+          }
+        }
+        
         files.push_back(fileName);
       }
     }
@@ -265,19 +421,79 @@ std::vector<std::string> get_unstaged_files()
   {
     // First, get all files that are tracked in the current branch's history
     std::unordered_set<std::string> trackedFiles;
-    std::string currentCommit = get_current_commit();
-    if (!currentCommit.empty())
+    std::string currentBranch = get_current_branch();
+    
+    // Read commit history to get all tracked files
+    std::ifstream history_file(".bittrack/commits/history");
+    if (history_file.is_open())
     {
-      std::string commitDir = ".bittrack/objects/" + currentCommit;
+      std::string line;
+      while (std::getline(history_file, line))
+      {
+        if (line.empty()) continue;
+        
+        std::istringstream iss(line);
+        std::string commitHash, branch;
+        if (iss >> commitHash >> branch && branch == currentBranch)
+        {
+          // Get files from this commit
+          std::string commitDir = ".bittrack/objects/" + commitHash;
+          if (std::filesystem::exists(commitDir))
+          {
+            for (const auto &entry : std::filesystem::recursive_directory_iterator(commitDir))
+            {
+              if (entry.is_regular_file())
+              {
+                std::string filePath = entry.path().string();
+                // Get relative path from commit directory
+                std::string relativePath = std::filesystem::relative(filePath, commitDir).string();
+                trackedFiles.insert(relativePath);
+              }
+            }
+          }
+        }
+      }
+      history_file.close();
+    }
+
+    // Get currently staged files to exclude them from unstaged
+    std::vector<std::string> stagedFiles = get_staged_files();
+    std::set<std::string> stagedSet(stagedFiles.begin(), stagedFiles.end());
+
+    // Check for deleted files (tracked files that no longer exist in working directory)
+    // Get files from the current commit to see what files are currently tracked
+    std::unordered_set<std::string> currentCommitFiles;
+    std::string currentCommitHash = get_current_commit();
+    if (!currentCommitHash.empty())
+    {
+      std::string commitDir = ".bittrack/objects/" + currentCommitHash;
       if (std::filesystem::exists(commitDir))
       {
-        for (const auto &entry : std::filesystem::directory_iterator(commitDir))
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(commitDir))
         {
           if (entry.is_regular_file())
           {
-            std::string fileName = entry.path().filename().string();
-            trackedFiles.insert(fileName);
+            std::string filePath = entry.path().string();
+            std::string relativePath = std::filesystem::relative(filePath, commitDir).string();
+            currentCommitFiles.insert(relativePath);
           }
+        }
+      }
+    }
+    
+    for (const auto& trackedFile : trackedFiles)
+    {
+      if (!std::filesystem::exists(trackedFile))
+      {
+        // File was tracked but no longer exists - it's been deleted
+        // Only add to unstaged if it's not already staged and it's in the current commit
+        // (meaning it was deleted after the current commit)
+        std::string deletedFileName = trackedFile + " (deleted)";
+        if (stagedSet.find(trackedFile) == stagedSet.end() && 
+            stagedSet.find(deletedFileName) == stagedSet.end() &&
+            currentCommitFiles.find(trackedFile) != currentCommitFiles.end())
+        {
+          unstagedFiles.insert(deletedFileName);
         }
       }
     }
@@ -298,11 +514,41 @@ std::vector<std::string> get_unstaged_files()
         // Skip system files
         if (filePath.find(".bittrack") == std::string::npos && !should_ignore_file(filePath))
         {
-          // If no commits yet, consider all files as untracked
-          // If we have commits, consider files that are not in the current commit as unstaged
-          if (currentCommit.empty() || trackedFiles.find(filePath) == trackedFiles.end())
+          // Skip files that are already staged
+          if (stagedSet.find(filePath) != stagedSet.end())
+          {
+            continue;
+          }
+
+          // If no tracked files yet, consider all files as untracked
+          // If we have tracked files, consider files that are not tracked as unstaged
+          if (trackedFiles.empty() || trackedFiles.find(filePath) == trackedFiles.end())
           {
             unstagedFiles.insert(filePath);
+          }
+          else
+          {
+            // File is tracked, check if it has been modified
+            std::string currentCommit = get_current_commit();
+            if (!currentCommit.empty())
+            {
+              std::string commitDir = ".bittrack/objects/" + currentCommit;
+              if (std::filesystem::exists(commitDir))
+              {
+                std::string committedFilePath = commitDir + "/" + std::filesystem::path(filePath).filename().string();
+                if (std::filesystem::exists(committedFilePath))
+                {
+                  // Compare file hashes to detect changes
+                  std::string workingHash = hash_file(filePath);
+                  std::string committedHash = hash_file(committedFilePath);
+                  
+                  if (workingHash != committedHash)
+                  {
+                    unstagedFiles.insert(filePath);
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -357,28 +603,31 @@ std::vector<std::string> get_unstaged_files()
     }
 
     // Remove files that match the current commit (unchanged files)
+    std::string currentCommit = get_current_commit();
     if (!currentCommit.empty())
     {
       std::string commitDir = ".bittrack/objects/" + currentCommit;
       
       if (std::filesystem::exists(commitDir))
       {
-        for (const auto &entry : std::filesystem::directory_iterator(commitDir))
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(commitDir))
         {
           if (entry.is_regular_file())
           {
-            std::string fileName = entry.path().filename().string();
+            std::string filePath = entry.path().string();
+            // Get relative path from commit directory
+            std::string relativePath = std::filesystem::relative(filePath, commitDir).string();
             
             // Check if file exists in working directory
-            if (std::filesystem::exists(fileName))
+            if (std::filesystem::exists(relativePath))
             {
-              std::string currentHash = hash_file(fileName);
+              std::string currentHash = hash_file(relativePath);
               std::string committedHash = hash_file(entry.path().string());
               
               // Only remove from unstaged if the hashes match (file unchanged since commit)
               if (currentHash == committedHash)
               {
-                unstagedFiles.erase(fileName);
+                unstagedFiles.erase(relativePath);
               }
               // If hashes don't match, keep the file in unstaged (it's been modified since commit)
             }

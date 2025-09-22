@@ -8,10 +8,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <set>
 
 #include "commit.hpp"
 #include "branch.hpp"
 #include "stage.hpp"
+#include "utils.hpp"
 
 struct MergeResult
 {
@@ -39,7 +41,6 @@ MergeResult three_way_merge(const std::string& base, const std::string& ours, co
 bool has_conflicts();
 void show_conflicts();
 std::vector<std::string> get_conflicted_files();
-void resolve_file_conflict(const std::string& file_path);
 void abort_merge();
 void continue_merge();
 std::string find_merge_base(const std::string& commit1, const std::string& commit2);

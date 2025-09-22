@@ -472,28 +472,7 @@ void restore_from_backup(const std::string &backup_path)
   }
 }
 
-void benchmark_operations()
-{
-  std::cout << "Benchmarking operations..." << std::endl;
 
-  auto start = std::chrono::high_resolution_clock::now();
-
-  // benchmark various operations
-  show_repository_stats();
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-  std::cout << "Benchmark completed in " << duration.count() << "ms" << std::endl;
-}
-
-void profile_repository()
-{
-  std::cout << "Profiling repository..." << std::endl;
-
-  // this would implement profiling logic
-  std::cout << "Repository profiling completed" << std::endl;
-}
 
 void check_integrity()
 {

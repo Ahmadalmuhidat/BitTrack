@@ -13,6 +13,10 @@
 #include <set>
 
 #include "error.hpp"
+#include "utils.hpp"
+#include "stage.hpp"
+#include "commit.hpp"
+#include "remote.hpp"
 
 std::string get_current_branch();
 std::vector<std::string> get_branches_list();
@@ -24,9 +28,6 @@ void rename_branch(const std::string& old_name, const std::string& new_name);
 void show_branch_info(const std::string& branch_name);
 bool branch_exists(const std::string& branch_name);
 std::string get_branch_last_commit_hash(const std::string& branch_name);
-std::string get_current_commit();
-std::vector<std::string> get_staged_files();
-std::vector<std::string> get_unstaged_files();
 void insert_commit_record_to_history(const std::string& commit_hash, const std::string& branch_name);
 void merge_branch(const std::string& source_branch, const std::string& target_branch);
 void rebase_branch(const std::string& source_branch, const std::string& target_branch);

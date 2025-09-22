@@ -45,6 +45,5 @@ std::string get_commit_hash(const std::string& name);
 std::string get_tags_dir();
 std::string format_timestamp(std::time_t timestamp);
 bool tag_exists(const std::string& name);
-std::string get_current_commit();
 
 #endif

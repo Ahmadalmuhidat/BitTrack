@@ -1,5 +1,4 @@
 #include "../include/commit.hpp"
-#include <unistd.h>
 
 void insert_commit_record_to_history(const std::string &last_commit_hash, const std::string &new_branch_name)
 {
@@ -119,18 +118,136 @@ void commit_changes(const std::string &author, const std::string &message)
   std::string timestamp = std::to_string(std::time(nullptr));
   std::string commit_hash = generate_commit_hash(author, message, timestamp);
   std::string line;
+  
+  // Create commit directory
+  std::string commit_dir = ".bittrack/objects/" + commit_hash;
+  std::filesystem::create_directories(commit_dir);
 
+  // First, collect all files that will be deleted (from staging area)
+  std::set<std::string> deleted_files;
+  std::ifstream staging_file_for_deletions(".bittrack/index");
+  if (staging_file_for_deletions.is_open())
+  {
+    std::string line;
+    while (std::getline(staging_file_for_deletions, line))
+    {
+      if (line.empty()) continue;
+      
+      // Parse using the same logic as get_staged_files
+      size_t last_space_pos = line.find_last_of(' ');
+      if (last_space_pos != std::string::npos)
+      {
+        std::string filePath = line.substr(0, last_space_pos);
+        std::string fileHash = line.substr(last_space_pos + 1);
+        
+        // Trim whitespace from hash
+        fileHash.erase(0, fileHash.find_first_not_of(" \t"));
+        fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
+        
+        if (fileHash.empty())
+        {
+          // Remove the (deleted) suffix to get the original filename
+          std::string originalFilePath = filePath;
+          if (filePath.length() >= 10 && filePath.substr(filePath.length() - 10) == " (deleted)")
+          {
+            originalFilePath = filePath.substr(0, filePath.length() - 10);
+          }
+          deleted_files.insert(originalFilePath);
+        }
+      }
+    }
+    staging_file_for_deletions.close();
+  }
+
+  // Then, include all files from the previous commit (unchanged files)
+  std::string previous_commit = get_current_commit();
+  if (!previous_commit.empty())
+  {
+    std::string previous_commit_path = ".bittrack/objects/" + previous_commit;
+    if (std::filesystem::exists(previous_commit_path))
+    {
+      // Copy all files from previous commit to new commit, except deleted ones
+      for (const auto& entry : std::filesystem::recursive_directory_iterator(previous_commit_path))
+      {
+        if (entry.is_regular_file())
+        {
+          std::string file_path = entry.path().string();
+          std::string relative_path = std::filesystem::relative(file_path, previous_commit_path).string();
+          
+          // Skip files that are being deleted
+          if (deleted_files.find(relative_path) != deleted_files.end())
+          {
+            continue;
+          }
+          
+          // Copy file to new commit directory
+          std::string new_file_path = commit_dir + "/" + relative_path;
+          std::filesystem::create_directories(std::filesystem::path(new_file_path).parent_path());
+          std::filesystem::copy_file(file_path, new_file_path);
+          
+          // Calculate hash for the file
+          std::string file_hash = hash_file(new_file_path);
+          file_hashes[relative_path] = file_hash;
+        }
+      }
+    }
+  }
+
+  // Then, process staged files (new/modified/deleted files)
+  bool has_staged_files = false;
   while (std::getline(staging_file, line))
   {
-    // get each file and hash it
-    std::string filePath = line.substr(0, line.find(" "));
-    std::string fileHash = hash_file(filePath);
-
-    // store a copy of the modified file
-    store_snapshot(filePath, commit_hash);
-    file_hashes[filePath] = fileHash;
+    if (line.empty()) continue;
+    
+    has_staged_files = true; // We have at least one staged file
+    
+    // Parse filepath and hash from staging file using the same logic as get_staged_files
+    size_t last_space_pos = line.find_last_of(' ');
+    if (last_space_pos != std::string::npos)
+    {
+      std::string filePath = line.substr(0, last_space_pos);
+      std::string fileHash = line.substr(last_space_pos + 1);
+      
+      // Trim whitespace from hash
+      fileHash.erase(0, fileHash.find_first_not_of(" \t"));
+      fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
+      
+      // Check if this is a deleted file (empty hash means deleted)
+      if (fileHash.empty())
+      {
+        // For deleted files, remove the (deleted) suffix to get the original filename
+        std::string originalFilePath = filePath;
+        if (filePath.length() >= 10 && filePath.substr(filePath.length() - 10) == " (deleted)")
+        {
+          originalFilePath = filePath.substr(0, filePath.length() - 10);
+        }
+        
+        // Remove from file_hashes and don't store snapshot
+        file_hashes.erase(originalFilePath);
+        
+        // Also remove the file from the commit directory if it exists
+        std::string deleted_file_path = commit_dir + "/" + originalFilePath;
+        if (std::filesystem::exists(deleted_file_path))
+        {
+          std::filesystem::remove(deleted_file_path);
+        }
+      }
+      else
+      {
+        // For regular files, store a copy of the modified file
+        store_snapshot(filePath, commit_hash);
+        file_hashes[filePath] = fileHash;
+      }
+    }
   }
   staging_file.close();
+
+  // Check if we have any staged files to commit
+  if (!has_staged_files)
+  {
+    std::cerr << "No files to commit!" << std::endl;
+    return;
+  }
 
   // store the commit information in history
   create_commit_log(author, message, file_hashes, commit_hash);

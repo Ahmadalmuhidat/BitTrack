@@ -134,25 +134,6 @@ void unstage_files(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("unstage file")
 }
 
-void commit()
-{
-  try
-  {
-    std::cout << "message: ";
-    std::string message;
-    getline(std::cin, message);
-
-    VALIDATE_COMMIT_MESSAGE(message);
-
-    commit_changes("almuhidat", message);
-  }
-  catch (const BitTrackError &e)
-  {
-    ErrorHandler::printError(e);
-    throw;
-  }
-  HANDLE_EXCEPTION("commit")
-}
 
 void show_staged_files_hashes()
 {
@@ -172,10 +153,6 @@ void show_staged_files_hashes()
   }
 }
 
-void show_current_commit()
-{
-  std::cout << get_current_commit() << std::endl;
-}
 
 void show_commit_history()
 {
@@ -784,6 +761,7 @@ void print_help()
   std::cout << "  --remote -v                 print current remote URL\n";
   std::cout << "           -s <url>           set remote URL\n";
   std::cout << "  --push                      push current commit to remote\n";
+  std::cout << "  --pull                      pull changes from remote\n";
   std::cout << "  --help                      show this help menu\n";
 }
 
@@ -830,7 +808,22 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--commit")
       {
-        commit();
+        try
+        {
+          std::cout << "message: ";
+          std::string message;
+          getline(std::cin, message);
+
+          VALIDATE_COMMIT_MESSAGE(message);
+
+          commit_changes("almuhidat", message);
+        }
+        catch (const BitTrackError &e)
+        {
+          ErrorHandler::printError(e);
+          throw;
+        }
+        HANDLE_EXCEPTION("commit")
         break;
       }
       else if (arg == "--staged-files-hashes")
@@ -840,7 +833,7 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--current-commit")
       {
-        show_current_commit();
+        std::cout << get_current_commit() << std::endl;
         break;
       }
       else if (arg == "--log")
@@ -901,6 +894,11 @@ int main(int argc, const char *argv[])
       else if (arg == "--push")
       {
         push();
+        break;
+      }
+      else if (arg == "--pull")
+      {
+        pull();
         break;
       }
       else

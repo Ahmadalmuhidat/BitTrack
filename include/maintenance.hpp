@@ -50,8 +50,6 @@ void compact_repository();
 void backup_repository(const std::string& backup_path = "");
 void list_backups();
 void restore_from_backup(const std::string& backup_path);
-void benchmark_operations();
-void profile_repository();
 void check_integrity();
 RepoStats calculate_repository_stats();
 std::vector<std::string> get_unreachable_objects();

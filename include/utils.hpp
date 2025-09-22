@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "../include/utils.hpp"
+#include "utils.hpp"
 
 // Generic utility functions
 std::string get_file_content(const std::string& file_path);
