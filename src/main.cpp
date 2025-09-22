@@ -264,7 +264,12 @@ void branch_operations(int argc, const char *argv[], int &i)
     VALIDATE_BRANCH_NAME(source);
     VALIDATE_BRANCH_NAME(target);
 
-    merge_branch(source, target);
+    MergeResult result = merge_branches(source, target);
+    if (result.success) {
+      std::cout << "Merge completed successfully: " << result.message << std::endl;
+    } else {
+      std::cout << "Merge failed: " << result.message << std::endl;
+    }
   }
   else if (subFlag == "-rebase")
   {

@@ -334,12 +334,6 @@ void remove_tracked_files_from_working_directory()
   }
 }
 
-std::string format_timestamp(std::time_t timestamp)
-{
-  char buffer[100];
-  std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&timestamp));
-  return std::string(buffer);
-}
 
 std::string get_stash_dir()
 {

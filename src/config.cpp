@@ -78,56 +78,6 @@ void config_list(ConfigScope scope)
   }
 }
 
-void config_show_all()
-{
-  config_load();
-
-  std::cout << "All configuration:" << std::endl;
-
-  if (!global_config.empty())
-  {
-    std::cout << "Global:" << std::endl;
-    for (const auto &entry : global_config)
-    {
-      std::cout << "  " << entry.first << " = " << entry.second << std::endl;
-    }
-  }
-
-  if (!repository_config.empty())
-  {
-    std::cout << "Repository:" << std::endl;
-    for (const auto &entry : repository_config)
-    {
-      std::cout << "  " << entry.first << " = " << entry.second << std::endl;
-    }
-  }
-
-  if (global_config.empty() && repository_config.empty())
-  {
-    std::cout << "  (no configuration set)" << std::endl;
-  }
-}
-
-void config_set_user_name(const std::string &name)
-{
-  config_set("user.name", name, ConfigScope::GLOBAL);
-}
-
-void config_set_user_email(const std::string &email)
-{
-  config_set("user.email", email, ConfigScope::GLOBAL);
-}
-
-std::string config_get_user_name()
-{
-  return config_get("user.name", ConfigScope::GLOBAL);
-}
-
-std::string config_get_user_email()
-{
-  return config_get("user.email", ConfigScope::GLOBAL);
-}
-
 void config_load()
 {
   // load global config
@@ -177,12 +127,6 @@ void config_load()
     }
     file.close();
   }
-
-  // create default config if none exists
-  if (global_config.empty() && repository_config.empty())
-  {
-    create_default_config();
-  }
 }
 
 void config_save()
@@ -212,12 +156,6 @@ void config_save()
   repo_file.close();
 }
 
-std::map<std::string, std::string> get_config_map(ConfigScope scope)
-{
-  config_load();
-  return (scope == ConfigScope::GLOBAL) ? global_config : repository_config;
-}
-
 void set_config_value(const std::string &key, const std::string &value, ConfigScope scope)
 {
   if (scope == ConfigScope::GLOBAL)
@@ -228,11 +166,6 @@ void set_config_value(const std::string &key, const std::string &value, ConfigSc
   {
     repository_config[key] = value;
   }
-}
-
-std::string get_config_file_path(ConfigScope scope)
-{
-  return (scope == ConfigScope::GLOBAL) ? get_global_config_path() : get_repository_config_path();
 }
 
 std::string get_global_config_path()
@@ -250,15 +183,3 @@ std::string get_repository_config_path()
   return ".bittrack/config";
 }
 
-void create_default_config()
-{
-  // set default values
-  global_config["core.editor"] = "nano";
-  global_config["core.pager"] = "less";
-  global_config["init.defaultBranch"] = "main";
-  global_config["user.name"] = "";
-  global_config["user.email"] = "";
-  repository_config["core.repositoryFormatVersion"] = "0";
-  repository_config["core.filemode"] = "true";
-  repository_config["core.bare"] = "false";
-}

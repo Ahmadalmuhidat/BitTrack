@@ -57,24 +57,12 @@ DiffResult compare_file_to_content(const std::string& file, const std::string& c
 DiffResult diff_staged();
 DiffResult diff_unstaged();
 DiffResult diff_working_directory();
-DiffResult diff_commits(const std::string& commit1, const std::string& commit2);
-DiffResult diff_commit_to_working(const std::string& commit);
-DiffResult diff_branches(const std::string& branch1, const std::string& branch2);
 void show_diff(const DiffResult& result);
-void show_unified_diff(const DiffResult& result);
-void show_side_by_side_diff(const DiffResult& result);
-void show_compact_diff(const DiffResult& result);
 bool is_binary_file(const std::string& file_path);
 std::vector<std::string> read_file_lines(const std::string& file_path);
 std::vector<DiffHunk> compute_hunks(const std::vector<std::string>& old_lines, const std::vector<std::string>& new_lines);
 std::vector<DiffLine> compute_diff_lines(const std::vector<std::string>& old_lines, const std::vector<std::string>& new_lines);
 void print_diff_line(const DiffLine& line, const std::string& prefix = "");
 std::string get_diff_line_prefix(DiffLineType type);
-void show_file_history(const std::string& file_path);
-void show_file_blame(const std::string& file_path);
-void show_file_log(const std::string& file_path, int max_entries = 10);
-std::string get_staged_file_content(const std::string& file_path);
-std::vector<std::string> get_commits_containing_file(const std::string& file_path);
-std::string find_line_commit(const std::string& file_path, int line_number, const std::vector<std::string>& commits);
 
 #endif

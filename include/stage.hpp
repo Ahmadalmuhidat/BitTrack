@@ -23,7 +23,7 @@ std::vector<std::string> get_staged_files();
 std::vector<std::string> get_unstaged_files();
 bool is_staged(const std::string& file_path);
 std::string get_file_hash(const std::string& file_path);
-std::vector<std::string> read_bitignore(const std::string& ignore_file_path);
 std::string get_staged_file_content(const std::string& file_path);
+bool is_file_ignored_by_patterns(const std::string& file_path, const std::vector<std::string>& patterns);
 
 #endif

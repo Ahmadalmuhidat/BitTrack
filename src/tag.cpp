@@ -91,21 +91,6 @@ void tag_details(const std::string &name)
   }
 }
 
-void tag_checkout(const std::string &name)
-{
-  Tag tag = get_tag(name);
-  if (tag.name.empty())
-  {
-    std::cout << "Error: Tag '" << name << "' not found" << std::endl;
-    return;
-  }
-
-  // lSwitch to the tagged commit
-  std::cout << "Checking out tag: " << name << " -> " << tag.commit_hash << std::endl;
-  // lNote: This would need integration with the checkout system
-  std::cout << "Tag checkout not fully implemented yet" << std::endl;
-}
-
 std::vector<Tag> get_all_tags()
 {
   std::vector<Tag> tags;
@@ -145,7 +130,7 @@ Tag get_tag(const std::string &name)
   std::ifstream file(tag_file);
   std::string line;
 
-  // lRead tag header
+  // Read tag header
   if (std::getline(file, line))
   {
     if (line.find("object ") == 0)
@@ -179,7 +164,7 @@ Tag get_tag(const std::string &name)
     }
   }
 
-  // lRead message
+  // Read message
   std::stringstream message_stream;
   bool in_message = false;
   while (std::getline(file, line))
@@ -195,7 +180,7 @@ Tag get_tag(const std::string &name)
   }
   tag.message = message_stream.str();
 
-  // lFor lightweight tags, just read the commit hash
+  // For lightweight tags, just read the commit hash
   if (tag.type == TagType::LIGHTWEIGHT)
   {
     std::ifstream light_file(tag_file);
@@ -225,7 +210,7 @@ void save_tag(const Tag &tag)
   }
   else
   {
-    // lLightweight tag - just store the commit hash
+    // Lightweight tag - just store the commit hash
     file << tag.commit_hash << std::endl;
   }
 
@@ -246,12 +231,6 @@ std::string get_tag_file_path(const std::string &name)
   return get_tags_dir() + "/" + name;
 }
 
-std::string get_commit_hash(const std::string &name)
-{
-  Tag tag = get_tag(name);
-  return tag.commit_hash;
-}
-
 std::string get_tags_dir()
 {
   return ".bittrack/refs/tags";
@@ -261,3 +240,11 @@ bool tag_exists(const std::string &name)
 {
   return std::filesystem::exists(get_tag_file_path(name));
 }
+
+std::string format_timestamp(std::time_t timestamp)
+{
+  char buffer[100];
+  std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&timestamp));
+  return std::string(buffer);
+}
+

@@ -291,131 +291,6 @@ std::string get_current_commit()
   return commit_hash;
 }
 
-void show_commit_details(const std::string& commit_hash)
-{
-  std::string commit_path = ".bittrack/objects/" + commit_hash;
-
-  if (!std::filesystem::exists(commit_path))
-  {
-    std::cout << "Commit not found: " << commit_hash << std::endl;
-    return;
-  }
-
-  std::ifstream commit_file(commit_path);
-  if (!commit_file.is_open())
-  {
-    std::cout << "Error reading commit file." << std::endl;
-    return;
-  }
-
-  std::string line;
-  while (std::getline(commit_file, line))
-  {
-    std::cout << line << std::endl;
-  }
-  commit_file.close();
-}
-
-std::vector<std::string> get_commit_files(const std::string& commit_hash)
-{
-  std::vector<std::string> files;
-  std::string commit_path = ".bittrack/objects/" + commit_hash;
-
-  if (!std::filesystem::exists(commit_path))
-  {
-    return files;
-  }
-
-  for (const auto& entry : std::filesystem::directory_iterator(commit_path))
-  {
-    if (entry.is_regular_file())
-    {
-      files.push_back(entry.path().filename().string());
-    }
-  }
-  return files;
-}
-
-std::string get_commit_message(const std::string& commit_hash)
-{
-  std::string commit_path = ".bittrack/objects/" + commit_hash;
-  
-  if (!std::filesystem::exists(commit_path))
-  {
-    return "";
-  }
-  
-  std::ifstream commit_file(commit_path);
-  if (!commit_file.is_open())
-  {
-    return "";
-  }
-  
-  std::string line;
-  while (std::getline(commit_file, line))
-  {
-    if (line.find("Message: ") == 0)
-    {
-      return line.substr(9); // Remove "Message: " prefix
-    }
-  }
-  
-  return "";
-}
-
-std::string get_commit_author(const std::string& commit_hash)
-{
-  std::string commit_path = ".bittrack/objects/" + commit_hash;
-  
-  if (!std::filesystem::exists(commit_path))
-  {
-    return "";
-  }
-  
-  std::ifstream commit_file(commit_path);
-  if (!commit_file.is_open())
-  {
-    return "";
-  }
-  
-  std::string line;
-  while (std::getline(commit_file, line))
-  {
-    if (line.find("Author: ") == 0)
-    {
-      return line.substr(8); // Remove "Author: " prefix
-    }
-  }
-  
-  return "";
-}
-
-std::string get_commit_timestamp(const std::string& commit_hash)
-{
-  std::string commit_path = ".bittrack/objects/" + commit_hash;
-  
-  if (!std::filesystem::exists(commit_path))
-  {
-    return "";
-  }
-  
-  std::ifstream commit_file(commit_path);
-  if (!commit_file.is_open())
-  {
-    return "";
-  }
-  
-  std::string line;
-  while (std::getline(commit_file, line))
-  {
-    if (line.find("Timestamp: ") == 0)
-    {
-      return line.substr(11); // Remove "Timestamp: " prefix
-    }
-  }
-  
-  return "";
-}
 
 std::string get_staged_file_content(const std::string &file_path)
 {
@@ -432,6 +307,8 @@ std::string get_staged_file_content(const std::string &file_path)
   }
   return content;
 }
+
+
 
 std::string get_current_timestamp()
 {
@@ -471,51 +348,23 @@ std::string get_current_user()
   return "unknown";
 }
 
-std::string get_commit_info(const std::string& commit_hash)
+std::vector<std::string> get_commit_files(const std::string& commit_hash)
 {
-  // Find commit in any branch
-  std::string objects_dir = ".bittrack/objects";
-  if (!std::filesystem::exists(objects_dir))
+  std::vector<std::string> files;
+  std::string commit_path = ".bittrack/objects/" + commit_hash;
+
+  if (!std::filesystem::exists(commit_path))
   {
-    return "";
+    return files;
   }
-  
-  for (const auto& branch_entry : std::filesystem::directory_iterator(objects_dir))
+
+  for (const auto& entry : std::filesystem::directory_iterator(commit_path))
   {
-    if (branch_entry.is_directory())
+    if (entry.is_regular_file())
     {
-      std::string commit_dir = branch_entry.path().string() + "/" + commit_hash;
-      if (std::filesystem::exists(commit_dir))
-      {
-        std::string commit_file = commit_dir + "/commit.txt";
-        if (std::filesystem::exists(commit_file))
-        {
-          std::ifstream file(commit_file);
-          std::string line;
-          std::string message, author, timestamp;
-          
-          while (std::getline(file, line))
-          {
-            if (line.find("message ") == 0)
-            {
-              message = line.substr(8);
-            }
-            else if (line.find("author ") == 0)
-            {
-              author = line.substr(7);
-            }
-            else if (line.find("timestamp ") == 0)
-            {
-              timestamp = line.substr(10);
-            }
-          }
-          file.close();
-          
-          return commit_hash.substr(0, 8) + " " + author + " " + timestamp + " " + message;
-        }
-      }
+      files.push_back(entry.path().filename().string());
     }
   }
-  
-  return "";
+  return files;
 }
+

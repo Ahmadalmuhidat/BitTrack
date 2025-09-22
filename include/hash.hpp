@@ -21,6 +21,5 @@ std::string calculate_file_hash(const std::string& file_path);
 std::string generate_file_hash(const std::string& content);
 std::string sha256_hash(const std::string& input);
 std::string hash_file(const std::string& file_path);
-std::vector<std::string> read_bitignore(const std::string& ignore_file_path);
 
 #endif
