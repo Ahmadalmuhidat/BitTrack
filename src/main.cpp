@@ -56,13 +56,13 @@ void init()
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create remote file", ErrorSeverity::FATAL, "init");
     }
 
-    // Initialize main branch ref file (empty - no commits yet)
+    // initialize main branch ref file (empty - no commits yet)
     if (!ErrorHandler::safeWriteFile(".bittrack/refs/heads/main", ""))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create main branch ref", ErrorSeverity::FATAL, "init");
     }
     
-    // Set HEAD to point to main branch
+    // set HEAD to point to main branch
     if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "main"))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to main", ErrorSeverity::FATAL, "init");
@@ -86,8 +86,7 @@ void status()
     std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
   }
 
-  std::cout << "\n"
-            << std::endl;
+  std::cout << "\n" << std::endl;
 
   std::cout << "unstaged files:" << std::endl;
   for (std::string fileName : get_unstaged_files())
@@ -718,6 +717,7 @@ void print_help()
   std::cout << "  --stage <file>              stage a file for commit\n";
   std::cout << "  --unstage <file>            unstage a file\n";
   std::cout << "  --commit                    commit staged files with a message\n";
+  std::cout << "           -m <message>        commit with message (no prompt)\n";
   std::cout << "  --log                       show commit history\n";
   std::cout << "  --current-commit            show the current commit ID\n";
   std::cout << "  --staged-files-hashes       show hashes of staged files\n";
@@ -812,9 +812,28 @@ int main(int argc, const char *argv[])
       {
         try
         {
-          std::cout << "message: ";
           std::string message;
-          getline(std::cin, message);
+          
+          // Check if next argument is -m flag
+          if (i + 1 < argc && std::string(argv[i + 1]) == "-m")
+          {
+            // Check if message is provided after -m
+            if (i + 2 < argc)
+            {
+              message = argv[i + 2];
+              i += 2; // Skip -m and message arguments
+            }
+            else
+            {
+              throw BitTrackError(ErrorCode::MISSING_ARGUMENTS, "Commit message required after -m flag", ErrorSeverity::ERROR, "--commit");
+            }
+          }
+          else
+          {
+            // Prompt for message if -m flag not provided
+            std::cout << "message: ";
+            getline(std::cin, message);
+          }
 
           VALIDATE_COMMIT_MESSAGE(message);
 

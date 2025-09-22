@@ -214,6 +214,33 @@ bool is_file_ignored_by_ignore_patterns(const std::string &filePath, const std::
   return ignored;
 }
 
+bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector<std::string> &patterns)
+{
+  try
+  {
+    if (file_path.empty())
+    {
+      return false;
+    }
+
+    std::vector<IgnorePattern> ignorePatterns;
+    for (const auto &pattern : patterns)
+    {
+      if (!pattern.empty())
+      {
+        ignorePatterns.emplace_back(pattern);
+      }
+    }
+
+    return ::is_file_ignored_by_ignore_patterns(file_path, ignorePatterns);
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << "Error checking if file is ignored: " << e.what() << std::endl;
+    return false;
+  }
+}
+
 bool should_ignore_file(const std::string &file_path)
 {
   // check for .bitignore file in current directory and parent directories

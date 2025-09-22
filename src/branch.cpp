@@ -42,7 +42,6 @@ std::vector<std::string> get_branches_list()
   return branchesList;
 }
 
-
 void copy_current_commit_object_to_branch(std::string new_branch_name)
 {
   std::string current_branch = get_current_branch();
@@ -86,7 +85,6 @@ void add_branch_implementaion(std::string name)
     std::cout << name << " is already there" << std::endl;
   }
 }
-
 
 bool attempt_automatic_merge(const std::filesystem::path &first_file, const std::filesystem::path &second_file, const std::string &target_path)
 {
@@ -430,9 +428,6 @@ void rename_branch(const std::string &old_name, const std::string &new_name)
   std::cout << "Renamed branch '" << old_name << "' to '" << new_name << "'" << std::endl;
 }
 
-
-
-
 void show_branch_info(const std::string &branch_name)
 {
   std::vector<std::string> branches = get_branches_list();
@@ -467,7 +462,6 @@ void show_branch_info(const std::string &branch_name)
 
   std::cout << "  Commits: " << commit_count << std::endl;
 }
-
 
 void add_branch(const std::string &branch_name)
 {
@@ -591,7 +585,6 @@ std::string get_branch_last_commit_hash(const std::string &branch_name)
   return "";
 }
 
-
 void rebase_branch(const std::string& source_branch, const std::string& target_branch)
 {
   try
@@ -679,4 +672,3 @@ void show_branch_history(const std::string& branch_name)
     std::cout << "Error reading branch history: " << e.what() << std::endl;
   }
 }
-

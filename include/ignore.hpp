@@ -63,5 +63,6 @@ void create_default_bitignore();
 void add_ignore_pattern(const std::string& pattern);
 void remove_ignore_pattern(const std::string& pattern);
 void list_ignore_patterns();
+bool is_file_ignored_by_patterns(const std::string& file_path, const std::vector<std::string>& patterns);
 
 #endif

@@ -914,9 +914,9 @@ bool push_to_github_api(const std::string& token, const std::string& username, c
       
       for (const auto& file_path : committed_files) {
         // Check if this is a deleted file
-        if (file_path.length() > 10 && file_path.substr(file_path.length() - 10) == " (deleted)") {
+        if (is_deleted(file_path)) {
           // Handle deleted file
-          std::string actual_path = file_path.substr(0, file_path.length() - 10);
+          std::string actual_path = get_actual_path(file_path);
           if (delete_github_file(token, username, repo_name, actual_path, commit_message)) {
             std::cout << "    Deleted file: " << actual_path << std::endl;
           } else {
@@ -951,7 +951,7 @@ bool push_to_github_api(const std::string& token, const std::string& username, c
         // Check if all files are deleted
         bool all_deleted = true;
         for (const auto& file_path : committed_files) {
-          if (file_path.length() <= 10 || file_path.substr(file_path.length() - 10) != " (deleted)") {
+          if (!is_deleted(file_path)) {
             all_deleted = false;
             break;
           }

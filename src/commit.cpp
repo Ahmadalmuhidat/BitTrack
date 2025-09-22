@@ -118,12 +118,12 @@ void commit_changes(const std::string &author, const std::string &message)
   std::string timestamp = std::to_string(std::time(nullptr));
   std::string commit_hash = generate_commit_hash(author, message, timestamp);
   std::string line;
-  
-  // Create commit directory
+
+  // create commit directory
   std::string commit_dir = ".bittrack/objects/" + commit_hash;
   std::filesystem::create_directories(commit_dir);
 
-  // First, collect all files that will be deleted (from staging area)
+  // collect all files that will be deleted (from staging area)
   std::set<std::string> deleted_files;
   std::ifstream staging_file_for_deletions(".bittrack/index");
   if (staging_file_for_deletions.is_open())
@@ -131,27 +131,26 @@ void commit_changes(const std::string &author, const std::string &message)
     std::string line;
     while (std::getline(staging_file_for_deletions, line))
     {
-      if (line.empty()) continue;
-      
-      // Parse using the same logic as get_staged_files
+      if (line.empty())
+      {
+        continue;
+      }
+
+      // parse using the same logic as get_staged_files
       size_t last_space_pos = line.find_last_of(' ');
       if (last_space_pos != std::string::npos)
       {
         std::string filePath = line.substr(0, last_space_pos);
         std::string fileHash = line.substr(last_space_pos + 1);
-        
-        // Trim whitespace from hash
+
+        // trim whitespace from hash
         fileHash.erase(0, fileHash.find_first_not_of(" \t"));
         fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
         
         if (fileHash.empty())
         {
-          // Remove the (deleted) suffix to get the original filename
-          std::string originalFilePath = filePath;
-          if (filePath.length() >= 10 && filePath.substr(filePath.length() - 10) == " (deleted)")
-          {
-            originalFilePath = filePath.substr(0, filePath.length() - 10);
-          }
+          // remove the (deleted) suffix to get the original filename
+          std::string originalFilePath = get_actual_path(filePath);
           deleted_files.insert(originalFilePath);
         }
       }
@@ -159,14 +158,14 @@ void commit_changes(const std::string &author, const std::string &message)
     staging_file_for_deletions.close();
   }
 
-  // Then, include all files from the previous commit (unchanged files)
+  // include all files from the previous commit (unchanged files)
   std::string previous_commit = get_current_commit();
   if (!previous_commit.empty())
   {
     std::string previous_commit_path = ".bittrack/objects/" + previous_commit;
     if (std::filesystem::exists(previous_commit_path))
     {
-      // Copy all files from previous commit to new commit, except deleted ones
+      // copy all files from previous commit to new commit
       for (const auto& entry : std::filesystem::recursive_directory_iterator(previous_commit_path))
       {
         if (entry.is_regular_file())
@@ -174,18 +173,18 @@ void commit_changes(const std::string &author, const std::string &message)
           std::string file_path = entry.path().string();
           std::string relative_path = std::filesystem::relative(file_path, previous_commit_path).string();
           
-          // Skip files that are being deleted
+          // skip files that are being deleted
           if (deleted_files.find(relative_path) != deleted_files.end())
           {
             continue;
           }
           
-          // Copy file to new commit directory
+          // copy file to new commit directory
           std::string new_file_path = commit_dir + "/" + relative_path;
           std::filesystem::create_directories(std::filesystem::path(new_file_path).parent_path());
           std::filesystem::copy_file(file_path, new_file_path);
-          
-          // Calculate hash for the file
+
+          // calculate hash for the file
           std::string file_hash = hash_file(new_file_path);
           file_hashes[relative_path] = file_hash;
         }
@@ -193,39 +192,35 @@ void commit_changes(const std::string &author, const std::string &message)
     }
   }
 
-  // Then, process staged files (new/modified/deleted files)
+  // process staged files (new/modified/deleted files)
   bool has_staged_files = false;
   while (std::getline(staging_file, line))
   {
     if (line.empty()) continue;
     
-    has_staged_files = true; // We have at least one staged file
+    has_staged_files = true; // we have at least one staged file
     
-    // Parse filepath and hash from staging file using the same logic as get_staged_files
+    // parse filepath and hash from staging file using the same logic as get_staged_files
     size_t last_space_pos = line.find_last_of(' ');
     if (last_space_pos != std::string::npos)
     {
       std::string filePath = line.substr(0, last_space_pos);
       std::string fileHash = line.substr(last_space_pos + 1);
-      
-      // Trim whitespace from hash
+
+      // trim whitespace from hash
       fileHash.erase(0, fileHash.find_first_not_of(" \t"));
       fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
       
-      // Check if this is a deleted file (empty hash means deleted)
+      // check if this is a deleted file (empty hash means deleted)
       if (fileHash.empty())
       {
-        // For deleted files, remove the (deleted) suffix to get the original filename
-        std::string originalFilePath = filePath;
-        if (filePath.length() >= 10 && filePath.substr(filePath.length() - 10) == " (deleted)")
-        {
-          originalFilePath = filePath.substr(0, filePath.length() - 10);
-        }
+        // for deleted files, remove the (deleted) suffix to get the original filename
+        std::string originalFilePath = get_actual_path(filePath);
         
-        // Remove from file_hashes and don't store snapshot
+        // remove from file_hashes and don't store snapshot
         file_hashes.erase(originalFilePath);
         
-        // Also remove the file from the commit directory if it exists
+        // also remove the file from the commit directory if it exists
         std::string deleted_file_path = commit_dir + "/" + originalFilePath;
         if (std::filesystem::exists(deleted_file_path))
         {
@@ -234,7 +229,7 @@ void commit_changes(const std::string &author, const std::string &message)
       }
       else
       {
-        // For regular files, store a copy of the modified file
+        // for regular files, store a copy of the modified file
         store_snapshot(filePath, commit_hash);
         file_hashes[filePath] = fileHash;
       }
@@ -242,7 +237,7 @@ void commit_changes(const std::string &author, const std::string &message)
   }
   staging_file.close();
 
-  // Check if we have any staged files to commit
+  // check if we have any staged files to commit
   if (!has_staged_files)
   {
     std::cerr << "No files to commit!" << std::endl;
@@ -264,7 +259,6 @@ void commit_changes(const std::string &author, const std::string &message)
   std::ofstream clear_staging_file(".bittrack/index", std::ios::trunc);
   clear_staging_file.close();
 }
-
 
 std::string generate_commit_hash(const std::string &author, const std::string &message, const std::string &timestamp)
 {
@@ -291,7 +285,6 @@ std::string get_current_commit()
   return commit_hash;
 }
 
-
 std::string get_staged_file_content(const std::string &file_path)
 {
   std::ifstream file(file_path);
@@ -308,8 +301,6 @@ std::string get_staged_file_content(const std::string &file_path)
   return content;
 }
 
-
-
 std::string get_current_timestamp()
 {
   auto now = std::chrono::system_clock::now();
@@ -325,7 +316,7 @@ std::string get_current_timestamp()
 
 std::string get_current_user()
 {
-  // Try to get user from environment variables
+  // try to get user from environment variables
   const char* user = std::getenv("USER");
   if (user != nullptr)
   {
@@ -338,7 +329,7 @@ std::string get_current_user()
     return std::string(user);
   }
   
-  // Fallback to system call
+  // fallback to system call
   char buffer[256];
   if (getlogin_r(buffer, sizeof(buffer)) == 0)
   {
@@ -367,4 +358,3 @@ std::vector<std::string> get_commit_files(const std::string& commit_hash)
   }
   return files;
 }
-
