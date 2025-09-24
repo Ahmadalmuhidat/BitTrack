@@ -102,6 +102,16 @@ void push()
     return;
   }
 
+  // Check if local repository is behind remote before pushing
+  if (is_local_behind_remote())
+  {
+    std::cerr << "Error: Local repository is behind the remote repository.\n";
+    std::cerr << "Someone else has pushed changes since your last push.\n";
+    std::cerr << "Please pull the latest changes before pushing.\n";
+    std::cerr << "Use 'bittrack --pull' to sync with remote.\n";
+    return;
+  }
+
   // Check if this is a GitHub repository and handle it specially
   if (is_github_remote(remote_url))
   {
@@ -2077,7 +2087,6 @@ bool delete_github_file(const std::string &token, const std::string &username, c
     return false;
   }
 
-  // Check if the response contains a commit SHA (success)
   return validate_github_operation_success(response_data);
 }
 
@@ -2143,4 +2152,66 @@ bool create_github_file(const std::string &token, const std::string &username, c
     std::cerr << "Failed to create file " << filename << " - GitHub API error" << std::endl;
   }
   return success;
+}
+
+bool is_local_behind_remote()
+{
+  std::string remote_url = get_remote_origin();
+  if (remote_url.empty())
+  {
+    std::cerr << "Error: No remote origin set. Use set_remote_origin(url) first.\n";
+    return false;
+  }
+
+  if (is_github_remote(remote_url))
+  {
+    std::string token = config_get("github.token", ConfigScope::REPOSITORY);
+    if (token.empty())
+    {
+      token = config_get("github.token", ConfigScope::GLOBAL);
+    }
+    if (token.empty())
+    {
+      std::cerr << "Error: GitHub token not configured. Use 'bittrack --config github.token <token>'" << std::endl;
+      return false;
+    }
+
+    std::string username, repo_name;
+    if (extract_github_info_from_url(remote_url, username, repo_name).empty())
+    {
+      std::cerr << "Error: Could not parse GitHub repository URL" << std::endl;
+      return false;
+    }
+
+    std::string remote_commit = get_github_ref(token, username, repo_name, "heads/main");
+    if (remote_commit.empty())
+    {
+      return false;
+    }
+
+    std::string last_pushed = get_last_pushed_commit();
+    if (last_pushed.empty())
+    {
+      return false;
+    }
+
+    if (last_pushed != remote_commit)
+    {
+      std::vector<std::string> unpushed_commits = get_unpushed_commits();
+      if (!unpushed_commits.empty())
+      {
+        std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
+        return true;
+      }
+      else
+      {
+        std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return false;
 }

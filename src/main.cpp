@@ -684,10 +684,6 @@ void maintenance_operations(int argc, const char *argv[], int &i)
       {
         analyze_repository();
       }
-      else if (subFlag == "clean")
-      {
-        clean_untracked_files();
-      }
       else if (subFlag == "prune")
       {
         prune_objects();
@@ -765,7 +761,6 @@ void print_help()
   std::cout << "           stats              show repository statistics\n";
   std::cout << "           optimize           optimize repository\n";
   std::cout << "           analyze            analyze repository structure\n";
-  std::cout << "           clean              clean untracked files\n";
   std::cout << "           prune              prune unreachable objects\n";
   std::cout << "  --remote -v                 print current remote URL\n";
   std::cout << "           -s <url>           set remote URL\n";

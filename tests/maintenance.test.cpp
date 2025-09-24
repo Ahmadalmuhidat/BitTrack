@@ -63,11 +63,6 @@ bool test_maintenance_find_duplicates()
   return true;
 }
 
-bool test_maintenance_clean_untracked()
-{
-
-  return true;
-}
 
 bool test_maintenance_clean_ignored()
 {

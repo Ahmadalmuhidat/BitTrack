@@ -43,7 +43,6 @@ void analyze_repository();
 void find_large_files(size_t threshold = 1024 * 1024); // 1MB default
 void find_duplicate_files();
 void optimize_repository();
-void clean_untracked_files();
 void clean_ignored_files();
 void remove_empty_directories();
 void compact_repository();

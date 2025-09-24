@@ -817,14 +817,6 @@ BitTrack provides comprehensive maintenance tools for repository optimization.
 - Provides recommendations
 - Detailed repository insights
 
-### Clean Untracked Files
-```bash
-./build/bittrack --maintenance clean
-```
-- Removes untracked files
-- Cleans working directory
-- Preserves tracked files
-- **Warning**: Irreversible operation
 
 ### Prune Objects
 ```bash
@@ -1289,7 +1281,6 @@ cat .bittrack/commits/history
 | `--maintenance stats` | Show statistics |
 | `--maintenance optimize` | Optimize repository |
 | `--maintenance analyze` | Analyze repository |
-| `--maintenance clean` | Clean untracked files |
 | `--maintenance prune` | Prune objects |
 | `--maintenance find-large-files` | Find large files |
 | `--maintenance find-duplicates` | Find duplicate files |

@@ -42,6 +42,7 @@ bool validate_github_operation_success(const std::string& response_data);
 std::string base64_encode(const std::string& input);
 std::string get_last_pushed_commit();
 std::vector<std::string> get_unpushed_commits();
+bool is_local_behind_remote();
 void set_last_pushed_commit(const std::string& commit);
 void set_github_commit_mapping(const std::string& bittrack_commit, const std::string& github_commit);
 std::string get_github_commit_for_bittrack(const std::string& bittrack_commit);

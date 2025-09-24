@@ -48,7 +48,6 @@ extern bool test_maintenance_show_info();
 extern bool test_maintenance_analyze();
 extern bool test_maintenance_find_large_files();
 extern bool test_maintenance_find_duplicates();
-extern bool test_maintenance_clean_untracked();
 extern bool test_maintenance_clean_ignored();
 extern bool test_maintenance_remove_empty_dirs();
 extern bool test_maintenance_compact();
@@ -312,10 +311,6 @@ TEST(t69_maintenance, find_duplicates_test)
   EXPECT_TRUE(test_maintenance_find_duplicates());
 }
 
-TEST(t70_maintenance, clean_untracked_test)
-{
-  EXPECT_TRUE(test_maintenance_clean_untracked());
-}
 
 TEST(t71_maintenance, clean_ignored_test)
 {

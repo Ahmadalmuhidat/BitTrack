@@ -250,56 +250,6 @@ void optimize_repository()
   std::cout << "Repository optimization completed" << std::endl;
 }
 
-void clean_untracked_files()
-{
-  std::cout << "Cleaning untracked files..." << std::endl;
-
-  std::vector<std::string> tracked_files = get_staged_files();
-  std::set<std::string> tracked_set(tracked_files.begin(), tracked_files.end());
-
-  size_t removed_count = 0;
-  size_t freed_space = 0;
-  std::vector<std::filesystem::path> files_to_remove;
-
-  // collect files to remove first
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
-  {
-    if (entry.is_regular_file())
-    {
-      std::string file_path = entry.path().string();
-
-      // skip .bittrack directory and tracked files
-      if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
-      {
-        continue;
-      }
-
-      // check if file is ignored using Git-like ignore system
-      if (should_ignore_file(file_path))
-      {
-        continue;
-      }
-
-      files_to_remove.push_back(entry.path());
-    }
-  }
-
-  // remove files
-  for (const auto &file_path : files_to_remove)
-  {
-    if (std::filesystem::exists(file_path))
-    {
-      size_t file_size = std::filesystem::file_size(file_path);
-      std::filesystem::remove(file_path);
-      removed_count++;
-      freed_space += file_size;
-      std::cout << "  Removed: " << file_path.string() << std::endl;
-    }
-  }
-
-  std::cout << "Removed " << removed_count << " untracked files" << std::endl;
-  std::cout << "Freed " << format_size(freed_space) << " of space" << std::endl;
-}
 
 void clean_ignored_files()
 {
