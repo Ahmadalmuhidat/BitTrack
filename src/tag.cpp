@@ -247,4 +247,3 @@ std::string format_timestamp(std::time_t timestamp)
   std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&timestamp));
   return std::string(buffer);
 }
-

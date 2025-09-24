@@ -39,12 +39,10 @@ std::string IgnorePattern::convert_git_pattern_to_regex(const std::string &git_p
     case '$':
     case '|':
     case '\\':
-
       regex_pattern += '\\';
       regex_pattern += c;
       break;
-    case '/':
-      // / is literal in Git patterns
+    case '/': // / is literal in Git patterns
       regex_pattern += '/';
       break;
     default:
@@ -75,7 +73,6 @@ std::string IgnorePattern::convert_git_pattern_to_regex(const std::string &git_p
 
   return regex_pattern;
 }
-
 
 std::string normalize_path(const std::string &path)
 {
@@ -300,7 +297,7 @@ void create_default_bitignore()
   }
 }
 
-void add_ignore_pattern(const std::string& pattern)
+void add_ignore_pattern(const std::string &pattern)
 {
   std::ofstream bitignore_file(".bitignore", std::ios::app);
   if (bitignore_file.is_open())
@@ -315,17 +312,17 @@ void add_ignore_pattern(const std::string& pattern)
   }
 }
 
-void remove_ignore_pattern(const std::string& pattern)
+void remove_ignore_pattern(const std::string &pattern)
 {
   std::vector<std::string> patterns;
   std::ifstream bitignore_file(".bitignore");
-  
+
   if (!bitignore_file.is_open())
   {
     std::cout << "Error: Could not open .bitignore file." << std::endl;
     return;
   }
-  
+
   std::string line;
   while (std::getline(bitignore_file, line))
   {
@@ -335,11 +332,11 @@ void remove_ignore_pattern(const std::string& pattern)
     }
   }
   bitignore_file.close();
-  
+
   std::ofstream out_file(".bitignore");
   if (out_file.is_open())
   {
-    for (const auto& p : patterns)
+    for (const auto &p : patterns)
     {
       out_file << p << "\n";
     }
@@ -356,7 +353,7 @@ void list_ignore_patterns()
     std::cout << "No .bitignore file found." << std::endl;
     return;
   }
-  
+
   std::cout << "Current ignore patterns:" << std::endl;
   std::string line;
   int line_num = 1;

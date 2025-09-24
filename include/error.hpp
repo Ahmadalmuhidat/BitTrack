@@ -106,16 +106,17 @@ public:
   static void handleFilesystemError(const std::filesystem::filesystem_error& e, const std::string& context);
 };
 
-// macro for exception handling
 #define HANDLE_EXCEPTION(context) \
-  catch (const std::filesystem::filesystem_error& e) { \
-  ErrorHandler::handleFilesystemError(e, context); \
-  throw; \
-  } catch (const std::exception& e) { \
-  throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error in " + std::string(context) + ": " + e.what(), ErrorSeverity::ERROR, context); \
+  catch (const std::filesystem::filesystem_error& e) \
+  { \
+    ErrorHandler::handleFilesystemError(e, context); \
+    throw; \
+  } \
+  catch (const std::exception& e) \
+  { \
+    throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error in " + std::string(context) + ": " + e.what(), ErrorSeverity::ERROR, context); \
   }
 
-// validation macros
 #define VALIDATE_ARGS(argc, required, command) ErrorHandler::validateArguments(argc, required, command)
 #define VALIDATE_FILE_PATH(path) ErrorHandler::validateFilePath(path)
 #define VALIDATE_BRANCH_NAME(name) ErrorHandler::validateBranchName(name)

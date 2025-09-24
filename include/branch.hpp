@@ -32,5 +32,10 @@ void insert_commit_record_to_history(const std::string& commit_hash, const std::
 void rebase_branch(const std::string& source_branch, const std::string& target_branch);
 void show_branch_history(const std::string& branch_name);
 bool has_uncommitted_changes();
+std::vector<std::string> get_branch_commits(const std::string& branch_name);
+void cleanup_branch_commits(const std::string& branch_name);
+std::string find_common_ancestor(const std::string& branch1, const std::string& branch2);
+std::vector<std::string> get_commit_chain(const std::string& from_commit, const std::string& to_commit);
+bool apply_commit_during_rebase(const std::string& commit_hash);
 
 #endif

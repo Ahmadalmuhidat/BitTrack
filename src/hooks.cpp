@@ -11,10 +11,10 @@ void install_hook(HookType type, const std::string &script_path)
   std::string hook_path = get_hook_path(type);
   std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());
 
-  // lCopy script to hook location
+  // copy script to hook location
   std::filesystem::copy_file(script_path, hook_path, std::filesystem::copy_options::overwrite_existing);
 
-  // lMake executable
+  // make executable
   make_hook_executable(hook_path);
 
   std::cout << "Installed hook: " << get_hook_name(type) << std::endl;
@@ -75,7 +75,7 @@ HookResult run_hook(HookType type, const std::vector<std::string> &args)
   if (!std::filesystem::exists(hook_path))
   {
     HookResult result;
-    result.success = true; // lNo hook to run
+    result.success = true; // no hook to run
     return result;
   }
 

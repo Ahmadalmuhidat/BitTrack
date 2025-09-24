@@ -26,8 +26,6 @@ std::string get_file_hash(const std::string& file_path);
 std::string get_staged_file_content(const std::string& file_path);
 bool is_deleted(const std::string& file_path);
 std::string get_actual_path(const std::string& file_path);
-
-// Helper functions for stage operations
 std::unordered_map<std::string, std::string> load_staged_files();
 void save_staged_files(const std::unordered_map<std::string, std::string>& staged_files);
 bool validate_file_for_staging(const std::string& file_path);

@@ -182,4 +182,3 @@ std::string get_repository_config_path()
 {
   return ".bittrack/config";
 }
-

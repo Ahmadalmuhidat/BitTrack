@@ -61,13 +61,13 @@ void init()
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create main branch ref", ErrorSeverity::FATAL, "init");
     }
-    
+
     // set HEAD to point to main branch
     if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "main"))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to main", ErrorSeverity::FATAL, "init");
     }
-    
+
     std::cout << "Initialized empty BitTrack repository." << std::endl;
   }
   catch (const BitTrackError &e)
@@ -86,7 +86,8 @@ void status()
     std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
   }
 
-  std::cout << "\n" << std::endl;
+  std::cout << "\n"
+            << std::endl;
 
   std::cout << "unstaged files:" << std::endl;
   for (std::string fileName : get_unstaged_files())
@@ -136,15 +137,15 @@ void unstage_files(int argc, const char *argv[], int &i)
 void show_staged_files_hashes()
 {
   std::vector<std::string> staged_files = get_staged_files();
-  
+
   if (staged_files.empty())
   {
     std::cout << "No staged files." << std::endl;
     return;
   }
-  
+
   std::cout << "Staged files and their hashes:" << std::endl;
-  for (const auto& file : staged_files)
+  for (const auto &file : staged_files)
   {
     std::string hash = get_file_hash(file);
     std::cout << file << ": " << hash << std::endl;
@@ -154,14 +155,14 @@ void show_staged_files_hashes()
 void show_commit_history()
 {
   std::cout << "Commit history:" << std::endl;
-  
+
   std::ifstream history_file(".bittrack/commits/history");
   if (!history_file.is_open())
   {
     std::cout << "No commits found." << std::endl;
     return;
   }
-  
+
   std::string line;
   while (std::getline(history_file, line))
   {
@@ -190,7 +191,7 @@ void branch_operations(int argc, const char *argv[], int &i)
     // print branches list
     std::vector<std::string> branches = get_branches_list();
     std::string current_branch = get_current_branch();
-    
+
     for (const auto &branch : branches)
     {
       if (branch == current_branch)
@@ -262,9 +263,12 @@ void branch_operations(int argc, const char *argv[], int &i)
     VALIDATE_BRANCH_NAME(target);
 
     MergeResult result = merge_branches(source, target);
-    if (result.success) {
+    if (result.success)
+    {
       std::cout << "Merge completed successfully: " << result.message << std::endl;
-    } else {
+    }
+    else
+    {
       std::cout << "Merge failed: " << result.message << std::endl;
     }
   }
@@ -760,6 +764,9 @@ void print_help()
   std::cout << "           fsck               check repository integrity\n";
   std::cout << "           stats              show repository statistics\n";
   std::cout << "           optimize           optimize repository\n";
+  std::cout << "           analyze            analyze repository structure\n";
+  std::cout << "           clean              clean untracked files\n";
+  std::cout << "           prune              prune unreachable objects\n";
   std::cout << "  --remote -v                 print current remote URL\n";
   std::cout << "           -s <url>           set remote URL\n";
   std::cout << "  --push                      push current commit to remote\n";
@@ -813,7 +820,7 @@ int main(int argc, const char *argv[])
         try
         {
           std::string message;
-          
+
           // Check if next argument is -m flag
           if (i + 1 < argc && std::string(argv[i + 1]) == "-m")
           {

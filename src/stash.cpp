@@ -2,9 +2,10 @@
 
 void stash_changes(const std::string &message)
 {
-  if (get_staged_files().empty() && get_unstaged_files().empty())
+  std::vector<std::string> staged_files = get_staged_files();
+  if (staged_files.empty())
   {
-    std::cout << "No changes to stash" << std::endl;
+    std::cout << "No staged changes to stash" << std::endl;
     return;
   }
 
@@ -14,18 +15,22 @@ void stash_changes(const std::string &message)
   entry.branch = get_current_branch();
   entry.commit_hash = get_current_commit();
   entry.timestamp = std::time(nullptr);
-  entry.files = get_tracked_files();
+  entry.files = staged_files; // Only stash staged files
 
-  // backup working directory
-  backup_working_directory(entry.id);
+  // backup staged files
+  backup_staged_files(entry.id);
 
-  // remove files from working directory
-  remove_tracked_files_from_working_directory();
+  // remove staged files from working directory
+  remove_staged_files_from_working_directory();
+
+  // clear the staging index
+  std::ofstream clear_staging_file(".bittrack/index", std::ios::trunc);
+  clear_staging_file.close();
 
   // save stash entry
   save_stash_entry(entry);
 
-  std::cout << "Stashed changes: " << entry.message << std::endl;
+  std::cout << "Stashed " << staged_files.size() << " staged files: " << entry.message << std::endl;
 }
 
 void stash_list()
@@ -95,10 +100,19 @@ void stash_apply(const std::string &stash_id)
     return;
   }
 
-  // restore working directory
+  // restore staged files to working directory
   restore_working_directory(entry.id);
 
-  std::cout << "Applied stash: " << entry.message << std::endl;
+  // stage the restored files
+  for (const auto &file : entry.files)
+  {
+    if (std::filesystem::exists(file))
+    {
+      stage(file);
+    }
+  }
+
+  std::cout << "Applied stash: " << entry.message << " (" << entry.files.size() << " files staged)" << std::endl;
 }
 
 void stash_pop(const std::string &stash_id)
@@ -221,7 +235,23 @@ StashEntry get_stash_entry(const std::string &stash_id)
   {
     if (entry.id == stash_id)
     {
-      return entry;
+      StashEntry result = entry;
+
+      // populate files vector by reading from stash directory
+      std::string stash_dir = get_stash_file_path(stash_id);
+      if (std::filesystem::exists(stash_dir))
+      {
+        for (const auto &file_entry : std::filesystem::recursive_directory_iterator(stash_dir))
+        {
+          if (file_entry.is_regular_file())
+          {
+            std::string rel_path = std::filesystem::relative(file_entry.path(), stash_dir).string();
+            result.files.push_back(rel_path);
+          }
+        }
+      }
+
+      return result;
     }
   }
 
@@ -259,14 +289,14 @@ std::string generate_stash_id()
   return "stash_" + std::to_string(std::time(nullptr));
 }
 
-void backup_working_directory(const std::string &stash_id)
+void backup_staged_files(const std::string &stash_id)
 {
   std::string stash_dir = get_stash_file_path(stash_id);
   std::filesystem::create_directories(stash_dir);
 
-  std::vector<std::string> files = get_tracked_files();
+  std::vector<std::string> staged_files = get_staged_files();
 
-  for (const auto &file : files)
+  for (const auto &file : staged_files)
   {
     if (std::filesystem::exists(file))
     {
@@ -293,19 +323,19 @@ void restore_working_directory(const std::string &stash_id)
     {
       std::string rel_path = std::filesystem::relative(entry.path(), stash_dir).string();
       std::filesystem::path parent_path = std::filesystem::path(rel_path).parent_path();
-      
+
       // Only create directories if parent path is not empty
       if (!parent_path.empty())
       {
         std::filesystem::create_directories(parent_path);
       }
-      
+
       std::filesystem::copy_file(entry.path(), rel_path, std::filesystem::copy_options::overwrite_existing);
     }
   }
 }
 
-std::vector<std::string> get_tracked_files()
+std::vector<std::string> get_all_tracked_files()
 {
   std::vector<std::string> files;
   std::vector<std::string> staged = get_staged_files();
@@ -321,11 +351,11 @@ std::vector<std::string> get_tracked_files()
   return files;
 }
 
-void remove_tracked_files_from_working_directory()
+void remove_staged_files_from_working_directory()
 {
-  std::vector<std::string> tracked_files = get_tracked_files();
-  
-  for (const auto &file : tracked_files)
+  std::vector<std::string> staged_files = get_staged_files();
+
+  for (const auto &file : staged_files)
   {
     if (std::filesystem::exists(file))
     {
@@ -333,7 +363,6 @@ void remove_tracked_files_from_working_directory()
     }
   }
 }
-
 
 std::string get_stash_dir()
 {

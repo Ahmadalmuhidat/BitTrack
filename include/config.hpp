@@ -23,7 +23,6 @@ struct ConfigEntry
   ConfigEntry(const std::string& k, const std::string& v, ConfigScope s): key(k), value(v), scope(s) {}
 };
 
-// global configuration storage
 static std::map<std::string, std::string> global_config;
 static std::map<std::string, std::string> repository_config;
 

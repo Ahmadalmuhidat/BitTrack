@@ -1,4 +1,5 @@
 #include "../include/error.hpp"
+#include "../include/stage.hpp"
 
 void ErrorHandler::printError(const BitTrackError &error)
 {
@@ -448,7 +449,29 @@ bool ErrorHandler::validateBranchExists(const std::string &branchName)
 
 bool ErrorHandler::validateNoUncommittedChanges()
 {
-  // this would need to be implemented with access to staging functions
-  // for now, return true - this will be implemented when we update the CLI operations
-  return true;
+  try
+  {
+    // check if there are any staged files
+    std::vector<std::string> staged_files = get_staged_files();
+    if (!staged_files.empty())
+    {
+      printError(ErrorCode::VALIDATION_ERROR, "You have staged changes. Please commit or unstage them before proceeding.", ErrorSeverity::ERROR, "uncommitted changes");
+      return false;
+    }
+
+    // check if there are any unstaged files
+    std::vector<std::string> unstaged_files = get_unstaged_files();
+    if (!unstaged_files.empty())
+    {
+      printError(ErrorCode::VALIDATION_ERROR, "You have unstaged changes. Please stage and commit them before proceeding.", ErrorSeverity::ERROR, "uncommitted changes");
+      return false;
+    }
+
+    return true;
+  }
+  catch (const std::exception &e)
+  {
+    printError(ErrorCode::VALIDATION_ERROR, "Error checking for uncommitted changes: " + std::string(e.what()), ErrorSeverity::ERROR, "validation");
+    return false;
+  }
 }

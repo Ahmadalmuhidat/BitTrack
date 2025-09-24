@@ -170,7 +170,6 @@ std::vector<std::string> get_conflicted_files()
   return merge_state.conflicted_files;
 }
 
-
 void abort_merge()
 {
   if (!is_merge_in_progress())
@@ -314,40 +313,38 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
   std::string commit_hash = generate_commit_hash(get_current_user(), message, get_current_timestamp());
   std::string commit_dir = ".bittrack/objects/" + commit_hash;
   std::filesystem::create_directories(commit_dir);
-  
+
   // Create commit file
   std::string commit_file = commit_dir + "/commit.txt";
   std::ofstream file(commit_file);
-  
+
   if (!file.is_open())
   {
     std::cerr << "Error: Could not create merge commit file" << std::endl;
     return;
   }
-  
+
   // Write commit metadata
   file << "commit " << commit_hash << std::endl;
   file << "message " << message << std::endl;
   file << "timestamp " << get_current_timestamp() << std::endl;
   file << "author " << get_current_user() << std::endl;
-  
+
   // Write parent commits
-  for (const auto& parent : parents)
+  for (const auto &parent : parents)
   {
     file << "parent " << parent << std::endl;
   }
-  
+
   file.close();
-  
+
   // Update branch head
   std::ofstream head_file(".bittrack/refs/heads/" + get_current_branch());
   head_file << commit_hash << std::endl;
   head_file.close();
-  
+
   // Add to commit history
   insert_commit_record_to_history(commit_hash, get_current_branch());
-  
+
   std::cout << "Created merge commit: " << commit_hash << std::endl;
 }
-
-

@@ -32,12 +32,8 @@ bool is_remote_configured();
 std::string get_remote_url(const std::string& remote_name = "origin");
 void update_remote_url(const std::string& remote_name, const std::string& new_url);
 void show_remote_info();
-
-// Helper functions for GitHub detection
 bool is_github_remote(const std::string& url);
 std::string extract_github_info_from_url(const std::string& url, std::string& username, std::string& repository);
-
-// GitHub API functions
 bool push_to_github_api(const std::string& token, const std::string& username, const std::string& repo_name);
 bool pull_from_github_api(const std::string& token, const std::string& username, const std::string& repo_name);
 bool create_github_file(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& filename, const std::string& content, const std::string& message);

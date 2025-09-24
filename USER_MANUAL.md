@@ -498,36 +498,61 @@ BitTrack provides sophisticated merge functionality with conflict resolution.
 
 ### Merge Branches
 ```bash
-./build/bittrack --merge <branch1> <branch2>
+./build/bittrack --branch -merge <source> <target>
 ```
-- Performs three-way merge when possible
-- Handles merge conflicts
-- Creates merge commit
-- **Example**: `./build/bittrack --merge feature-login main`
+**Description**: Merges source branch into target branch
+- **Parameters**:
+  - `<source>`: Source branch to merge from
+  - `<target>`: Target branch to merge into
+- **Example**: `./build/bittrack --branch -merge feature-login main`
+
+### Rebase Branch
+```bash
+./build/bittrack --branch -rebase <source> <target>
+```
+**Description**: Rebases source branch onto target branch
+- **Parameters**:
+  - `<source>`: Source branch to rebase
+  - `<target>`: Target branch to rebase onto
+- **Example**: `./build/bittrack --branch -rebase feature-login main`
 
 ### Merge Features
 
-#### Automatic Conflict Resolution
-- Attempts to resolve conflicts automatically
-- Uses three-way merge algorithm
+#### Three-Way Merge Algorithm
+- Finds common ancestor between branches
+- Performs intelligent conflict resolution
 - Preserves both branches' changes where possible
+- Handles fast-forward merges automatically
 
-#### Manual Conflict Resolution
-- Shows conflict markers in files
-- Allows manual editing
-- Supports standard Git conflict format
+#### Fast-Forward Detection
+- Automatically detects when fast-forward is possible
+- Updates branch pointer without creating merge commit
+- Optimizes merge performance
+
+#### Conflict Resolution
+- **Automatic Resolution**: Attempts to resolve conflicts automatically
+- **Manual Resolution**: Shows conflict markers for manual editing
+- **Conflict Markers**: Uses standard Git conflict format
+- **Conflict State**: Tracks ongoing merge operations
 
 #### Merge State Management
-- Tracks ongoing merge operations
-- Allows merge abortion
-- Supports merge continuation
+- **Merge State File**: Stores merge progress in `.bittrack/MERGE_HEAD`
+- **Abort Merge**: Allows cancellation of ongoing merges
+- **Continue Merge**: Resume after conflict resolution
+- **Merge Commits**: Creates proper merge commits with multiple parents
 
 ### Conflict Resolution Process
 
 1. **Identify Conflicts**: BitTrack shows conflicted files
-2. **Edit Files**: Resolve conflicts manually
-3. **Stage Resolved Files**: Add resolved files to staging
-4. **Complete Merge**: Finish merge process
+2. **Edit Files**: Resolve conflicts manually using conflict markers
+3. **Stage Resolved Files**: Add resolved files to staging area
+4. **Complete Merge**: Finish merge process with merge commit
+
+### Merge Result Information
+- **Success Status**: Indicates if merge completed successfully
+- **Conflict Status**: Reports if conflicts were encountered
+- **Conflicted Files**: Lists files that had conflicts
+- **Merge Commit**: Shows the created merge commit hash
 
 ---
 
@@ -589,11 +614,96 @@ BitTrack supports remote repository operations for collaboration.
 - Stores in `.bittrack/remote`
 - **Example**: `./build/bittrack --remote -s https://github.com/user/repo.git`
 
+### Add Remote
+```bash
+./build/bittrack --remote add <name> <url>
+```
+**Description**: Adds a new remote repository
+- **Parameters**:
+  - `<name>`: Name for the remote (e.g., "origin", "upstream")
+  - `<url>`: Remote repository URL
+- **Example**: `./build/bittrack --remote add origin https://github.com/user/repo.git`
+
+### Remove Remote
+```bash
+./build/bittrack --remote remove <name>
+```
+**Description**: Removes a configured remote
+- **Parameters**: `<name>`: Name of the remote to remove
+- **Example**: `./build/bittrack --remote remove origin`
+
+### List Remotes
+```bash
+./build/bittrack --remote list
+```
+**Description**: Lists all configured remotes
+- Shows remote names and URLs
+- Displays remote configuration
+
+### Update Remote URL
+```bash
+./build/bittrack --remote update <name> <new-url>
+```
+**Description**: Updates the URL for an existing remote
+- **Parameters**:
+  - `<name>`: Name of the remote to update
+  - `<new-url>`: New remote URL
+- **Example**: `./build/bittrack --remote update origin https://new-url.git`
+
+### Show Remote Information
+```bash
+./build/bittrack --remote info
+```
+**Description**: Shows detailed information about remotes
+- Displays remote configuration details
+- Shows connection status
+
+### Push to Specific Remote
+```bash
+./build/bittrack --remote push <remote-name> <branch-name>
+```
+**Description**: Pushes to a specific remote and branch
+- **Parameters**:
+  - `<remote-name>`: Name of the remote
+  - `<branch-name>`: Name of the branch to push
+- **Example**: `./build/bittrack --remote push origin main`
+
+### Pull from Specific Remote
+```bash
+./build/bittrack --remote pull <remote-name> <branch-name>
+```
+**Description**: Pulls from a specific remote and branch
+- **Parameters**:
+  - `<remote-name>`: Name of the remote
+  - `<branch-name>`: Name of the branch to pull
+- **Example**: `./build/bittrack --remote pull origin main`
+
+### Fetch from Remote
+```bash
+./build/bittrack --remote fetch <remote-name>
+```
+**Description**: Fetches changes from remote without merging
+- **Parameters**: `<remote-name>`: Name of the remote to fetch from
+- Downloads changes but doesn't merge them
+- **Example**: `./build/bittrack --remote fetch origin`
+
+### Clone Repository
+```bash
+./build/bittrack --remote clone <url> [local-path]
+```
+**Description**: Clones a remote repository
+- **Parameters**:
+  - `<url>`: Remote repository URL
+  - `[local-path]`: Optional local directory name
+- **Example**: `./build/bittrack --remote clone https://github.com/user/repo.git my-project`
+
 ### Remote Features
 
 - **URL Validation**: Ensures proper remote URL format
-- **Origin Management**: Primary remote repository
-- **Push/Pull Support**: (Implementation pending)
+- **Multiple Remotes**: Support for multiple remote repositories
+- **GitHub Integration**: Special handling for GitHub repositories
+- **Authentication**: Support for GitHub tokens and other auth methods
+- **Push/Pull Support**: Full implementation with conflict handling
 
 ---
 
@@ -724,6 +834,87 @@ BitTrack provides comprehensive maintenance tools for repository optimization.
 - Cleans up orphaned data
 - Reduces repository size
 - Frees up disk space
+
+### Find Large Files
+```bash
+./build/bittrack --maintenance find-large-files [threshold]
+```
+**Description**: Identifies files larger than specified threshold
+- **Parameters**: `[threshold]` - Size threshold in bytes (optional, defaults to 1MB)
+- Helps identify files consuming excessive space
+- **Example**: `./build/bittrack --maintenance find-large-files 1048576`
+
+### Find Duplicate Files
+```bash
+./build/bittrack --maintenance find-duplicates
+```
+**Description**: Identifies duplicate files in the repository
+- Detects files with identical content
+- Helps optimize storage by removing duplicates
+- Reports file paths and sizes
+
+### Clean Ignored Files
+```bash
+./build/bittrack --maintenance clean-ignored
+```
+**Description**: Removes files that match ignore patterns
+- Cleans up files that should be ignored
+- Respects `.bitignore` patterns
+- **Warning**: Irreversible operation
+
+### Remove Empty Directories
+```bash
+./build/bittrack --maintenance remove-empty-dirs
+```
+**Description**: Removes empty directories from the repository
+- Cleans up directory structure
+- Preserves `.bittrack` directory
+- Improves repository organization
+
+### Compact Repository
+```bash
+./build/bittrack --maintenance compact
+```
+**Description**: Performs comprehensive repository compaction
+- Runs multiple optimization tasks
+- Reduces repository size significantly
+- Equivalent to running multiple maintenance operations
+
+### Backup Repository
+```bash
+./build/bittrack --maintenance backup [backup-path]
+```
+**Description**: Creates a backup of the current repository
+- **Parameters**: `[backup-path]` - Optional backup location (defaults to timestamped directory)
+- Creates complete repository copy
+- **Example**: `./build/bittrack --maintenance backup /path/to/backup`
+
+### List Backups
+```bash
+./build/bittrack --maintenance list-backups
+```
+**Description**: Lists all available repository backups
+- Shows backup locations and timestamps
+- Helps identify available restore points
+
+### Restore from Backup
+```bash
+./build/bittrack --maintenance restore <backup-path>
+```
+**Description**: Restores repository from a backup
+- **Parameters**: `<backup-path>` - Path to backup directory
+- Replaces current repository with backup
+- Creates safety backup of current state
+- **Warning**: Irreversible operation
+
+### Check Integrity
+```bash
+./build/bittrack --maintenance check-integrity
+```
+**Description**: Performs comprehensive integrity check
+- Validates all repository objects
+- Checks for corruption and inconsistencies
+- Reports detailed health status
 
 ---
 
@@ -1057,7 +1248,8 @@ cat .bittrack/commits/history
 #### Merge Commands
 | Command | Description |
 |---------|-------------|
-| `--merge <b1> <b2>` | Merge branches |
+| `--branch -merge <src> <tgt>` | Merge branches |
+| `--branch -rebase <src> <tgt>` | Rebase branch |
 
 #### Config Commands
 | Command | Description |
@@ -1071,6 +1263,15 @@ cat .bittrack/commits/history
 |---------|-------------|
 | `--remote -v` | Show remote URL |
 | `--remote -s <url>` | Set remote URL |
+| `--remote add <name> <url>` | Add remote |
+| `--remote remove <name>` | Remove remote |
+| `--remote list` | List remotes |
+| `--remote update <name> <url>` | Update remote URL |
+| `--remote info` | Show remote info |
+| `--remote push <name> <branch>` | Push to remote |
+| `--remote pull <name> <branch>` | Pull from remote |
+| `--remote fetch <name>` | Fetch from remote |
+| `--remote clone <url> [path]` | Clone repository |
 
 #### Hooks Commands
 | Command | Description |
@@ -1090,6 +1291,15 @@ cat .bittrack/commits/history
 | `--maintenance analyze` | Analyze repository |
 | `--maintenance clean` | Clean untracked files |
 | `--maintenance prune` | Prune objects |
+| `--maintenance find-large-files` | Find large files |
+| `--maintenance find-duplicates` | Find duplicate files |
+| `--maintenance clean-ignored` | Clean ignored files |
+| `--maintenance remove-empty-dirs` | Remove empty directories |
+| `--maintenance compact` | Compact repository |
+| `--maintenance backup` | Backup repository |
+| `--maintenance list-backups` | List backups |
+| `--maintenance restore` | Restore from backup |
+| `--maintenance check-integrity` | Check integrity |
 
 ### File Formats
 

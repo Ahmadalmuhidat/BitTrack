@@ -472,8 +472,6 @@ void restore_from_backup(const std::string &backup_path)
   }
 }
 
-
-
 void check_integrity()
 {
   std::cout << "Checking repository integrity..." << std::endl;
@@ -636,7 +634,6 @@ std::vector<std::string> get_duplicate_files()
   return duplicates;
 }
 
-
 std::string get_repository_size()
 {
   size_t total_size = 0;
@@ -652,21 +649,19 @@ std::string get_repository_size()
   return format_size(total_size);
 }
 
-
 std::string format_size(size_t bytes)
 {
-  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
+  const char *units[] = {"B", "KB", "MB", "GB", "TB"};
   int unit_index = 0;
   double size = static_cast<double>(bytes);
-  
+
   while (size >= 1024.0 && unit_index < 4)
   {
     size /= 1024.0;
     unit_index++;
   }
-  
+
   std::ostringstream oss;
   oss << std::fixed << std::setprecision(2) << size << " " << units[unit_index];
   return oss.str();
 }
-
