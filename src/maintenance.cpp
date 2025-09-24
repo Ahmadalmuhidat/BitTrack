@@ -136,29 +136,22 @@ void fsck_repository()
   }
 }
 
-void show_repository_stats()
-{
-  RepoStats stats = calculate_repository_stats();
-
-  std::cout << "Repository Statistics:" << std::endl;
-  std::cout << "  Total objects: " << stats.total_objects << std::endl;
-  std::cout << "  Total size: " << format_size(stats.total_size) << std::endl;
-  std::cout << "  Commits: " << stats.commit_count << std::endl;
-  std::cout << "  Branches: " << stats.branch_count << std::endl;
-  std::cout << "  Tags: " << stats.tag_count << std::endl;
-
-  if (!stats.largest_file.empty())
-  {
-    std::cout << "  Largest file: " << stats.largest_file << " (" << format_size(stats.largest_file_size) << ")" << std::endl;
-  }
-}
 
 void show_repository_info()
 {
   std::cout << "Repository Information:" << std::endl;
   std::cout << "  Current branch: " << get_current_branch() << std::endl;
   std::cout << "  Current commit: " << get_current_commit() << std::endl;
-  std::cout << "  Repository size: " << get_repository_size() << std::endl;
+  // Calculate repository size
+  size_t total_size = 0;
+  for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack"))
+  {
+    if (entry.is_regular_file())
+    {
+      total_size += std::filesystem::file_size(entry.path());
+    }
+  }
+  std::cout << "  Repository size: " << format_size(total_size) << std::endl;
   std::cout << "  Last modified: " << std::endl; // would get from filesystem
 }
 
@@ -244,191 +237,7 @@ void optimize_repository()
   // repack repository
   repack_repository();
 
-  // remove empty directories
-  remove_empty_directories();
-
   std::cout << "Repository optimization completed" << std::endl;
-}
-
-
-void clean_ignored_files()
-{
-  std::cout << "Cleaning ignored files..." << std::endl;
-
-  std::vector<std::string> tracked_files = get_staged_files();
-  std::set<std::string> tracked_set(tracked_files.begin(), tracked_files.end());
-
-  size_t removed_count = 0;
-  size_t freed_space = 0;
-  std::vector<std::filesystem::path> files_to_remove;
-
-  // collect files to remove first
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
-  {
-    if (entry.is_regular_file())
-    {
-      std::string file_path = entry.path().string();
-
-      // skip .bittrack directory and tracked files
-      if (file_path.find(".bittrack") == 0 || tracked_set.find(file_path) != tracked_set.end())
-      {
-        continue;
-      }
-
-      // only remove ignored files using Git-like ignore system
-      if (should_ignore_file(file_path))
-      {
-        files_to_remove.push_back(entry.path());
-      }
-    }
-  }
-
-  // remove files
-  for (const auto &file_path : files_to_remove)
-  {
-    if (std::filesystem::exists(file_path))
-    {
-      size_t file_size = std::filesystem::file_size(file_path);
-      std::filesystem::remove(file_path);
-      removed_count++;
-      freed_space += file_size;
-      std::cout << "  Removed ignored file: " << file_path.string() << std::endl;
-    }
-  }
-
-  std::cout << "Removed " << removed_count << " ignored files" << std::endl;
-  std::cout << "Freed " << format_size(freed_space) << " of space" << std::endl;
-}
-
-void remove_empty_directories()
-{
-  std::cout << "Removing empty directories..." << std::endl;
-
-  size_t removed_count = 0;
-  std::vector<std::filesystem::path> empty_dirs;
-
-  // collect empty directories first (excluding .bittrack)
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
-  {
-    if (entry.is_directory() && entry.path().string().find(".bittrack") != 0)
-    {
-      if (std::filesystem::is_empty(entry.path()))
-      {
-        empty_dirs.push_back(entry.path());
-      }
-    }
-  }
-
-  // remove empty directories
-  for (const auto &dir : empty_dirs)
-  {
-    if (std::filesystem::exists(dir) && std::filesystem::is_empty(dir))
-    {
-      std::filesystem::remove(dir);
-      removed_count++;
-    }
-  }
-
-  std::cout << "Removed " << removed_count << " empty directories" << std::endl;
-}
-
-void compact_repository()
-{
-  std::cout << "Compacting repository..." << std::endl;
-
-  // run optimization
-  optimize_repository();
-
-  std::cout << "Repository compaction completed" << std::endl;
-}
-
-void backup_repository(const std::string &backup_path)
-{
-  std::string target_path = backup_path.empty() ? "backup_" + std::to_string(std::time(nullptr)) : backup_path;
-  std::cout << "Creating backup to: " << target_path << std::endl;
-
-  // copy entire repository
-  std::filesystem::create_directories(target_path);
-  std::filesystem::copy(".", target_path, std::filesystem::copy_options::recursive);
-
-  std::cout << "Backup created successfully" << std::endl;
-}
-
-void list_backups()
-{
-  std::cout << "Available backups:" << std::endl;
-
-  // look for backup directories
-  for (const auto &entry : std::filesystem::directory_iterator("."))
-  {
-    if (entry.is_directory() && entry.path().filename().string().find("backup_") == 0)
-    {
-      std::cout << "  " << entry.path().filename().string() << std::endl;
-    }
-  }
-}
-
-void restore_from_backup(const std::string &backup_path)
-{
-  if (!std::filesystem::exists(backup_path))
-  {
-    std::cout << "Backup not found: " << backup_path << std::endl;
-    return;
-  }
-
-  std::cout << "Restoring from backup: " << backup_path << std::endl;
-
-  // create a temporary directory for the current state
-  std::string temp_dir = ".bittrack_temp_" + std::to_string(std::time(nullptr));
-  std::filesystem::create_directories(temp_dir);
-
-  try
-  {
-    // move current .bittrack to temp directory
-    if (std::filesystem::exists(".bittrack"))
-    {
-      std::filesystem::rename(".bittrack", temp_dir + "/.bittrack");
-    }
-
-    // copy backup .bittrack to current directory
-    std::string backup_bittrack = backup_path + "/.bittrack";
-    if (std::filesystem::exists(backup_bittrack))
-    {
-      std::filesystem::copy(backup_bittrack, ".bittrack", std::filesystem::copy_options::recursive);
-    }
-
-    // copy backup files to current directory
-    for (const auto &entry : std::filesystem::directory_iterator(backup_path))
-    {
-      if (entry.is_regular_file() && entry.path().filename().string() != ".bittrack")
-      {
-        std::filesystem::copy(entry.path(), entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
-      }
-    }
-
-    std::cout << "Restore completed successfully" << std::endl;
-    std::cout << "Previous state backed up to: " << temp_dir << std::endl;
-  }
-  catch (const std::exception &e)
-  {
-    std::cout << "Restore failed: " << e.what() << std::endl;
-
-    // restore previous state
-    if (std::filesystem::exists(temp_dir + "/.bittrack"))
-    {
-      std::filesystem::remove_all(".bittrack");
-      std::filesystem::rename(temp_dir + "/.bittrack", ".bittrack");
-    }
-  }
-}
-
-void check_integrity()
-{
-  std::cout << "Checking repository integrity..." << std::endl;
-
-  fsck_repository();
-
-  std::cout << "Integrity check completed" << std::endl;
 }
 
 RepoStats calculate_repository_stats()
@@ -584,20 +393,6 @@ std::vector<std::string> get_duplicate_files()
   return duplicates;
 }
 
-std::string get_repository_size()
-{
-  size_t total_size = 0;
-
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack"))
-  {
-    if (entry.is_regular_file())
-    {
-      total_size += std::filesystem::file_size(entry.path());
-    }
-  }
-
-  return format_size(total_size);
-}
 
 std::string format_size(size_t bytes)
 {

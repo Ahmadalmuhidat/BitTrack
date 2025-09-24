@@ -108,6 +108,15 @@ std::string get_last_commit(const std::string &branch)
 
 void commit_changes(const std::string &author, const std::string &message)
 {
+  // Check if there are unpushed commits
+  if (has_unpushed_commits())
+  {
+    std::cerr << "Error: Cannot create new commit while there are unpushed commits." << std::endl;
+    std::cerr << "Please push your current commit before creating a new one." << std::endl;
+    std::cerr << "Use 'bittrack --push' to push your changes." << std::endl;
+    return;
+  }
+
   std::ifstream staging_file(".bittrack/index");
   if (!staging_file)
   {

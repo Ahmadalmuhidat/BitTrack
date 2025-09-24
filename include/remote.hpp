@@ -10,6 +10,7 @@
 #include <curl/curl.h>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
 
 #include "branch.hpp"
 #include "commit.hpp"
@@ -52,7 +53,7 @@ std::string create_github_blob(const std::string& token, const std::string& user
 std::string create_github_tree(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& blob_sha, const std::string& filename);
 std::string create_github_tree_with_files(const std::string& token, const std::string& username, const std::string& repo_name, const std::vector<std::string>& blob_shas, const std::vector<std::string>& file_names, const std::string& base_tree_sha = "");
 std::string get_github_commit_tree(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& commit_sha);
-std::string create_github_commit(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& tree_sha, const std::string& parent_sha, const std::string& message);
+std::string create_github_commit(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& tree_sha, const std::string& parent_sha, const std::string& message, const std::string& author_name, const std::string& author_email, const std::string& timestamp);
 std::string get_github_ref(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& ref);
 bool update_github_ref(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& ref, const std::string& sha);
 std::string get_github_commit_data(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& commit_sha);
@@ -62,5 +63,9 @@ bool download_files_from_github_tree(const std::string& token, const std::string
 std::string get_github_blob_content(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& blob_sha);
 std::string base64_decode(const std::string& encoded);
 void integrate_pulled_files_with_bittrack(const std::string& commit_sha, const std::vector<std::string>& downloaded_files);
+std::string get_commit_author(const std::string& commit_hash);
+std::string get_commit_author_email(const std::string& commit_hash);
+std::string get_commit_timestamp(const std::string& commit_hash);
+bool has_unpushed_commits();
 
 #endif

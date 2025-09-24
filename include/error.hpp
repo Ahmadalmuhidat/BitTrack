@@ -10,6 +10,8 @@
 #include <string>
 #include <exception>
 
+#include "stage.hpp"
+
 enum class ErrorCode
 {
   SUCCESS = 0,

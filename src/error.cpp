@@ -1,5 +1,4 @@
 #include "../include/error.hpp"
-#include "../include/stage.hpp"
 
 void ErrorHandler::printError(const BitTrackError &error)
 {

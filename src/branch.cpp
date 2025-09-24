@@ -1,5 +1,4 @@
 #include "../include/branch.hpp"
-#include "../include/error.hpp"
 
 std::string get_current_branch()
 {

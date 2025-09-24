@@ -10,7 +10,6 @@ void set_remote_origin(const std::string &url)
     return;
   }
 
-  // write the URL to the file
   RemoteFile << url << std::endl;
   RemoteFile.close();
 }
@@ -36,10 +35,7 @@ bool compress_folder(const std::string &folder_path, const std::string &zip_path
 {
   mz_zip_archive zip_archive;
   memset(&zip_archive, 0, sizeof(zip_archive));
-  bool createZip = mz_zip_writer_init_file(
-      &zip_archive,
-      zip_path.c_str(),
-      0);
+  bool createZip = mz_zip_writer_init_file(&zip_archive, zip_path.c_str(), 0);
 
   if (!createZip)
   {
@@ -81,7 +77,6 @@ bool compress_folder(const std::string &folder_path, const std::string &zip_path
     return false;
   }
 
-  // write the compressed folder to the zip file path
   mz_zip_writer_end(&zip_archive);
   return true;
 }
@@ -102,7 +97,6 @@ void push()
     return;
   }
 
-  // Check if local repository is behind remote before pushing
   if (is_local_behind_remote())
   {
     std::cerr << "Error: Local repository is behind the remote repository.\n";
@@ -112,7 +106,6 @@ void push()
     return;
   }
 
-  // Check if this is a GitHub repository and handle it specially
   if (is_github_remote(remote_url))
   {
     std::string token = config_get("github.token", ConfigScope::REPOSITORY);
@@ -126,7 +119,6 @@ void push()
       return;
     }
 
-    // Extract repository info
     std::string username, repo_name;
     if (extract_github_info_from_url(remote_url, username, repo_name).empty())
     {
@@ -136,10 +128,9 @@ void push()
 
     std::cout << "Pushing to GitHub repository: " << username << "/" << repo_name << std::endl;
 
-    // Try GitHub API push
     if (push_to_github_api(token, username, repo_name))
     {
-      return; // Success, don't continue with regular push
+      return;
     }
     else
     {
@@ -147,8 +138,6 @@ void push()
     }
   }
 
-  // Use the original push method (works for both GitHub and other remotes)
-  // compress the folder into remote_push_folder.zip
   system("zip -r .bittrack/remote_push_folder.zip .bittrack/objects > /dev/null");
 
   CURL *curl;
@@ -163,35 +152,35 @@ void push()
     std::string CurrentBranch = get_current_branch();
     std::string CurrentCommit = get_current_commit();
 
-    // attach compressed zip to POST
     curl_formadd(
-        &form,
-        &last,
-        CURLFORM_COPYNAME,
-        "upload",
-        CURLFORM_FILE,
-        ".bittrack/remote_push_folder.zip",
-        CURLFORM_END);
+      &form,
+      &last,
+      CURLFORM_COPYNAME,
+      "upload",
+      CURLFORM_FILE,
+      ".bittrack/remote_push_folder.zip",
+      CURLFORM_END
+    );
 
-    // Add branch metadata
     curl_formadd(
-        &form,
-        &last,
-        CURLFORM_COPYNAME,
-        "branch",
-        CURLFORM_COPYCONTENTS,
-        CurrentBranch.c_str(),
-        CURLFORM_END);
+      &form,
+      &last,
+      CURLFORM_COPYNAME,
+      "branch",
+      CURLFORM_COPYCONTENTS,
+      CurrentBranch.c_str(),
+      CURLFORM_END
+    );
 
-    // add commit metadata
     curl_formadd(
-        &form,
-        &last,
-        CURLFORM_COPYNAME,
-        "commit",
-        CURLFORM_COPYCONTENTS,
-        CurrentCommit.c_str(),
-        CURLFORM_END);
+      &form,
+      &last,
+      CURLFORM_COPYNAME,
+      "commit",
+      CURLFORM_COPYCONTENTS,
+      CurrentCommit.c_str(),
+      CURLFORM_END
+    );
 
     curl_easy_setopt(curl, CURLOPT_URL, remote_url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
@@ -204,7 +193,6 @@ void push()
     }
     else
     {
-      // Check if this is a GitHub repository and provide appropriate feedback
       if (is_github_remote(remote_url))
       {
         std::cout << "Note: GitHub integration is currently limited." << std::endl;
@@ -220,7 +208,6 @@ void push()
     curl_easy_cleanup(curl);
     curl_formfree(form);
   }
-  // remove the temp push file
   system("rm -f .bittrack/remote_push_folder.zip");
 }
 
@@ -233,7 +220,6 @@ void pull()
     return;
   }
 
-  // Check if working directory is clean before pulling
   std::vector<std::string> staged_files = get_staged_files();
   std::vector<std::string> unstaged_files = get_unstaged_files();
 
@@ -262,7 +248,6 @@ void pull()
     return;
   }
 
-  // Check if this is a GitHub repository and use GitHub API
   if (is_github_remote(base_url))
   {
     std::string token = config_get("github.token", ConfigScope::REPOSITORY);
@@ -276,7 +261,6 @@ void pull()
       return;
     }
 
-    // Extract repository info
     std::string username, repo_name;
     if (extract_github_info_from_url(base_url, username, repo_name).empty())
     {
@@ -284,7 +268,6 @@ void pull()
       return;
     }
 
-    // Use GitHub API to pull repository data
     if (pull_from_github_api(token, username, repo_name))
     {
       return; // Success
@@ -388,7 +371,6 @@ void push_to_remote(const std::string &remote_name, const std::string &branch_na
     return;
   }
 
-  // Use existing push() function but with specific remote
   set_remote_origin(remote_url);
   push();
 }
@@ -409,7 +391,6 @@ void pull_from_remote(const std::string &remote_name, const std::string &branch_
     return;
   }
 
-  // Use existing pull() function but with specific remote
   set_remote_origin(remote_url);
   pull();
 }
@@ -425,7 +406,6 @@ void fetch_from_remote(const std::string &remote_name)
 
   std::cout << "Fetching from remote '" << remote_name << "'..." << std::endl;
 
-  // For now, fetch is similar to pull but doesn't merge
   std::string base_url = remote_url;
   std::string current_branch = get_current_branch();
   std::string remote_url_with_branch = base_url + "?branch=" + current_branch;
@@ -464,7 +444,6 @@ void fetch_from_remote(const std::string &remote_name)
     curl_easy_cleanup(curl);
   }
 
-  // Clean up temp file
   system("rm -f .bittrack/remote_fetch_folder.zip");
 }
 
@@ -486,21 +465,19 @@ void clone_repository(const std::string &url, const std::string &local_path)
 
   std::cout << "Cloning repository from " << url << " to " << target_path << "..." << std::endl;
 
-  // Create target directory
   std::filesystem::create_directories(target_path);
 
-  // Change to target directory
   std::string original_dir = std::filesystem::current_path().string();
   std::filesystem::current_path(target_path);
 
   // Initialize BitTrack repository
   system("mkdir -p .bittrack");
 
-  // Set remote origin
   set_remote_origin(url);
 
   // Fetch from remote
   fetch_from_remote("origin");
+  
 
   // Restore original directory
   std::filesystem::current_path(original_dir);
@@ -637,7 +614,7 @@ std::string get_last_pushed_commit()
   std::ifstream file(".bittrack/last_pushed_commit");
   if (!file.is_open())
   {
-    return ""; // No previous push
+    return "";
   }
 
   std::string commit;
@@ -646,40 +623,6 @@ std::string get_last_pushed_commit()
   return commit;
 }
 
-std::vector<std::string> get_unpushed_commits()
-{
-  std::vector<std::string> unpushed_commits;
-
-  try
-  {
-    std::string current_commit = get_current_commit();
-    std::string last_pushed = get_last_pushed_commit();
-
-    if (current_commit.empty())
-    {
-      return unpushed_commits;
-    }
-
-    // If no previous push, push the current commit
-    if (last_pushed.empty())
-    {
-      unpushed_commits.push_back(current_commit);
-      return unpushed_commits;
-    }
-
-    // If current commit is different from last pushed, push it
-    if (current_commit != last_pushed)
-    {
-      unpushed_commits.push_back(current_commit);
-    }
-  }
-  catch (const std::exception &e)
-  {
-    std::cerr << "Error getting unpushed commits: " << e.what() << std::endl;
-  }
-
-  return unpushed_commits;
-}
 
 void set_last_pushed_commit(const std::string &commit)
 {
@@ -754,11 +697,10 @@ std::string get_latest_github_commit(const std::string &token, const std::string
     return "";
   }
 
-  // Parse response to get commit SHA
   size_t sha_pos = response_data.find("\"sha\":\"");
   if (sha_pos != std::string::npos)
   {
-    sha_pos += 7; // Skip "sha":"
+    sha_pos += 7;
     size_t sha_end = response_data.find("\"", sha_pos);
     if (sha_end != std::string::npos)
     {
@@ -773,7 +715,6 @@ std::vector<std::string> get_committed_files(const std::string &commit)
 {
   std::vector<std::string> files;
 
-  // Read the commit file to get the list of files in this commit
   std::string commit_file = ".bittrack/commits/" + commit;
   std::ifstream file(commit_file);
   if (!file.is_open())
@@ -793,21 +734,18 @@ std::vector<std::string> get_committed_files(const std::string &commit)
 
     if (in_files_section && !line.empty())
     {
-      // Trim leading whitespace
       size_t start = line.find_first_not_of(" \t");
       if (start != std::string::npos)
       {
         line = line.substr(start);
       }
 
-      // Extract filename from "filename hash" format
       size_t space_pos = line.find(" ");
       if (space_pos != std::string::npos)
       {
         std::string filename = line.substr(0, space_pos);
         std::string hash = line.substr(space_pos + 1);
 
-        // If hash is empty or just whitespace, it's a deleted file
         if (hash.empty() || hash.find_first_not_of(" \t") == std::string::npos)
         {
           files.push_back(filename + " (deleted)");
@@ -819,7 +757,6 @@ std::vector<std::string> get_committed_files(const std::string &commit)
       }
       else
       {
-        // If no space found, it's a regular file (from pulled commits)
         files.push_back(line);
       }
     }
@@ -844,7 +781,7 @@ std::string get_commit_message_simple(const std::string &commit)
     if (line.find("Message:") == 0)
     {
       file.close();
-      return line.substr(8); // Skip "Message:"
+      return line.substr(8);
     }
   }
   file.close();
@@ -871,7 +808,6 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 {
   try
   {
-    // Get current commit info
     std::string current_commit = get_current_commit();
     std::string current_branch = get_current_branch();
 
@@ -881,26 +817,22 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
       return false;
     }
 
-    // Get all unpushed commits
-    std::vector<std::string> unpushed_commits = get_unpushed_commits();
-    if (unpushed_commits.empty())
+    std::string last_pushed = get_last_pushed_commit();
+    if (last_pushed == current_commit)
     {
       std::cout << "Repository is up to date." << std::endl;
       return true;
     }
 
-    std::cout << "Pushing " << unpushed_commits.size() << " commits to " << username << "/" << repo_name << "..." << std::endl;
+    std::cout << "Pushing current commit to " << username << "/" << repo_name << "..." << std::endl;
 
-    // Check if repository is empty
     std::string parent_sha = get_github_ref(token, username, repo_name, "heads/main");
     bool is_empty_repo = parent_sha.empty();
 
     if (is_empty_repo)
     {
-      // For empty repositories, we need to create the initial commit using Git API
       std::cout << "Repository is empty, creating initial commit..." << std::endl;
 
-      // Get files from the latest commit only
       std::vector<std::string> latest_commit_files = get_committed_files(current_commit);
       if (latest_commit_files.empty())
       {
@@ -914,7 +846,6 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         commit_message = "BitTrack commit: " + current_commit;
       }
 
-      // Create blobs for all files
       std::vector<std::string> blob_shas;
       std::vector<std::string> file_names;
 
@@ -929,11 +860,9 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         file.close();
 
-        // For empty repos, we need to create blobs differently
-        // Let's try creating a simple file first using Contents API with a different approach
+        // Create blob
         std::string base64_content = base64_encode(content);
 
-        // Use PUT method to create file
         CURL *curl = curl_easy_init();
         if (!curl)
           continue;
@@ -974,44 +903,31 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
       return true;
     }
 
-    // For non-empty repositories, use Git API
-    // Process each unpushed commit in order
     std::string current_tree_sha = "";
     std::string last_commit_sha = parent_sha;
-    std::vector<std::string> successfully_pushed_commits;
 
-    for (size_t i = 0; i < unpushed_commits.size(); ++i)
+    std::string commit_message = get_commit_message_simple(current_commit);
+    if (commit_message.empty())
     {
-      const std::string &commit_hash = unpushed_commits[i];
+      commit_message = "BitTrack commit: " + current_commit;
+    }
 
-      // Get commit message
-      std::string commit_message = get_commit_message_simple(commit_hash);
-      if (commit_message.empty())
-      {
-        commit_message = "BitTrack commit: " + commit_hash;
-      }
+    std::vector<std::string> committed_files = get_committed_files(current_commit);
+    if (committed_files.empty())
+    {
+      std::cerr << "Error: No files found in current commit" << std::endl;
+      return false;
+    }
 
-      // Get files from this commit
-      std::vector<std::string> committed_files = get_committed_files(commit_hash);
-      if (committed_files.empty())
-      {
-        std::cerr << "Warning: No files found in commit " << commit_hash << std::endl;
-        continue;
-      }
+    std::cout << "  Processing commit (" << current_commit.substr(0, 8) << "): " << commit_message << std::endl;
 
-      std::cout << "  Processing commit " << (i + 1) << "/" << unpushed_commits.size()
-                << " (" << commit_hash.substr(0, 8) << "): " << commit_message << std::endl;
-
-      // Create blobs for all files in this commit
       std::vector<std::string> blob_shas;
       std::vector<std::string> file_names;
 
       for (const auto &file_path : committed_files)
       {
-        // Check if this is a deleted file
         if (is_deleted(file_path))
         {
-          // Handle deleted file
           std::string actual_path = get_actual_path(file_path);
           if (delete_github_file(token, username, repo_name, actual_path, commit_message))
           {
@@ -1024,8 +940,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         }
         else
         {
-          // Handle regular file - read from commit directory
-          std::string commit_file_path = ".bittrack/objects/" + commit_hash + "/" + file_path;
+          std::string commit_file_path = ".bittrack/objects/" + current_commit + "/" + file_path;
           std::ifstream file(commit_file_path);
           if (!file.is_open())
           {
@@ -1036,7 +951,6 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
           std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
           file.close();
 
-          // Create blob
           std::string blob_sha = create_github_blob(token, username, repo_name, content);
           if (!blob_sha.empty())
           {
@@ -1051,10 +965,8 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         }
       }
 
-      // For commits with only deleted files, we don't need to create blobs
       if (blob_shas.empty() && !committed_files.empty())
       {
-        // Check if all files are deleted
         bool all_deleted = true;
         for (const auto &file_path : committed_files)
         {
@@ -1067,18 +979,16 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
         if (!all_deleted)
         {
-          std::cerr << "Warning: Could not create blobs for commit " << commit_hash << std::endl;
-          continue;
+          std::cerr << "Error: Could not create blobs for current commit" << std::endl;
+          return false;
         }
-        // If all files are deleted, continue without creating blobs
       }
       else if (blob_shas.empty())
       {
-        std::cerr << "Warning: No files to process for commit " << commit_hash << std::endl;
-        continue;
+        std::cerr << "Error: No files to process for current commit" << std::endl;
+        return false;
       }
 
-      // Create or update tree (only if we have blobs)
       if (!blob_shas.empty())
       {
         if (current_tree_sha.empty())
@@ -1092,19 +1002,17 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
         if (current_tree_sha.empty())
         {
-          std::cerr << "Error: Could not create or update tree for commit " << commit_hash << std::endl;
+          std::cerr << "Error: Could not create or update tree for current commit" << std::endl;
           return false;
         }
       }
       else if (current_tree_sha.empty())
       {
-        // For commits with only deletions and no existing tree, we need to get the tree from the parent commit
         if (last_commit_sha.empty())
         {
-          std::cerr << "Error: No parent commit for deletion-only commit " << commit_hash << std::endl;
+          std::cerr << "Error: No parent commit for deletion-only commit" << std::endl;
           return false;
         }
-        // Get the tree SHA from the parent commit
         std::string parent_tree_sha = get_github_commit_tree(token, username, repo_name, last_commit_sha);
         if (parent_tree_sha.empty())
         {
@@ -1114,46 +1022,30 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         current_tree_sha = parent_tree_sha;
       }
 
-      // Create the commit
-      std::string new_commit_sha = create_github_commit(token, username, repo_name, current_tree_sha, last_commit_sha, commit_message);
+      std::string author_name = get_commit_author(current_commit);
+      std::string author_email = get_commit_author_email(current_commit);
+      std::string commit_timestamp = get_commit_timestamp(current_commit);
+      
+      std::string new_commit_sha = create_github_commit(token, username, repo_name, current_tree_sha, last_commit_sha, commit_message, author_name, author_email, commit_timestamp);
       if (new_commit_sha.empty())
       {
-        std::cerr << "Error: Could not create commit " << commit_hash << std::endl;
-        // Don't return false immediately, continue with other commits
-        continue;
+        std::cerr << "Error: Could not create commit " << current_commit << std::endl;
+        return false;
       }
 
-      last_commit_sha = new_commit_sha;
-      successfully_pushed_commits.push_back(commit_hash);
+    last_commit_sha = new_commit_sha;
 
-      // Track the mapping between BitTrack commit and GitHub commit
-      set_github_commit_mapping(commit_hash, new_commit_sha);
-    }
+    set_github_commit_mapping(current_commit, new_commit_sha);
 
-    // Update the branch reference to point to the latest commit
-    // Use 'main' as GitHub's default branch name
     if (!update_github_ref(token, username, repo_name, "heads/main", last_commit_sha))
     {
       std::cerr << "Error: Could not update branch reference" << std::endl;
-      // Still update last_pushed_commit for successfully pushed commits
-      if (!successfully_pushed_commits.empty())
-      {
-        set_last_pushed_commit(successfully_pushed_commits.back());
-        std::cout << "✓ Partially pushed " << successfully_pushed_commits.size() << " commits to GitHub!" << std::endl;
-      }
       return false;
     }
 
-    if (successfully_pushed_commits.empty())
-    {
-      std::cerr << "Error: No commits were successfully pushed" << std::endl;
-      return false;
-    }
+    std::cout << "✓ Successfully pushed current commit to GitHub!" << std::endl;
 
-    std::cout << "✓ Successfully pushed " << successfully_pushed_commits.size() << " commits to GitHub!" << std::endl;
-
-    // Mark the latest successfully pushed commit as pushed
-    set_last_pushed_commit(successfully_pushed_commits.back());
+    set_last_pushed_commit(current_commit);
 
     return true;
   }
@@ -1175,7 +1067,6 @@ std::string create_github_blob(const std::string &token, const std::string &user
   std::string response_data;
   std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/blobs";
 
-  // Use base64 encoding for content (more reliable than UTF-8)
   std::string base64_content = base64_encode(content);
   std::string json_data = "{\"content\":\"" + base64_content + "\",\"encoding\":\"base64\"}";
 
@@ -1192,7 +1083,6 @@ std::string create_github_blob(const std::string &token, const std::string &user
 
   CURLcode res = curl_easy_perform(curl);
 
-  // Debug output removed for cleaner output
 
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
@@ -1203,11 +1093,10 @@ std::string create_github_blob(const std::string &token, const std::string &user
     return "";
   }
 
-  // Parse response to get SHA
   size_t sha_pos = response_data.find("\"sha\":\"");
   if (sha_pos != std::string::npos)
   {
-    sha_pos += 7; // Skip "sha":"
+    sha_pos += 7;
     size_t sha_end = response_data.find("\"", sha_pos);
     if (sha_end != std::string::npos)
     {
@@ -1228,7 +1117,6 @@ std::string create_github_tree(const std::string &token, const std::string &user
   std::string response_data;
   std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/trees";
 
-  // Prepare JSON data with proper escaping
   std::string escaped_filename = filename;
   size_t pos = 0;
   while ((pos = escaped_filename.find("\"", pos)) != std::string::npos)
@@ -1260,11 +1148,10 @@ std::string create_github_tree(const std::string &token, const std::string &user
     return "";
   }
 
-  // Parse response to get SHA
   size_t sha_pos = response_data.find("\"sha\":\"");
   if (sha_pos != std::string::npos)
   {
-    sha_pos += 7; // Skip "sha":"
+    sha_pos += 7;
     size_t sha_end = response_data.find("\"", sha_pos);
     if (sha_end != std::string::npos)
     {
@@ -1394,7 +1281,7 @@ std::string create_github_tree_with_files(const std::string &token, const std::s
   return "";
 }
 
-std::string create_github_commit(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &tree_sha, const std::string &parent_sha, const std::string &message)
+std::string create_github_commit(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &tree_sha, const std::string &parent_sha, const std::string &message, const std::string &author_name, const std::string &author_email, const std::string &timestamp)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -1418,11 +1305,24 @@ std::string create_github_commit(const std::string &token, const std::string &us
     pos += 2;
   }
 
+  // Use current time for GitHub API to ensure accurate timestamps
+  // This ensures the timestamp reflects when the commit was actually pushed
+  auto now = std::chrono::system_clock::now();
+  auto time_t = std::chrono::system_clock::to_time_t(now);
+  std::stringstream ss;
+  ss << std::put_time(std::gmtime(&time_t), "%Y-%m-%dT%H:%M:%SZ");
+  std::string github_timestamp = ss.str();
+
   std::string json_data = "{\"message\":\"" + escaped_message + "\",\"tree\":\"" + tree_sha + "\"";
   if (!parent_sha.empty())
   {
     json_data += ",\"parents\":[\"" + parent_sha + "\"]";
   }
+  
+  // Add author and committer information
+  json_data += ",\"author\":{\"name\":\"" + author_name + "\",\"email\":\"" + author_email + "\",\"date\":\"" + github_timestamp + "\"}";
+  json_data += ",\"committer\":{\"name\":\"" + author_name + "\",\"email\":\"" + author_email + "\",\"date\":\"" + github_timestamp + "\"}";
+  
   json_data += "}";
 
   struct curl_slist *headers = nullptr;
@@ -2195,23 +2095,86 @@ bool is_local_behind_remote()
       return false;
     }
 
-    if (last_pushed != remote_commit)
+    // If last_pushed == remote_commit, we're in sync
+    if (last_pushed == remote_commit)
     {
-      std::vector<std::string> unpushed_commits = get_unpushed_commits();
-      if (!unpushed_commits.empty())
-      {
-        std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
-        return true;
-      }
-      else
-      {
-        std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
-        return true;
-      }
+      return false;
     }
 
-    return false;
+    // If last_pushed != remote_commit, check if we have unpushed commits
+    if (has_unpushed_commits())
+    {
+      return false;
+    }
+    else
+    {
+      std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
+      return true;
+    }
   }
 
   return false;
+}
+
+std::string get_commit_author(const std::string &commit_hash)
+{
+  std::string commit_file = ".bittrack/commits/" + commit_hash;
+  if (!std::filesystem::exists(commit_file))
+  {
+    return "BitTrack User";
+  }
+
+  std::ifstream file(commit_file);
+  std::string line;
+  while (std::getline(file, line))
+  {
+    if (line.find("Author: ") == 0)
+    {
+      return line.substr(8);
+    }
+  }
+  return "BitTrack User";
+}
+
+std::string get_commit_author_email(const std::string &commit_hash)
+{
+  return "bittrack@example.com";
+}
+
+std::string get_commit_timestamp(const std::string &commit_hash)
+{
+  std::string commit_file = ".bittrack/commits/" + commit_hash;
+  if (!std::filesystem::exists(commit_file))
+  {
+    return "";
+  }
+
+  std::ifstream file(commit_file);
+  std::string line;
+  while (std::getline(file, line))
+  {
+    if (line.find("Timestamp: ") == 0)
+    {
+      return line.substr(11);
+    }
+  }
+  return "";
+}
+
+bool has_unpushed_commits()
+{
+  std::string current_commit = get_current_commit();
+  std::string last_pushed = get_last_pushed_commit();
+  
+  if (current_commit.empty())
+  {
+    return false;
+  }
+  
+  if (last_pushed.empty())
+  {
+    return true;
+  }
+  
+  return current_commit != last_pushed;
 }
