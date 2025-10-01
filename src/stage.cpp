@@ -50,7 +50,6 @@ void save_staged_files(const std::unordered_map<std::string, std::string> &stage
   }
   updatedStagingFile.close();
 
-  // atomic replacement
   if (std::filesystem::exists(".bittrack/index"))
   {
     std::filesystem::remove(".bittrack/index");
@@ -68,7 +67,6 @@ bool validate_file_for_staging(const std::string &file_path)
   bool is_deleted_file = is_deleted(file_path);
   std::string actual_path = get_actual_path(file_path);
 
-  // for non-deleted files, check existence and type
   if (!is_deleted_file)
   {
     if (!std::filesystem::exists(actual_path))
@@ -88,7 +86,6 @@ bool validate_file_for_staging(const std::string &file_path)
       return false;
     }
   }
-
   return true;
 }
 
@@ -99,7 +96,7 @@ std::string calculate_file_hash(const std::string &file_path)
 
   if (is_deleted_file)
   {
-    return ""; // empty hash for deleted files
+    return "";
   }
 
   std::string fileHash = hash_file(actual_path);
@@ -192,18 +189,15 @@ void stage_single_file_impl(const std::string &file_path, std::unordered_map<std
     return;
   }
 
-  // remove any existing staging entry for this file
   staged_files.erase(actual_path);
   staged_files.erase(actual_path + " (deleted)");
 
-  // check if file is already committed and unchanged
   if (!is_deleted_file && is_file_unchanged_from_commit(actual_path, file_hash))
   {
     std::cout << "File already committed and unchanged: " << actual_path << std::endl;
     return;
   }
 
-  // store the file in staging
   std::string stored_path = is_deleted_file ? actual_path + " (deleted)" : actual_path;
   staged_files[stored_path] = file_hash;
 
@@ -219,14 +213,12 @@ void stage_single_file_impl(const std::string &file_path, std::unordered_map<std
 
 void stage_all_files(std::unordered_map<std::string, std::string> &staged_files)
 {
-  // stage all existing files
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
     if (entry.is_regular_file())
     {
       std::string filePath = entry.path().string();
 
-      // normalize path by removing leading "./" if present
       if (filePath.length() > 2 && filePath.substr(0, 2) == "./")
       {
         filePath = filePath.substr(2);
@@ -235,7 +227,6 @@ void stage_all_files(std::unordered_map<std::string, std::string> &staged_files)
     }
   }
 
-  // check for staged files that no longer exist and mark them as deleted
   for (const auto &stagedFile : staged_files)
   {
     if (!is_deleted(stagedFile.first) && !std::filesystem::exists(stagedFile.first))
@@ -246,7 +237,6 @@ void stage_all_files(std::unordered_map<std::string, std::string> &staged_files)
     }
   }
 
-  // check for deleted files that were previously tracked
   std::unordered_set<std::string> trackedFiles = get_tracked_files();
   for (const auto &trackedFile : trackedFiles)
   {
@@ -271,10 +261,8 @@ void stage(const std::string &file_path)
       throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not in a BitTrack repository", ErrorSeverity::ERROR, "stage");
     }
 
-    // load existing staged files
     std::unordered_map<std::string, std::string> staged_files = load_staged_files();
 
-    // stage files based on input
     if (file_path == ".")
     {
       stage_all_files(staged_files);
@@ -284,7 +272,6 @@ void stage(const std::string &file_path)
       stage_single_file_impl(file_path, staged_files);
     }
 
-    // save the updated staging index
     save_staged_files(staged_files);
   }
   catch (const BitTrackError &e)
@@ -315,7 +302,6 @@ void unstage(const std::string &filePath)
       return;
     }
 
-    // handle deleted files - check both with and without (deleted) suffix
     bool is_deleted_file = is_deleted(filePath);
     std::string actualFilePath = get_actual_path(filePath);
 
@@ -361,7 +347,6 @@ void unstage(const std::string &filePath)
       std::string staged_file_path, staged_file_hash;
       if (iss >> staged_file_path >> staged_file_hash)
       {
-        // check if this is the file we want to unstage
         bool should_remove = false;
         if (staged_file_path == actualFilePath)
         {
@@ -389,7 +374,6 @@ void unstage(const std::string &filePath)
       return;
     }
 
-    // atomic rename
     std::filesystem::remove(".bittrack/index");
     std::filesystem::rename(temp_index_path, ".bittrack/index");
   }
@@ -433,11 +417,9 @@ std::vector<std::string> get_staged_files()
         std::string fileName = line.substr(0, last_space_pos);
         std::string fileHash = line.substr(last_space_pos + 1);
 
-        // trim whitespace from hash
         fileHash.erase(0, fileHash.find_first_not_of(" \t"));
         fileHash.erase(fileHash.find_last_not_of(" \t") + 1);
 
-        // if the hash is empty or just whitespace, it means this is a deleted file
         if (fileHash.empty())
         {
           if (!is_deleted(fileName))
@@ -464,12 +446,10 @@ std::vector<std::string> get_unstaged_files()
 
   try
   {
-    // get current commit and staged files once
     std::string currentCommit = get_current_commit();
     std::vector<std::string> stagedFiles = get_staged_files();
     std::set<std::string> stagedSet(stagedFiles.begin(), stagedFiles.end());
 
-    // get files from current commit (not entire history)
     std::unordered_set<std::string> committedFiles;
     if (!currentCommit.empty())
     {
@@ -487,36 +467,30 @@ std::vector<std::string> get_unstaged_files()
       }
     }
 
-    // check working directory files
     for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
     {
       if (entry.is_regular_file())
       {
         std::string filePath = entry.path().string();
 
-        // normalize path
         if (filePath.length() > 2 && filePath.substr(0, 2) == "./")
         {
           filePath = filePath.substr(2);
         }
 
-        // skip system files and ignored files
         if (filePath.find(".bittrack") != std::string::npos || should_ignore_file(filePath))
         {
           continue;
         }
 
-        // skip if already staged
         if (stagedSet.find(filePath) != stagedSet.end())
         {
           continue;
         }
 
-        // check if file is modified or untracked
         bool isModified = false;
         if (committedFiles.find(filePath) != committedFiles.end())
         {
-          // file is tracked, check if modified
           std::string commitDir = ".bittrack/objects/" + currentCommit;
           std::string committedFilePath = commitDir + "/" + filePath;
           if (std::filesystem::exists(committedFilePath))
@@ -528,7 +502,7 @@ std::vector<std::string> get_unstaged_files()
         }
         else
         {
-          isModified = true; // file is untracked
+          isModified = true;
         }
 
         if (isModified)
@@ -538,7 +512,6 @@ std::vector<std::string> get_unstaged_files()
       }
     }
 
-    // check for deleted files
     for (const auto &committedFile : committedFiles)
     {
       if (!std::filesystem::exists(committedFile) && stagedSet.find(committedFile) == stagedSet.end())
@@ -601,7 +574,6 @@ bool is_deleted(const std::string &file_path)
       return false;
     }
 
-    // check if the file path ends with " (deleted)" suffix
     const std::string deleted_suffix = " (deleted)";
     return file_path.length() > deleted_suffix.length() && file_path.substr(file_path.length() - deleted_suffix.length()) == deleted_suffix;
   }
@@ -621,7 +593,6 @@ std::string get_actual_path(const std::string &file_path)
       return file_path;
     }
 
-    // if it's a deleted file, remove the " (deleted)" suffix
     if (is_deleted(file_path))
     {
       const std::string deleted_suffix = " (deleted)";

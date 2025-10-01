@@ -42,7 +42,6 @@ void repack_repository()
   size_t original_size = 0;
   size_t repacked_size = 0;
 
-  // lCount original objects
   for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
   {
     if (entry.is_regular_file())
@@ -52,11 +51,9 @@ void repack_repository()
     }
   }
 
-  // lCreate packed objects directory
   std::string packed_dir = objects_dir + "/packed";
   std::filesystem::create_directories(packed_dir);
 
-  // lSimple repacking: move all objects to packed directory
   for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
   {
     if (entry.is_regular_file() && entry.path().parent_path().string() != packed_dir)
@@ -100,10 +97,8 @@ void fsck_repository()
 {
   std::cout << "Checking repository integrity..." << std::endl;
 
-  // check for missing objects
   std::vector<std::string> missing_objects;
 
-  // check all commits
   std::string objects_dir = ".bittrack/objects";
   if (std::filesystem::exists(objects_dir))
   {
@@ -111,7 +106,6 @@ void fsck_repository()
     {
       if (entry.is_regular_file())
       {
-        // check if file is readable
         std::ifstream file(entry.path());
         if (!file.good())
         {
@@ -136,13 +130,11 @@ void fsck_repository()
   }
 }
 
-
 void show_repository_info()
 {
   std::cout << "Repository Information:" << std::endl;
   std::cout << "  Current branch: " << get_current_branch() << std::endl;
   std::cout << "  Current commit: " << get_current_commit() << std::endl;
-  // Calculate repository size
   size_t total_size = 0;
   for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack"))
   {
@@ -152,7 +144,7 @@ void show_repository_info()
     }
   }
   std::cout << "  Repository size: " << format_size(total_size) << std::endl;
-  std::cout << "  Last modified: " << std::endl; // would get from filesystem
+  std::cout << "  Last modified: " << std::endl;
 }
 
 void analyze_repository()
@@ -166,10 +158,7 @@ void analyze_repository()
   std::cout << "  Average commit size: " << format_size(stats.total_size / std::max(stats.commit_count, size_t(1))) << std::endl;
   std::cout << "  Files per commit: " << stats.total_objects / std::max(stats.commit_count, size_t(1)) << std::endl;
 
-  // find large files
   find_large_files();
-
-  // find duplicates
   find_duplicate_files();
 }
 
@@ -197,9 +186,7 @@ void find_large_files(size_t threshold)
     return;
   }
 
-  // sort by size
-  std::sort(large_files.begin(), large_files.end(), [](const auto &a, const auto &b)
-            { return a.second > b.second; });
+  std::sort(large_files.begin(), large_files.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
   std::cout << "Large files:" << std::endl;
 
   for (const auto &file : large_files)
@@ -231,10 +218,7 @@ void optimize_repository()
 {
   std::cout << "Optimizing repository..." << std::endl;
 
-  // run garbage collection
   garbage_collect();
-
-  // repack repository
   repack_repository();
 
   std::cout << "Repository optimization completed" << std::endl;
@@ -244,7 +228,6 @@ RepoStats calculate_repository_stats()
 {
   RepoStats stats;
 
-  // count objects
   std::string objects_dir = ".bittrack/objects";
   if (std::filesystem::exists(objects_dir))
   {
@@ -265,10 +248,7 @@ RepoStats calculate_repository_stats()
     }
   }
 
-  // count commits (simplified)
-  stats.commit_count = stats.total_objects; // this is a rough estimate
-
-  // lCount branches
+  stats.commit_count = stats.total_objects;
   std::string refs_dir = ".bittrack/refs/heads";
   if (std::filesystem::exists(refs_dir))
   {
@@ -281,7 +261,6 @@ RepoStats calculate_repository_stats()
     }
   }
 
-  // count tags
   std::string tags_dir = ".bittrack/refs/tags";
   if (std::filesystem::exists(tags_dir))
   {
@@ -309,15 +288,12 @@ std::vector<std::string> get_unreachable_objects()
 
   std::set<std::string> reachable_objects;
 
-  // get all commit hashes from refs
-  // lFor now, we'll get commits from the current branch
   std::string current_commit = get_current_commit();
   if (!current_commit.empty())
   {
     reachable_objects.insert(current_commit);
   }
 
-  // get all branch refs
   std::string refs_dir = ".bittrack/refs/heads";
   if (std::filesystem::exists(refs_dir))
   {
@@ -336,7 +312,6 @@ std::vector<std::string> get_unreachable_objects()
     }
   }
 
-  // find unreachable objects
   for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
   {
     if (entry.is_regular_file())
@@ -359,7 +334,6 @@ std::vector<std::string> get_duplicate_files()
   std::vector<std::string> duplicates;
   std::map<std::string, std::vector<std::string>> file_hashes;
 
-  // scan all files in the repository
   for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
   {
     if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
@@ -371,18 +345,15 @@ std::vector<std::string> get_duplicate_files()
       }
       catch (...)
       {
-        // skip files that can't be hashed
         continue;
       }
     }
   }
 
-  // find files with duplicate hashes
   for (const auto &pair : file_hashes)
   {
     if (pair.second.size() > 1)
     {
-      // add all but the first file as duplicates
       for (size_t i = 1; i < pair.second.size(); ++i)
       {
         duplicates.push_back(pair.second[i]);
@@ -392,7 +363,6 @@ std::vector<std::string> get_duplicate_files()
 
   return duplicates;
 }
-
 
 std::string format_size(size_t bytes)
 {

@@ -101,7 +101,7 @@ std::vector<Tag> get_all_tags()
     return tags;
   }
 
-  for (const auto &entry : std::filesystem::directory_iterator(tags_dir))
+  for (const auto &entry: std::filesystem::directory_iterator(tags_dir))
   {
     if (entry.is_regular_file())
     {
@@ -113,7 +113,6 @@ std::vector<Tag> get_all_tags()
       }
     }
   }
-
   return tags;
 }
 
@@ -130,7 +129,6 @@ Tag get_tag(const std::string &name)
   std::ifstream file(tag_file);
   std::string line;
 
-  // Read tag header
   if (std::getline(file, line))
   {
     if (line.find("object ") == 0)
@@ -164,7 +162,6 @@ Tag get_tag(const std::string &name)
     }
   }
 
-  // Read message
   std::stringstream message_stream;
   bool in_message = false;
   while (std::getline(file, line))
@@ -180,7 +177,6 @@ Tag get_tag(const std::string &name)
   }
   tag.message = message_stream.str();
 
-  // For lightweight tags, just read the commit hash
   if (tag.type == TagType::LIGHTWEIGHT)
   {
     std::ifstream light_file(tag_file);
@@ -210,7 +206,6 @@ void save_tag(const Tag &tag)
   }
   else
   {
-    // Lightweight tag - just store the commit hash
     file << tag.commit_hash << std::endl;
   }
 

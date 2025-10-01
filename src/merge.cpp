@@ -4,7 +4,6 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
 {
   MergeResult result;
 
-  // lCheck if branches exist
   std::string source_commit = get_branch_last_commit_hash(source_branch);
   std::string target_commit = get_branch_last_commit_hash(target_branch);
 
@@ -14,7 +13,6 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
     return result;
   }
 
-  // lCheck if already up to date
   if (source_commit == target_commit)
   {
     result.success = true;
@@ -22,7 +20,6 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
     return result;
   }
 
-  // lCheck for fast-forward merge
   if (is_fast_forward(source_branch, target_branch))
   {
     result.success = true;
@@ -31,7 +28,6 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
     return result;
   }
 
-  // lPerform three-way merge
   std::string merge_base = find_merge_base(source_commit, target_commit);
   if (merge_base.empty())
   {
@@ -43,7 +39,6 @@ MergeResult merge_branches(const std::string &source_branch, const std::string &
 
   if (result.success && !result.has_conflicts)
   {
-    // lCreate merge commit
     std::string merge_message = "Merge branch '" + source_branch + "' into " + target_branch;
     create_merge_commit(merge_message, {target_commit, source_commit});
     result.merge_commit = get_current_commit();
@@ -56,7 +51,6 @@ MergeResult merge_commits(const std::string &commit1, const std::string &commit2
 {
   MergeResult result;
 
-  // lFind common ancestor
   std::string merge_base = find_merge_base(commit1, commit2);
   if (merge_base.empty())
   {
@@ -64,9 +58,7 @@ MergeResult merge_commits(const std::string &commit1, const std::string &commit2
     return result;
   }
 
-  // lPerform three-way merge
   result = three_way_merge(merge_base, commit1, commit2);
-
   return result;
 }
 
@@ -74,7 +66,6 @@ MergeResult three_way_merge(const std::string &base, const std::string &ours, co
 {
   MergeResult result;
 
-  // lGet files from all three commits
   std::set<std::string> all_files;
   std::vector<std::string> base_files = get_commit_files(base);
   std::vector<std::string> our_files = get_commit_files(ours);
@@ -84,32 +75,26 @@ MergeResult three_way_merge(const std::string &base, const std::string &ours, co
   all_files.insert(our_files.begin(), our_files.end());
   all_files.insert(their_files.begin(), their_files.end());
 
-  // lProcess each file
   for (const auto &file : all_files)
   {
     std::string base_content = get_file_content(base + "/" + file);
     std::string our_content = get_file_content(ours + "/" + file);
     std::string their_content = get_file_content(theirs + "/" + file);
 
-    // lCheck for conflicts
     if (our_content != their_content)
     {
       if (base_content == our_content)
       {
-        // lThey modified, we didn't - take their version
         std::cout << "Auto-merged " << file << std::endl;
       }
       else if (base_content == their_content)
       {
-        // lWe modified, they didn't - take our version
         std::cout << "Auto-merged " << file << std::endl;
       }
       else
       {
-        // lBoth modified - conflict
         result.has_conflicts = true;
         result.conflicted_files.push_back(file);
-        // lCreate conflict file
         std::ofstream conflict_file(file);
         conflict_file << "<<<<<<< HEAD" << std::endl;
         conflict_file << our_content << std::endl;
@@ -204,9 +189,6 @@ void continue_merge()
 
 std::string find_merge_base(const std::string &commit1, const std::string &commit2)
 {
-  // lSimple implementation - find common ancestor
-  // lIn a real implementation, this would use a more sophisticated algorithm
-
   std::string current = commit1;
   std::set<std::string> visited;
 
@@ -219,7 +201,6 @@ std::string find_merge_base(const std::string &commit1, const std::string &commi
       return current;
     }
 
-    // lGet parent commit (simplified)
     current = get_last_commit(current);
   }
 
@@ -228,7 +209,6 @@ std::string find_merge_base(const std::string &commit1, const std::string &commi
 
 bool is_ancestor(const std::string &ancestor, const std::string &descendant)
 {
-  // lSimple implementation - check if ancestor is in the history of descendant
   std::string current = descendant;
   std::set<std::string> visited;
 
@@ -309,12 +289,10 @@ bool is_merge_in_progress()
 
 void create_merge_commit(const std::string &message, const std::vector<std::string> &parents)
 {
-  // Create merge commit directory
   std::string commit_hash = generate_commit_hash(get_current_user(), message, get_current_timestamp());
   std::string commit_dir = ".bittrack/objects/" + commit_hash;
   std::filesystem::create_directories(commit_dir);
 
-  // Create commit file
   std::string commit_file = commit_dir + "/commit.txt";
   std::ofstream file(commit_file);
 
@@ -324,13 +302,11 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
     return;
   }
 
-  // Write commit metadata
   file << "commit " << commit_hash << std::endl;
   file << "message " << message << std::endl;
   file << "timestamp " << get_current_timestamp() << std::endl;
   file << "author " << get_current_user() << std::endl;
 
-  // Write parent commits
   for (const auto &parent : parents)
   {
     file << "parent " << parent << std::endl;
@@ -338,12 +314,10 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
 
   file.close();
 
-  // Update branch head
   std::ofstream head_file(".bittrack/refs/heads/" + get_current_branch());
   head_file << commit_hash << std::endl;
   head_file.close();
 
-  // Add to commit history
   insert_commit_record_to_history(commit_hash, get_current_branch());
 
   std::cout << "Created merge commit: " << commit_hash << std::endl;

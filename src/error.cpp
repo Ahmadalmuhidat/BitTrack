@@ -7,26 +7,25 @@ void ErrorHandler::printError(const BitTrackError &error)
 
 void ErrorHandler::printError(ErrorCode code, const std::string &message, ErrorSeverity severity, const std::string &context)
 {
-  // set color based on severity
   std::string color;
   std::string severityStr;
 
   switch (severity)
   {
   case ErrorSeverity::INFO:
-    color = "\033[36m"; // cyan
+    color = "\033[36m";
     severityStr = "INFO";
     break;
   case ErrorSeverity::WARNING:
-    color = "\033[33m"; // yellow
+    color = "\033[33m";
     severityStr = "WARNING";
     break;
   case ErrorSeverity::ERROR:
-    color = "\033[31m"; // red
+    color = "\033[31m";
     severityStr = "ERROR";
     break;
   case ErrorSeverity::FATAL:
-    color = "\033[35m"; // magenta
+    color = "\033[35m";
     severityStr = "FATAL";
     break;
   }
@@ -40,7 +39,6 @@ void ErrorHandler::printError(ErrorCode code, const std::string &message, ErrorS
 
   std::cerr << message << std::endl;
 
-  // print additional help for common errors
   switch (code)
   {
   case ErrorCode::NOT_IN_REPOSITORY:
@@ -157,7 +155,6 @@ void ErrorHandler::handleFilesystemError(const std::filesystem::filesystem_error
 {
   std::string errorMsg = "Filesystem error during " + operation + ": " + e.what();
 
-  // determine specific error type based on error code
   if (e.code() == std::errc::no_such_file_or_directory)
   {
     printError(ErrorCode::FILE_NOT_FOUND, errorMsg, ErrorSeverity::ERROR, operation);
@@ -193,14 +190,12 @@ bool ErrorHandler::validateFilePath(const std::string &path)
     return false;
   }
 
-  // check for invalid characters
   if (path.find('\0') != std::string::npos)
   {
     printError(ErrorCode::INVALID_FILE_PATH, "File path contains null character", ErrorSeverity::ERROR, path);
     return false;
   }
 
-  // check for path traversal attempts
   if (path.find("..") != std::string::npos)
   {
     printError(ErrorCode::INVALID_FILE_PATH, "File path contains path traversal", ErrorSeverity::ERROR, path);
@@ -218,7 +213,6 @@ bool ErrorHandler::validateBranchName(const std::string &name)
     return false;
   }
 
-  // check for invalid characters in branch names
   std::regex branchPattern("^[a-zA-Z0-9._-]+$");
   if (!std::regex_match(name, branchPattern))
   {
@@ -226,7 +220,6 @@ bool ErrorHandler::validateBranchName(const std::string &name)
     return false;
   }
 
-  // check for reserved names
   if (name == "HEAD")
   {
     printError(ErrorCode::INVALID_BRANCH_NAME, "Branch name '" + name + "' is reserved", ErrorSeverity::ERROR, name);
@@ -261,7 +254,6 @@ bool ErrorHandler::validateRemoteUrl(const std::string &url)
     return false;
   }
 
-  // basic URL validation
   std::regex urlPattern("^(https?|ftp)://[^\\s/$.?#].[^\\s]*$");
   if (!std::regex_match(url, urlPattern))
   {
@@ -306,7 +298,6 @@ bool ErrorHandler::safeCopyFile(const std::filesystem::path &from, const std::fi
       return false;
     }
 
-    // create parent directory if it doesn't exist
     if (!to.parent_path().empty())
     {
       safeCreateDirectories(to.parent_path());
@@ -333,7 +324,7 @@ bool ErrorHandler::safeRemoveFile(const std::filesystem::path &path)
   {
     if (!std::filesystem::exists(path))
     {
-      return true; // file doesn't exist, consider it removed
+      return true;
     }
 
     std::filesystem::remove(path);
@@ -355,7 +346,6 @@ bool ErrorHandler::safeWriteFile(const std::filesystem::path &path, const std::s
 {
   try
   {
-    // create parent directory if it doesn't exist
     if (!path.parent_path().empty())
     {
       safeCreateDirectories(path.parent_path());
@@ -425,7 +415,6 @@ bool ErrorHandler::validateRepository()
     return false;
   }
 
-  // check for essential repository files
   if (!std::filesystem::exists(".bittrack/HEAD") || !std::filesystem::exists(".bittrack/commits") || !std::filesystem::exists(".bittrack/refs"))
   {
     printError(ErrorCode::REPOSITORY_CORRUPTED, "Repository appears to be corrupted - missing essential files", ErrorSeverity::FATAL, "repository validation");
@@ -450,7 +439,6 @@ bool ErrorHandler::validateNoUncommittedChanges()
 {
   try
   {
-    // check if there are any staged files
     std::vector<std::string> staged_files = get_staged_files();
     if (!staged_files.empty())
     {
@@ -458,7 +446,6 @@ bool ErrorHandler::validateNoUncommittedChanges()
       return false;
     }
 
-    // check if there are any unstaged files
     std::vector<std::string> unstaged_files = get_unstaged_files();
     if (!unstaged_files.empty())
     {

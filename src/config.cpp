@@ -23,7 +23,7 @@ std::string config_get(const std::string &key, ConfigScope scope)
     {
       return it->second;
     }
-    // fall back to global config
+
     it = global_config.find(key);
     return (it != global_config.end()) ? it->second : "";
   }
@@ -80,7 +80,6 @@ void config_list(ConfigScope scope)
 
 void config_load()
 {
-  // load global config
   std::string global_path = get_global_config_path();
   if (std::filesystem::exists(global_path))
   {
@@ -103,7 +102,6 @@ void config_load()
     file.close();
   }
 
-  // load repository config
   std::string repo_path = get_repository_config_path();
   if (std::filesystem::exists(repo_path))
   {
@@ -131,7 +129,6 @@ void config_load()
 
 void config_save()
 {
-  // save global config
   std::string global_path = get_global_config_path();
   std::filesystem::create_directories(std::filesystem::path(global_path).parent_path());
 
@@ -143,7 +140,6 @@ void config_save()
   }
   global_file.close();
 
-  // save repository config
   std::string repo_path = get_repository_config_path();
   std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
 

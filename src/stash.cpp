@@ -15,19 +15,14 @@ void stash_changes(const std::string &message)
   entry.branch = get_current_branch();
   entry.commit_hash = get_current_commit();
   entry.timestamp = std::time(nullptr);
-  entry.files = staged_files; // Only stash staged files
+  entry.files = staged_files;
 
-  // backup staged files
   backup_staged_files(entry.id);
-
-  // remove staged files from working directory
   remove_staged_files_from_working_directory();
 
-  // clear the staging index
   std::ofstream clear_staging_file(".bittrack/index", std::ios::trunc);
   clear_staging_file.close();
 
-  // save stash entry
   save_stash_entry(entry);
 
   std::cout << "Stashed " << staged_files.size() << " staged files: " << entry.message << std::endl;
@@ -100,10 +95,8 @@ void stash_apply(const std::string &stash_id)
     return;
   }
 
-  // restore staged files to working directory
   restore_working_directory(entry.id);
 
-  // stage the restored files
   for (const auto &file : entry.files)
   {
     if (std::filesystem::exists(file))
@@ -147,14 +140,12 @@ void stash_drop(const std::string &stash_id)
     return;
   }
 
-  // delete stash directory
   std::string stash_dir = get_stash_file_path(stash_id);
   if (std::filesystem::exists(stash_dir))
   {
     std::filesystem::remove_all(stash_dir);
   }
 
-  // delete stash entry
   delete_stash_entry(stash_id);
 
   std::cout << "Dropped stash: " << stash_id << std::endl;
@@ -173,7 +164,6 @@ void stash_clear()
     }
   }
 
-  // clear stash index
   std::string stash_index = get_stash_dir() + "/index";
   if (std::filesystem::exists(stash_index))
   {
@@ -237,7 +227,6 @@ StashEntry get_stash_entry(const std::string &stash_id)
     {
       StashEntry result = entry;
 
-      // populate files vector by reading from stash directory
       std::string stash_dir = get_stash_file_path(stash_id);
       if (std::filesystem::exists(stash_dir))
       {
@@ -324,7 +313,6 @@ void restore_working_directory(const std::string &stash_id)
       std::string rel_path = std::filesystem::relative(entry.path(), stash_dir).string();
       std::filesystem::path parent_path = std::filesystem::path(rel_path).parent_path();
 
-      // Only create directories if parent path is not empty
       if (!parent_path.empty())
       {
         std::filesystem::create_directories(parent_path);
@@ -344,7 +332,6 @@ std::vector<std::string> get_all_tracked_files()
   files.insert(files.end(), staged.begin(), staged.end());
   files.insert(files.end(), unstaged.begin(), unstaged.end());
 
-  // remove duplicates
   std::sort(files.begin(), files.end());
   files.erase(std::unique(files.begin(), files.end()), files.end());
 

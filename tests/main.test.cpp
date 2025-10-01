@@ -6,7 +6,6 @@
 #include <vector>
 #include <algorithm>
 
-// Include test function declarations
 extern bool test_branch_master();
 extern bool test_list_branches();
 extern bool test_checkout_new_branch();

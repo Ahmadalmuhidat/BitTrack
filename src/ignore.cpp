@@ -240,11 +240,9 @@ bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector
 
 bool should_ignore_file(const std::string &file_path)
 {
-  // check for .bitignore file in current directory and parent directories
   std::string current_dir = std::filesystem::current_path().string();
   std::string bitignore_path = current_dir + "/.bitignore";
 
-  // look for .bitignore in current directory and parent directories
   while (current_dir != std::filesystem::path(current_dir).parent_path().string())
   {
     bitignore_path = current_dir + "/.bitignore";

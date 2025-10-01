@@ -39,10 +39,10 @@ DiffResult compare_file_to_content(const std::string &file, const std::string &c
 
   std::vector<std::string> file_lines = read_file_lines(file);
 
-  // split content into lines
   std::vector<std::string> content_lines;
   std::istringstream iss(content);
   std::string line;
+
   while (std::getline(iss, line))
   {
     content_lines.push_back(line);
@@ -65,7 +65,6 @@ DiffResult diff_staged()
   std::string current_commit = get_current_commit();
   if (current_commit.empty())
   {
-    // if no commits, show all staged files as additions
     for (const auto &file : staged_files)
     {
       if (is_binary_file(file))
@@ -75,7 +74,6 @@ DiffResult diff_staged()
 
       std::string staged_content = get_staged_file_content(file);
 
-      // split staged content into lines
       std::vector<std::string> content_lines;
       std::istringstream iss(staged_content);
       std::string line;
@@ -84,7 +82,6 @@ DiffResult diff_staged()
         content_lines.push_back(line);
       }
 
-      // Create a hunk showing all lines as additions
       if (!content_lines.empty())
       {
         DiffHunk hunk(0, 0, 1, content_lines.size(), file + ": @@ -0,0 +1," + std::to_string(content_lines.size()) + " @@");
@@ -113,10 +110,8 @@ DiffResult diff_staged()
 
     if (std::filesystem::exists(commit_file))
     {
-      // file exists in commit, compare staged version to commit version
       DiffResult file_diff = compare_files(commit_file, file);
 
-      // merge hunks from this file
       for (const auto &hunk : file_diff.hunks)
       {
         DiffHunk file_hunk = hunk;
@@ -126,10 +121,8 @@ DiffResult diff_staged()
     }
     else
     {
-      // file doesn't exist in commit, show as addition
       DiffResult file_diff("/dev/null", file);
 
-      // split staged content into lines
       std::vector<std::string> content_lines;
       std::istringstream iss(staged_content);
       std::string line;
@@ -138,7 +131,6 @@ DiffResult diff_staged()
         content_lines.push_back(line);
       }
 
-      // create a hunk showing all lines as additions
       if (!content_lines.empty())
       {
         DiffHunk hunk(0, 0, 1, content_lines.size(), "@@ -0,0 +1," + std::to_string(content_lines.size()) + " @@");
@@ -152,7 +144,6 @@ DiffResult diff_staged()
         file_diff.hunks.push_back(hunk);
       }
 
-      // merge hunks from this file
       for (const auto &hunk : file_diff.hunks)
       {
         DiffHunk file_hunk = hunk;
@@ -185,7 +176,6 @@ DiffResult diff_unstaged()
     std::string staged_content = get_staged_file_content(file);
     DiffResult file_diff = compare_file_to_content(file, staged_content);
 
-    // merge hunks from this file
     for (const auto &hunk : file_diff.hunks)
     {
       DiffHunk file_hunk = hunk;
@@ -207,7 +197,6 @@ DiffResult diff_working_directory()
     return result;
   }
 
-  // get all files that are tracked (staged or in commit)
   std::vector<std::string> staged_files = get_staged_files();
   std::vector<std::string> unstaged_files = get_unstaged_files();
 
@@ -221,7 +210,6 @@ DiffResult diff_working_directory()
     all_files.insert(file);
   }
 
-  // also include files that exist in the current commit
   std::string commit_dir = ".bittrack/objects/" + current_commit;
   if (std::filesystem::exists(commit_dir))
   {
@@ -242,13 +230,11 @@ DiffResult diff_working_directory()
       continue;
     }
 
-    // compare with last commit version
     std::string commit_file = ".bittrack/objects/" + current_commit + "/" + file;
     if (std::filesystem::exists(commit_file))
     {
       DiffResult file_diff = compare_files(file, commit_file);
 
-      // merge hunks from this file
       for (const auto &hunk : file_diff.hunks)
       {
         DiffHunk file_hunk = hunk;
@@ -258,7 +244,6 @@ DiffResult diff_working_directory()
     }
     else
     {
-      // file doesn't exist in commit, show as addition
       std::vector<std::string> file_lines = read_file_lines(file);
 
       if (!file_lines.empty())
@@ -308,11 +293,6 @@ void show_diff(const DiffResult &result)
 
 bool is_binary_file(const std::string &file_path)
 {
-  if (!std::filesystem::exists(file_path))
-  {
-    return false;
-  }
-
   std::ifstream file(file_path, std::ios::binary);
   char buffer[1024];
   file.read(buffer, sizeof(buffer));
@@ -325,7 +305,6 @@ bool is_binary_file(const std::string &file_path)
       return true;
     }
   }
-
   return false;
 }
 

@@ -29,7 +29,6 @@ void init()
       throw BitTrackError(ErrorCode::REPOSITORY_ALREADY_EXISTS, "Repository already exists in this directory", ErrorSeverity::WARNING, "init");
     }
 
-    // create repository structure with error handling
     if (!ErrorHandler::safeCreateDirectories(".bittrack/objects"))
     {
       throw BitTrackError(ErrorCode::DIRECTORY_CREATION_FAILED, "Failed to create objects directory", ErrorSeverity::FATAL, "init");
@@ -45,7 +44,6 @@ void init()
       throw BitTrackError(ErrorCode::DIRECTORY_CREATION_FAILED, "Failed to create refs/heads directory", ErrorSeverity::FATAL, "init");
     }
 
-    // create essential files
     if (!ErrorHandler::safeWriteFile(".bittrack/commits/history", ""))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create history file", ErrorSeverity::FATAL, "init");
@@ -56,13 +54,11 @@ void init()
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create remote file", ErrorSeverity::FATAL, "init");
     }
 
-    // initialize main branch ref file (empty - no commits yet)
     if (!ErrorHandler::safeWriteFile(".bittrack/refs/heads/main", ""))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to create main branch ref", ErrorSeverity::FATAL, "init");
     }
 
-    // set HEAD to point to main branch
     if (!ErrorHandler::safeWriteFile(".bittrack/HEAD", "main"))
     {
       throw BitTrackError(ErrorCode::FILE_WRITE_ERROR, "Failed to set HEAD to main", ErrorSeverity::FATAL, "init");
@@ -73,7 +69,7 @@ void init()
   catch (const BitTrackError &e)
   {
     ErrorHandler::printError(e);
-    throw; // re-throw to be handled by main
+    throw;
   }
   HANDLE_EXCEPTION("init")
 }
@@ -86,8 +82,7 @@ void status()
     std::cout << "\033[32m" << fileName << "\033[0m" << std::endl;
   }
 
-  std::cout << "\n"
-            << std::endl;
+  std::cout << "\n" << std::endl;
 
   std::cout << "unstaged files:" << std::endl;
   for (std::string fileName : get_unstaged_files())
@@ -188,7 +183,6 @@ void branch_operations(int argc, const char *argv[], int &i)
 
   if (subFlag == "-l")
   {
-    // print branches list
     std::vector<std::string> branches = get_branches_list();
     std::string current_branch = get_current_branch();
 
@@ -196,12 +190,10 @@ void branch_operations(int argc, const char *argv[], int &i)
     {
       if (branch == current_branch)
       {
-        // Display current branch in green
         std::cout << "\033[32m" << branch << "\033[0m" << std::endl;
       }
       else
       {
-        // Display other branches in normal color
         std::cout << branch << std::endl;
       }
     }
@@ -369,7 +361,6 @@ void diff_operations(int argc, const char *argv[], int &i)
       }
       else if (i + 1 < argc)
       {
-        // compare two files
         std::string file1 = subFlag;
         std::string file2 = argv[++i];
         DiffResult result = compare_files(file1, file2);
@@ -377,14 +368,12 @@ void diff_operations(int argc, const char *argv[], int &i)
       }
       else
       {
-        // show working directory diff
         DiffResult result = diff_working_directory();
         show_diff(result);
       }
     }
     else
     {
-      // lShow working directory diff
       DiffResult result = diff_working_directory();
       show_diff(result);
     }
@@ -440,7 +429,6 @@ void stash_operations(int argc, const char *argv[], int &i)
     }
     else
     {
-      // Default: create stash with message prompt
       std::cout << "Enter stash message: ";
       std::string message;
       std::getline(std::cin, message);
@@ -469,7 +457,6 @@ void config_operations(int argc, const char *argv[], int &i)
       }
       else if (i + 1 < argc)
       {
-        // lSet config value
         std::string key = subFlag;
         std::string value = argv[++i];
         config_set(key, value);
@@ -477,7 +464,6 @@ void config_operations(int argc, const char *argv[], int &i)
       }
       else
       {
-        // lGet config value
         std::string value = config_get(subFlag);
         if (value.empty())
         {
@@ -563,8 +549,7 @@ void hooks_operations(int argc, const char *argv[], int &i)
       else if (subFlag == "install" && i + 1 < argc)
       {
         std::string hook_type = argv[++i];
-        // lConvert string to HookType enum
-        HookType type = HookType::PRE_COMMIT; // lDefault
+        HookType type = HookType::PRE_COMMIT;
         if (hook_type == "pre-commit")
           type = HookType::PRE_COMMIT;
         else if (hook_type == "post-commit")
@@ -604,8 +589,7 @@ void hooks_operations(int argc, const char *argv[], int &i)
       else if (subFlag == "uninstall" && i + 1 < argc)
       {
         std::string hook_type = argv[++i];
-        // lConvert string to HookType enum
-        HookType type = HookType::PRE_COMMIT; // lDefault
+        HookType type = HookType::PRE_COMMIT;
         if (hook_type == "pre-commit")
           type = HookType::PRE_COMMIT;
         else if (hook_type == "post-commit")
@@ -788,8 +772,6 @@ int main(int argc, const char *argv[])
         init();
         break;
       }
-
-      // validate repository exists for all operations except init
       if (!check_repository_exists())
       {
         throw BitTrackError(ErrorCode::NOT_IN_REPOSITORY, "Not inside a BitTrack repository", ErrorSeverity::ERROR, "repository check");
@@ -816,14 +798,12 @@ int main(int argc, const char *argv[])
         {
           std::string message;
 
-          // Check if next argument is -m flag
           if (i + 1 < argc && std::string(argv[i + 1]) == "-m")
           {
-            // Check if message is provided after -m
             if (i + 2 < argc)
             {
               message = argv[i + 2];
-              i += 2; // Skip -m and message arguments
+              i += 2;
             }
             else
             {
@@ -832,7 +812,6 @@ int main(int argc, const char *argv[])
           }
           else
           {
-            // Prompt for message if -m flag not provided
             std::cout << "message: ";
             getline(std::cin, message);
           }

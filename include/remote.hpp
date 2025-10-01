@@ -54,7 +54,7 @@ std::string create_github_tree(const std::string& token, const std::string& user
 std::string create_github_tree_with_files(const std::string& token, const std::string& username, const std::string& repo_name, const std::vector<std::string>& blob_shas, const std::vector<std::string>& file_names, const std::string& base_tree_sha = "");
 std::string get_github_commit_tree(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& commit_sha);
 std::string create_github_commit(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& tree_sha, const std::string& parent_sha, const std::string& message, const std::string& author_name, const std::string& author_email, const std::string& timestamp);
-std::string get_github_ref(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& ref);
+std::string get_github_last_commit_sha(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& ref);
 bool update_github_ref(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& ref, const std::string& sha);
 std::string get_github_commit_data(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& commit_sha);
 bool extract_files_from_github_commit(const std::string& token, const std::string& username, const std::string& repo_name, const std::string& commit_sha, const std::string& commit_data, std::vector<std::string>& downloaded_files);
