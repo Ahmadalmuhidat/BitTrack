@@ -1406,4 +1406,4 @@ Contributions are welcome! Please:
 ---
 
 **BitTrack User Manual v1.0**  
-*Last updated: December 2024*
+*Last updated: October 2025*
