@@ -32,16 +32,6 @@ A comprehensive, lightweight version control system built from scratch in C++—
   - zlib (for compression)
   - Google Test (for testing)
 
-### Installation on macOS
-```bash
-  # Install dependencies via Homebrew
-  brew install openssl curl zlib
-  # Clone and build
-  git clone https://github.com/Ahmadalmuhidat/bittrack.git
-  cd bittrack
-  make compile
-```
-
 ## Installation
 
 ### Quick Start
