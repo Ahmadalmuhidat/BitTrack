@@ -82,16 +82,16 @@ bittrack/
 ├── include/                # Header files
 ├── libs/                   # External libraries
 ├── src/                    # Source files
-│   ├── main.cpp           # Main application
-│   └── *.cpp              # Implementation files
+│   ├── main.cpp            # Main application
+│   └── *.cpp               # Implementation files
 ├── tests/                  # Test files
-│   ├── main.test.cpp      # Main test runner
-│   └── *.test.cpp         # Individual test modules
+│   ├── main.test.cpp       # Main test runner
+│   └── *.test.cpp          # Individual test modules
 ├── .bittrack/              # BitTrack repository data
 ├── .gitignore              # Git ignore rules
-├── Makefile               # Build configuration
-├── LICENSE                # MIT License
-└── README.md              # This file
+├── Makefile                # Build configuration
+├── LICENSE                 # MIT License
+└── README.md               # This file
 ```
 
 ## Development
