@@ -175,15 +175,15 @@ void push()
 
   std::string CurrentBranch = get_current_branch();
 
-  if (!remote_has_branch(CurrentBranch))
-  {
-    std::cout << "Remote branch not found. Creating it..." << std::endl;
-    if (!create_remote_branch(CurrentBranch))
-    {
-      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create remote branch '" + CurrentBranch + "'", ErrorSeverity::ERROR, "push");
-      return;
-    }
-  }
+  // if (!remote_has_branch(CurrentBranch))
+  // {
+  //   std::cout << "Remote branch not found. Creating it..." << std::endl;
+  //   if (!create_remote_branch(CurrentBranch))
+  //   {
+  //     ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create remote branch '" + CurrentBranch + "'", ErrorSeverity::ERROR, "push");
+  //     return;
+  //   }
+  // }
 
   system("zip -r .bittrack/remote_push_folder.zip .bittrack/objects > /dev/null");
 
