@@ -693,7 +693,7 @@ std::string get_latest_github_commit(const std::string &token, const std::string
     return "";
 
   std::string response_data;
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/refs/heads/" + get_current_branch();
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/refs/heads/main";
 
   struct curl_slist *headers = nullptr;
   headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
@@ -840,7 +840,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
       return true;
     }
 
-    std::string parent_sha = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
+    std::string parent_sha = get_github_last_commit_sha(token, username, repo_name, "heads/main");
     bool is_empty_repo = parent_sha.empty();
 
     if (is_empty_repo)
@@ -1049,7 +1049,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
     set_github_commit_mapping(current_commit, new_commit_sha);
 
-    if (!update_github_ref(token, username, repo_name, "heads/" + get_current_branch(), last_commit_sha))
+    if (!update_github_ref(token, username, repo_name, "heads/main", last_commit_sha))
     {
       ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not update branch reference", ErrorSeverity::ERROR, "push_to_github_api");
       return false;
@@ -1451,7 +1451,7 @@ bool pull_from_github_api(const std::string &token, const std::string &username,
 {
   try
   {
-    std::string latest_commit_sha = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
+    std::string latest_commit_sha = get_github_last_commit_sha(token, username, repo_name, "heads/main");
     if (latest_commit_sha.empty())
     {
       return false;
@@ -1949,7 +1949,7 @@ bool create_github_file(const std::string &token, const std::string &username, c
   }
 
   std::string response_data;
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=" + get_current_branch();
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=main";
   std::string base64_content = base64_encode(content);
 
   std::string escaped_message = message;
@@ -1966,7 +1966,7 @@ bool create_github_file(const std::string &token, const std::string &username, c
     pos += 2;
   }
 
-  std::string json_data = "{\"message\":\"" + escaped_message + "\",\"content\":\"" + base64_content + "\",\"branch\":\"" + get_current_branch() + "\"}";
+  std::string json_data = "{\"message\":\"" + escaped_message + "\",\"content\":\"" + base64_content + "\",\"branch\":\"main\"}";
 
   struct curl_slist *headers = nullptr;
   headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
@@ -2027,7 +2027,7 @@ bool is_local_behind_remote()
       return false;
     }
 
-    std::string remote_commit = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
+    std::string remote_commit = get_github_last_commit_sha(token, username, repo_name, "heads/main");
     if (remote_commit.empty())
     {
       return false;
