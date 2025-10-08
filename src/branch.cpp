@@ -6,7 +6,7 @@ std::string get_current_branch()
 
   if (!headFile.is_open())
   {
-    std::cerr << "Error: Could not open HEAD file." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not open HEAD file", ErrorSeverity::ERROR, "get_current_branch");
     return "";
   }
 
@@ -259,7 +259,7 @@ void restore_files_from_commit(const std::string &commit_path)
 {
   if (!std::filesystem::exists(commit_path))
   {
-    std::cerr << "Error: Commit snapshot not found: " << commit_path << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Commit snapshot not found: " + commit_path, ErrorSeverity::ERROR, "restore_files_from_commit");
     return;
   }
 
@@ -309,7 +309,7 @@ void update_working_directory(const std::string &target_branch)
   std::string target_commit = get_branch_last_commit_hash(target_branch);
   if (target_commit.empty())
   {
-    std::cerr << "Error: No commits found in target branch: " << target_branch << std::endl;
+    ErrorHandler::printError(ErrorCode::NO_COMMITS_FOUND, "No commits found in target branch: " + target_branch, ErrorSeverity::ERROR, "update_working_directory");
     return;
   }
 
@@ -348,13 +348,13 @@ void rename_branch(const std::string &old_name, const std::string &new_name)
 
   if (std::find(branches.begin(), branches.end(), old_name) == branches.end())
   {
-    std::cerr << "Error: Branch '" << old_name << "' does not exist." << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "Branch '" + old_name + "' does not exist", ErrorSeverity::ERROR, "rename_branch");
     return;
   }
 
   if (std::find(branches.begin(), branches.end(), new_name) != branches.end())
   {
-    std::cerr << "Error: Branch '" << new_name << "' already exists." << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_ALREADY_EXISTS, "Branch '" + new_name + "' already exists", ErrorSeverity::ERROR, "rename_branch");
     return;
   }
 
@@ -363,7 +363,7 @@ void rename_branch(const std::string &old_name, const std::string &new_name)
 
   if (std::rename(old_file.c_str(), new_file.c_str()) != 0)
   {
-    std::cerr << "Error: Failed to rename branch file." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Failed to rename branch file", ErrorSeverity::ERROR, "rename_branch");
     return;
   }
 
@@ -391,7 +391,7 @@ void show_branch_info(const std::string &branch_name)
 
   if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
-    std::cerr << "Error: Branch '" << branch_name << "' does not exist." << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "Branch '" + branch_name + "' does not exist", ErrorSeverity::ERROR, "show_branch_info");
     return;
   }
 
@@ -807,7 +807,7 @@ void cleanup_branch_commits(const std::string &branch_name)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error during commit cleanup: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error during commit cleanup: " + std::string(e.what()), ErrorSeverity::ERROR, "cleanup_branch_commits");
   }
 }
 
@@ -835,7 +835,7 @@ std::string find_common_ancestor(const std::string &branch1, const std::string &
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error finding common ancestor: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error finding common ancestor: " + std::string(e.what()), ErrorSeverity::ERROR, "find_common_ancestor");
     return "";
   }
 }
@@ -868,7 +868,7 @@ std::vector<std::string> get_commit_chain(const std::string &from_commit, const 
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error getting commit chain: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error getting commit chain: " + std::string(e.what()), ErrorSeverity::ERROR, "get_commit_chain");
     return commit_chain;
   }
 }
@@ -880,14 +880,14 @@ bool apply_commit_during_rebase(const std::string &commit_hash)
     std::string commit_file = ".bittrack/commits/" + commit_hash;
     if (!std::filesystem::exists(commit_file))
     {
-      std::cerr << "Commit file not found: " << commit_hash << std::endl;
+      ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Commit file not found: " + commit_hash, ErrorSeverity::ERROR, "apply_commit_during_rebase");
       return false;
     }
 
     std::ifstream file(commit_file);
     if (!file.is_open())
     {
-      std::cerr << "Cannot open commit file: " << commit_hash << std::endl;
+      ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Cannot open commit file: " + commit_hash, ErrorSeverity::ERROR, "apply_commit_during_rebase");
       return false;
     }
 
@@ -963,7 +963,7 @@ bool apply_commit_during_rebase(const std::string &commit_hash)
     std::string new_commit_hash = get_current_commit();
     if (new_commit_hash.empty())
     {
-      std::cerr << "Failed to create new commit during rebase" << std::endl;
+      ErrorHandler::printError(ErrorCode::COMMIT_FAILED, "Failed to create new commit during rebase", ErrorSeverity::ERROR, "apply_commit_during_rebase");
       return false;
     }
 
@@ -971,7 +971,7 @@ bool apply_commit_during_rebase(const std::string &commit_hash)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error applying commit during rebase: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error applying commit during rebase: " + std::string(e.what()), ErrorSeverity::ERROR, "apply_commit_during_rebase");
     return false;
   }
 }

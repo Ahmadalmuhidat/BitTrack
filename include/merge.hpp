@@ -14,6 +14,7 @@
 #include "branch.hpp"
 #include "stage.hpp"
 #include "utils.hpp"
+#include "error.hpp"
 
 struct MergeResult
 {

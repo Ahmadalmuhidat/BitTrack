@@ -18,6 +18,7 @@
 #include "branch.hpp"
 #include "stage.hpp"
 #include "remote.hpp"
+#include "error.hpp"
 
 void commit_changes(const std::string& author, const std::string& message);
 void store_snapshot(const std::string& file_path, const std::string& commit_hash);

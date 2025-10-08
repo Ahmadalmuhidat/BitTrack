@@ -71,13 +71,13 @@ bool validate_file_for_staging(const std::string &file_path)
   {
     if (!std::filesystem::exists(actual_path))
     {
-      std::cerr << "Warning: File does not exist: " << actual_path << std::endl;
+      ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "File does not exist: " + actual_path, ErrorSeverity::WARNING, "validate_file_for_staging");
       return false;
     }
 
     if (std::filesystem::is_directory(actual_path))
     {
-      std::cerr << "Warning: Cannot stage directory: " << actual_path << std::endl;
+      ErrorHandler::printError(ErrorCode::INVALID_FILE_PATH, "Cannot stage directory: " + actual_path, ErrorSeverity::WARNING, "validate_file_for_staging");
       return false;
     }
 
@@ -102,7 +102,7 @@ std::string calculate_file_hash(const std::string &file_path)
   std::string fileHash = hash_file(actual_path);
   if (fileHash.empty())
   {
-    std::cerr << "Warning: Could not generate hash for file: " << actual_path << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not generate hash for file: " + actual_path, ErrorSeverity::WARNING, "calculate_file_hash");
   }
 
   return fileHash;
@@ -434,7 +434,7 @@ std::vector<std::string> get_staged_files()
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error reading staged files: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error reading staged files: " + std::string(e.what()), ErrorSeverity::ERROR, "get_staged_files");
   }
 
   return files;
@@ -542,7 +542,7 @@ bool is_staged(const std::string &file_path)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error checking if file is staged: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error checking if file is staged: " + std::string(e.what()), ErrorSeverity::ERROR, "is_staged");
     return false;
   }
 }
@@ -560,7 +560,7 @@ std::string get_file_hash(const std::string &file_path)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error getting file hash: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error getting file hash: " + std::string(e.what()), ErrorSeverity::ERROR, "get_file_hash");
     return "";
   }
 }
@@ -579,7 +579,7 @@ bool is_deleted(const std::string &file_path)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error checking if file is deleted: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error checking if file is deleted: " + std::string(e.what()), ErrorSeverity::ERROR, "is_deleted");
     return false;
   }
 }
@@ -603,7 +603,7 @@ std::string get_actual_path(const std::string &file_path)
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error getting actual path: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error getting actual path: " + std::string(e.what()), ErrorSeverity::ERROR, "get_actual_path");
     return file_path;
   }
 }

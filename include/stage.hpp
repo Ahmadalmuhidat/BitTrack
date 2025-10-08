@@ -16,6 +16,7 @@
 #include "hash.hpp"
 #include "branch.hpp"
 #include "commit.hpp"
+#include "error.hpp"
 
 void stage(const std::string& file_path);
 void unstage(const std::string& file_path);

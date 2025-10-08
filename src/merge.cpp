@@ -298,7 +298,7 @@ void create_merge_commit(const std::string &message, const std::vector<std::stri
 
   if (!file.is_open())
   {
-    std::cerr << "Error: Could not create merge commit file" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not create merge commit file", ErrorSeverity::ERROR, "create_merge_commit");
     return;
   }
 

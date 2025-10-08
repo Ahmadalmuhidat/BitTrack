@@ -10,6 +10,8 @@
 #include <vector>
 #include <string>
 
+#include "error.hpp"
+
 enum class HookType
 {
   PRE_COMMIT,

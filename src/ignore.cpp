@@ -233,7 +233,7 @@ bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error checking if file is ignored: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error checking if file is ignored: " + std::string(e.what()), ErrorSeverity::ERROR, "is_file_ignored_by_patterns");
     return false;
   }
 }

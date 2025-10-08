@@ -6,7 +6,7 @@ void set_remote_origin(const std::string &url)
 
   if (!RemoteFile.is_open())
   {
-    std::cerr << "Error: Could not open .bittrack/remote for writing.\n";
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not open .bittrack/remote for writing", ErrorSeverity::ERROR, "set_remote_origin");
     return;
   }
 
@@ -20,7 +20,7 @@ std::string get_remote_origin()
 
   if (!remoteFile.is_open())
   {
-    std::cerr << "Error: Could not open .bittrack/remote for reading.\n";
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not open .bittrack/remote for reading", ErrorSeverity::ERROR, "get_remote_origin");
     return "";
   }
 
@@ -39,7 +39,7 @@ bool compress_folder(const std::string &folder_path, const std::string &zip_path
 
   if (!createZip)
   {
-    std::cerr << "Failed to initialize zip file." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Failed to initialize zip file", ErrorSeverity::ERROR, "compress_folder");
     return false;
   }
 
@@ -63,7 +63,7 @@ bool compress_folder(const std::string &folder_path, const std::string &zip_path
 
       if (!addFileToArchive)
       {
-        std::cerr << "Failed to add file to zip: " << file_path << std::endl;
+        ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Failed to add file to zip: " + file_path, ErrorSeverity::ERROR, "compress_folder");
         mz_zip_writer_end(&zip_archive);
         return false;
       }
@@ -72,7 +72,7 @@ bool compress_folder(const std::string &folder_path, const std::string &zip_path
 
   if (!mz_zip_writer_finalize_archive(&zip_archive))
   {
-    std::cerr << "Failed to finalize the zip archive." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Failed to finalize the zip archive", ErrorSeverity::ERROR, "compress_folder");
     mz_zip_writer_end(&zip_archive);
     return false;
   }
@@ -88,21 +88,56 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
   return size * nmemb;
 }
 
+bool remote_has_branch(const std::string& branchName)
+{
+  CURL *curl = curl_easy_init();
+  if (!curl) return false;
+
+  std::string remote_url = get_remote_origin() + "/branches/" + branchName;
+  long http_code = 0;
+
+  curl_easy_setopt(curl, CURLOPT_URL, remote_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1L); // HEAD request
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+  curl_easy_perform(curl);
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+  curl_easy_cleanup(curl);
+
+  return (http_code == 200);
+}
+
+bool create_remote_branch(const std::string& branchName)
+{
+  CURL *curl = curl_easy_init();
+  if (!curl) return false;
+
+  std::string remote_url = get_remote_origin() + "/branches";
+  std::string post_data = "branch=" + branchName;
+
+  CURLcode res;
+  curl_easy_setopt(curl, CURLOPT_URL, remote_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
+  res = curl_easy_perform(curl);
+  curl_easy_cleanup(curl);
+
+  return (res == CURLE_OK);
+}
+
 void push()
 {
   std::string remote_url = get_remote_origin();
   if (remote_url.empty())
   {
-    std::cerr << "Error: No remote origin set. Use set_remote_origin(url) first.\n";
+    ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "No remote origin set. Use set_remote_origin(url) first", ErrorSeverity::ERROR, "push");
     return;
   }
 
   if (is_local_behind_remote())
   {
-    std::cerr << "Error: Local repository is behind the remote repository.\n";
-    std::cerr << "Someone else has pushed changes since your last push.\n";
-    std::cerr << "Please pull the latest changes before pushing.\n";
-    std::cerr << "Use 'bittrack --pull' to sync with remote.\n";
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Local repository is behind the remote repository", ErrorSeverity::ERROR, "push");
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Someone else has pushed changes since your last push", ErrorSeverity::INFO, "push");
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Please pull the latest changes before pushing", ErrorSeverity::INFO, "push");
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Use 'bittrack --pull' to sync with remote", ErrorSeverity::INFO, "push");
     return;
   }
 
@@ -115,14 +150,14 @@ void push()
     }
     if (token.empty())
     {
-      std::cerr << "Error: GitHub token not configured. Use 'bittrack --config github.token <token>'" << std::endl;
+    ErrorHandler::printError(ErrorCode::CONFIG_ERROR, "GitHub token not configured. Use 'bittrack --config github.token <token>'", ErrorSeverity::ERROR, "push");
       return;
     }
 
     std::string username, repo_name;
     if (extract_github_info_from_url(remote_url, username, repo_name).empty())
     {
-      std::cerr << "Error: Could not parse GitHub repository URL" << std::endl;
+      ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "Could not parse GitHub repository URL", ErrorSeverity::ERROR, "push");
       return;
     }
 
@@ -138,6 +173,18 @@ void push()
     }
   }
 
+  std::string CurrentBranch = get_current_branch();
+
+  if (!remote_has_branch(CurrentBranch))
+  {
+    std::cout << "Remote branch not found. Creating it..." << std::endl;
+    if (!create_remote_branch(CurrentBranch))
+    {
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create remote branch '" + CurrentBranch + "'", ErrorSeverity::ERROR, "push");
+      return;
+    }
+  }
+
   system("zip -r .bittrack/remote_push_folder.zip .bittrack/objects > /dev/null");
 
   CURL *curl;
@@ -149,7 +196,6 @@ void push()
     struct curl_httppost *form = NULL;
     struct curl_httppost *last = NULL;
 
-    std::string CurrentBranch = get_current_branch();
     std::string CurrentCommit = get_current_commit();
 
     curl_formadd(
@@ -189,7 +235,7 @@ void push()
 
     if (response != CURLE_OK)
     {
-      std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "curl_easy_perform() failed: " + std::string(curl_easy_strerror(response)), ErrorSeverity::ERROR, "push");
     }
     else
     {
@@ -216,7 +262,7 @@ void pull()
   std::string base_url = get_remote_origin();
   if (base_url.empty())
   {
-    std::cerr << "Error: No remote origin set. Use set_remote_origin(url) first.\n";
+    ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "No remote origin set. Use set_remote_origin(url) first", ErrorSeverity::ERROR, "pull");
     return;
   }
 
@@ -225,8 +271,8 @@ void pull()
 
   if (!staged_files.empty() || !unstaged_files.empty())
   {
-    std::cerr << "Error: Cannot pull with uncommitted changes.\n";
-    std::cerr << "Please commit or stash your changes before pulling.\n";
+    ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "Cannot pull with uncommitted changes", ErrorSeverity::ERROR, "pull");
+    ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "Please commit or stash your changes before pulling", ErrorSeverity::INFO, "pull");
     return;
   }
 
@@ -239,14 +285,14 @@ void pull()
     }
     if (token.empty())
     {
-      std::cerr << "Error: GitHub token not configured. Use 'bittrack --config github.token <token>'" << std::endl;
+    ErrorHandler::printError(ErrorCode::CONFIG_ERROR, "GitHub token not configured. Use 'bittrack --config github.token <token>'", ErrorSeverity::ERROR, "pull");
       return;
     }
 
     std::string username, repo_name;
     if (extract_github_info_from_url(base_url, username, repo_name).empty())
     {
-      std::cerr << "Error: Could not parse GitHub repository URL" << std::endl;
+      ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "Could not parse GitHub repository URL", ErrorSeverity::ERROR, "pull");
       return;
     }
 
@@ -256,13 +302,13 @@ void pull()
     }
     else
     {
-      std::cerr << "Error: Failed to pull from GitHub. Please check your token and internet connection." << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to pull from GitHub. Please check your token and internet connection", ErrorSeverity::ERROR, "pull");
       return;
     }
   }
   else
   {
-    std::cerr << "Error: Pull is only supported for GitHub repositories. Please use a GitHub repository URL." << std::endl;
+    ErrorHandler::printError(ErrorCode::INTERNAL_ERROR, "Pull is only supported for GitHub repositories. Please use a GitHub repository URL", ErrorSeverity::ERROR, "pull");
     return;
   }
 }
@@ -271,7 +317,7 @@ void add_remote(const std::string &name, const std::string &url)
 {
   if (name.empty() || url.empty())
   {
-    std::cerr << "Error: Remote name and URL cannot be empty" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Remote name and URL cannot be empty", ErrorSeverity::ERROR, "add_remote");
     return;
   }
 
@@ -281,7 +327,7 @@ void add_remote(const std::string &name, const std::string &url)
   std::ofstream file(remote_file);
   if (!file.is_open())
   {
-    std::cerr << "Error: Could not create remote file for " << name << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not create remote file for " + name, ErrorSeverity::ERROR, "add_remote");
     return;
   }
 
@@ -295,7 +341,7 @@ void remove_remote(const std::string &name)
 {
   if (name.empty())
   {
-    std::cerr << "Error: Remote name cannot be empty" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Remote name cannot be empty", ErrorSeverity::ERROR, "remove_remote");
     return;
   }
 
@@ -303,7 +349,7 @@ void remove_remote(const std::string &name)
 
   if (!std::filesystem::exists(remote_file))
   {
-    std::cerr << "Error: Remote '" << name << "' does not exist" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Remote '" + name + "' does not exist", ErrorSeverity::ERROR, "remove_remote");
     return;
   }
 
@@ -342,14 +388,14 @@ void push_to_remote(const std::string &remote_name, const std::string &branch_na
   std::string remote_url = get_remote_url(remote_name);
   if (remote_url.empty())
   {
-    std::cerr << "Error: Remote '" << remote_name << "' not found" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Remote '" + remote_name + "' not found", ErrorSeverity::ERROR, "push_to_remote");
     return;
   }
 
   std::string current_branch = get_current_branch();
   if (current_branch != branch_name)
   {
-    std::cerr << "Error: Current branch '" << current_branch << "' does not match target branch '" << branch_name << "'" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Current branch '" + current_branch + "' does not match target branch '" + branch_name + "'", ErrorSeverity::ERROR, "push_to_remote");
     return;
   }
 
@@ -362,14 +408,14 @@ void pull_from_remote(const std::string &remote_name, const std::string &branch_
   std::string remote_url = get_remote_url(remote_name);
   if (remote_url.empty())
   {
-    std::cerr << "Error: Remote '" << remote_name << "' not found" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Remote '" + remote_name + "' not found", ErrorSeverity::ERROR, "pull_from_remote");
     return;
   }
 
   std::string current_branch = get_current_branch();
   if (current_branch != branch_name)
   {
-    std::cerr << "Error: Current branch '" << current_branch << "' does not match target branch '" << branch_name << "'" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Current branch '" + current_branch + "' does not match target branch '" + branch_name + "'", ErrorSeverity::ERROR, "pull_from_remote");
     return;
   }
 
@@ -382,7 +428,7 @@ void fetch_from_remote(const std::string &remote_name)
   std::string remote_url = get_remote_url(remote_name);
   if (remote_url.empty())
   {
-    std::cerr << "Error: Remote '" << remote_name << "' not found" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Remote '" + remote_name + "' not found", ErrorSeverity::ERROR, "fetch_from_remote");
     return;
   }
 
@@ -401,7 +447,7 @@ void fetch_from_remote(const std::string &remote_name)
     std::ofstream outfile(".bittrack/remote_fetch_folder.zip", std::ios::binary);
     if (!outfile.is_open())
     {
-      std::cerr << "Error: Could not open .bittrack/remote_fetch_folder.zip for writing." << std::endl;
+      ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not open .bittrack/remote_fetch_folder.zip for writing", ErrorSeverity::ERROR, "fetch_from_remote");
       curl_easy_cleanup(curl);
       return;
     }
@@ -415,7 +461,7 @@ void fetch_from_remote(const std::string &remote_name)
 
     if (response != CURLE_OK)
     {
-      std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "curl_easy_perform() failed: " + std::string(curl_easy_strerror(response)), ErrorSeverity::ERROR, "fetch_from_remote");
     }
     else
     {
@@ -433,7 +479,7 @@ void clone_repository(const std::string &url, const std::string &local_path)
 {
   if (url.empty())
   {
-    std::cerr << "Error: Repository URL cannot be empty" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Repository URL cannot be empty", ErrorSeverity::ERROR, "clone_repository");
     return;
   }
 
@@ -441,7 +487,7 @@ void clone_repository(const std::string &url, const std::string &local_path)
 
   if (std::filesystem::exists(target_path))
   {
-    std::cerr << "Error: Directory '" << target_path << "' already exists" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILESYSTEM_ERROR, "Directory '" + target_path + "' already exists", ErrorSeverity::ERROR, "clone_repository");
     return;
   }
 
@@ -497,7 +543,7 @@ void update_remote_url(const std::string &remote_name, const std::string &new_ur
 {
   if (remote_name.empty() || new_url.empty())
   {
-    std::cerr << "Error: Remote name and URL cannot be empty" << std::endl;
+    ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Remote name and URL cannot be empty", ErrorSeverity::ERROR, "update_remote_url");
     return;
   }
 
@@ -512,14 +558,14 @@ void update_remote_url(const std::string &remote_name, const std::string &new_ur
 
   if (!std::filesystem::exists(remote_file))
   {
-    std::cerr << "Error: Remote '" << remote_name << "' does not exist" << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Remote '" + remote_name + "' does not exist", ErrorSeverity::ERROR, "update_remote_url");
     return;
   }
 
   std::ofstream file(remote_file);
   if (!file.is_open())
   {
-    std::cerr << "Error: Could not update remote file for " << remote_name << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not update remote file for " + remote_name, ErrorSeverity::ERROR, "update_remote_url");
     return;
   }
 
@@ -647,7 +693,7 @@ std::string get_latest_github_commit(const std::string &token, const std::string
     return "";
 
   std::string response_data;
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/refs/heads/main";
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/refs/heads/" + get_current_branch();
 
   struct curl_slist *headers = nullptr;
   headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
@@ -783,7 +829,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
     if (current_commit.empty())
     {
-      std::cerr << "Error: No commits to push" << std::endl;
+      ErrorHandler::printError(ErrorCode::NO_COMMITS_FOUND, "No commits to push", ErrorSeverity::ERROR, "push_to_github_api");
       return false;
     }
 
@@ -794,7 +840,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
       return true;
     }
 
-    std::string parent_sha = get_github_last_commit_sha(token, username, repo_name, "heads/main");
+    std::string parent_sha = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
     bool is_empty_repo = parent_sha.empty();
 
     if (is_empty_repo)
@@ -802,7 +848,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
       std::vector<std::string> latest_commit_files = get_committed_files(current_commit);
       if (latest_commit_files.empty())
       {
-        std::cerr << "Error: No files found in latest commit" << std::endl;
+        ErrorHandler::printError(ErrorCode::INTERNAL_ERROR, "No files found in latest commit", ErrorSeverity::ERROR, "push_to_github_api");
         return false;
       }
 
@@ -856,7 +902,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         }
         else
         {
-          std::cerr << "Failed to create file: " << file_path << std::endl;
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create file: " + file_path, ErrorSeverity::ERROR, "push_to_github_api");
         }
       }
 
@@ -872,7 +918,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
     std::vector<std::string> committed_files = get_committed_files(current_commit);
     if (committed_files.empty())
     {
-      std::cerr << "Error: No files found in current commit" << std::endl;
+      ErrorHandler::printError(ErrorCode::INTERNAL_ERROR, "No files found in current commit", ErrorSeverity::ERROR, "push_to_github_api");
       return false;
     }
 
@@ -892,7 +938,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         }
         else
         {
-          std::cerr << "Failed to delete file: " << actual_path << std::endl;
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to delete file: " + actual_path, ErrorSeverity::ERROR, "push_to_github_api");
         }
       }
       else
@@ -901,7 +947,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         std::ifstream file(commit_file_path);
         if (!file.is_open())
         {
-          std::cerr << "Could not open commit file: " << commit_file_path << std::endl;
+          ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not open commit file: " + commit_file_path, ErrorSeverity::ERROR, "push_to_github_api");
           continue;
         }
 
@@ -917,7 +963,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         }
         else
         {
-          std::cerr << "Failed to create blob for " << file_path << std::endl;
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create blob for " + file_path, ErrorSeverity::ERROR, "push_to_github_api");
         }
       }
     }
@@ -936,53 +982,52 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
       if (!all_deleted)
       {
-        std::cerr << "Error: Could not create blobs for current commit" << std::endl;
+        ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not create blobs for current commit", ErrorSeverity::ERROR, "push_to_github_api");
         return false;
       }
     }
     else if (blob_shas.empty())
     {
-      std::cerr << "Error: No files to process for current commit" << std::endl;
+      ErrorHandler::printError(ErrorCode::INTERNAL_ERROR, "No files to process for current commit", ErrorSeverity::ERROR, "push_to_github_api");
       return false;
     }
 
-    if (!blob_shas.empty())
-    {
-      if (current_tree_sha.empty())
+      if (!blob_shas.empty())
       {
-        current_tree_sha = create_github_tree_with_files(token, username, repo_name, blob_shas, file_names);
-      }
-      else
-      {
-        current_tree_sha = create_github_tree_with_files(token, username, repo_name, blob_shas, file_names, current_tree_sha);
-      }
+        if (current_tree_sha.empty())
+        {
+          current_tree_sha = create_github_tree_with_files(token, username, repo_name, blob_shas, file_names);
+        }
+        else
+        {
+          current_tree_sha = create_github_tree_with_files(token, username, repo_name, blob_shas, file_names, current_tree_sha);
+        }
 
-      if (current_tree_sha.empty())
-      {
-        std::cerr << "Error: Could not create or update tree for current commit" << std::endl;
-        return false;
+        if (current_tree_sha.empty())
+        {
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not create or update tree for current commit", ErrorSeverity::ERROR, "push_to_github_api");
+          return false;
+        }
       }
-    }
-    else if (current_tree_sha.empty())
-    {
-      if (last_commit_sha.empty())
+      else if (current_tree_sha.empty())
       {
-        std::cerr << "Error: No parent commit for deletion-only commit" << std::endl;
-        return false;
+        if (last_commit_sha.empty())
+        {
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "No parent commit for deletion-only commit", ErrorSeverity::ERROR, "push_to_github_api");
+          return false;
+        }
+        std::string parent_tree_sha = get_github_commit_tree(token, username, repo_name, last_commit_sha);
+        if (parent_tree_sha.empty())
+        {
+          ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not get tree from parent commit " + last_commit_sha, ErrorSeverity::ERROR, "push_to_github_api");
+          return false;
+        }
+        current_tree_sha = parent_tree_sha;
       }
-      std::string parent_tree_sha = get_github_commit_tree(token, username, repo_name, last_commit_sha);
-      if (parent_tree_sha.empty())
-      {
-        std::cerr << "Error: Could not get tree from parent commit " << last_commit_sha << std::endl;
-        return false;
-      }
-      current_tree_sha = parent_tree_sha;
-    }
 
     std::string author_name = get_commit_author(current_commit);
     std::string author_email = get_commit_author_email(current_commit);
     std::string commit_timestamp = get_commit_timestamp(current_commit);
-
     std::string new_commit_sha = create_github_commit(
       token,
       username,
@@ -996,7 +1041,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
     );
     if (new_commit_sha.empty())
     {
-      std::cerr << "Error: Could not create commit " << current_commit << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not create commit " + current_commit, ErrorSeverity::ERROR, "push_to_github_api");
       return false;
     }
 
@@ -1004,9 +1049,9 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
 
     set_github_commit_mapping(current_commit, new_commit_sha);
 
-    if (!update_github_ref(token, username, repo_name, "heads/main", last_commit_sha))
+    if (!update_github_ref(token, username, repo_name, "heads/" + get_current_branch(), last_commit_sha))
     {
-      std::cerr << "Error: Could not update branch reference" << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not update branch reference", ErrorSeverity::ERROR, "push_to_github_api");
       return false;
     }
 
@@ -1018,7 +1063,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error: " + std::string(e.what()), ErrorSeverity::ERROR, "push_to_github_api");
     return false;
   }
 }
@@ -1054,7 +1099,7 @@ std::string create_github_blob(const std::string &token, const std::string &user
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL Error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL Error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "create_github_blob");
     return "";
   }
 
@@ -1069,7 +1114,7 @@ std::string create_github_blob(const std::string &token, const std::string &user
     }
   }
 
-  std::cerr << "Could not find SHA in response. Response: " << response_data << std::endl;
+  ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not find SHA in response", ErrorSeverity::ERROR, "create_github_blob");
   return "";
 }
 
@@ -1109,7 +1154,7 @@ std::string create_github_tree(const std::string &token, const std::string &user
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "create_github_tree");
     return "";
   }
 
@@ -1151,7 +1196,7 @@ std::string get_github_commit_tree(const std::string &token, const std::string &
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "get_github_commit_tree");
     return "";
   }
 
@@ -1226,7 +1271,7 @@ std::string create_github_tree_with_files(const std::string &token, const std::s
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "create_github_tree_with_files");
     return "";
   }
 
@@ -1303,7 +1348,7 @@ std::string create_github_commit(const std::string &token, const std::string &us
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "create_github_commit");
     return "";
   }
 
@@ -1350,7 +1395,7 @@ std::string get_github_last_commit_sha(const std::string &token, const std::stri
 
   if (response_data.find("Bad credentials") != std::string::npos)
   {
-    std::cerr << "Error: Invalid GitHub token. Please check your token and try again." << std::endl;
+    ErrorHandler::printError(ErrorCode::CONFIG_ERROR, "Error: Invalid GitHub token. Please check your token and try again.", ErrorSeverity::ERROR, "get_github_last_commit_sha");
     return "";
   }
 
@@ -1406,7 +1451,7 @@ bool pull_from_github_api(const std::string &token, const std::string &username,
 {
   try
   {
-    std::string latest_commit_sha = get_github_last_commit_sha(token, username, repo_name, "heads/main");
+    std::string latest_commit_sha = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
     if (latest_commit_sha.empty())
     {
       return false;
@@ -1415,7 +1460,7 @@ bool pull_from_github_api(const std::string &token, const std::string &username,
     std::string commit_data = get_github_commit_data(token, username, repo_name, latest_commit_sha);
     if (commit_data.empty())
     {
-      std::cerr << "Error: Could not get commit data from GitHub" << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not get commit data from GitHub", ErrorSeverity::ERROR, "pull_from_github_api");
       return false;
     }
 
@@ -1428,13 +1473,13 @@ bool pull_from_github_api(const std::string &token, const std::string &username,
     }
     else
     {
-      std::cerr << "Error: Failed to extract files from GitHub commit" << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to extract files from GitHub commit", ErrorSeverity::ERROR, "pull_from_github_api");
       return false;
     }
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error: " + std::string(e.what()), ErrorSeverity::ERROR, "pull_from_github_api");
     return false;
   }
 }
@@ -1538,7 +1583,7 @@ bool download_files_from_github_tree(const std::string &token, const std::string
     size_t tree_start = tree_data.find("\"tree\":[");
     if (tree_start == std::string::npos)
     {
-      std::cerr << "Error: Could not find tree array in GitHub response" << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not find tree array in GitHub response", ErrorSeverity::ERROR, "download_files_from_github_tree");
       return false;
     }
 
@@ -1546,7 +1591,7 @@ bool download_files_from_github_tree(const std::string &token, const std::string
     size_t tree_end = tree_data.find("]", tree_start);
     if (tree_end == std::string::npos)
     {
-      std::cerr << "Error: Malformed tree array in GitHub response" << std::endl;
+      ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Malformed tree array in GitHub response", ErrorSeverity::ERROR, "download_files_from_github_tree");
       return false;
     }
 
@@ -1623,19 +1668,19 @@ bool download_files_from_github_tree(const std::string &token, const std::string
         }
         else
         {
-          std::cerr << "Error: Could not create file " << file_path << std::endl;
+          ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not create file " + file_path, ErrorSeverity::ERROR, "download_files_from_github_tree");
         }
       }
       else
       {
-        std::cerr << "Error: Could not download content for " << file_path << std::endl;
+        ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not download content for " + file_path, ErrorSeverity::ERROR, "download_files_from_github_tree");
       }
     }
     return true;
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error downloading files: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error downloading files: " + std::string(e.what()), ErrorSeverity::ERROR, "download_files_from_github_tree");
     return false;
   }
 }
@@ -1778,7 +1823,7 @@ void integrate_pulled_files_with_bittrack(const std::string &commit_sha, const s
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Error integrating files: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error integrating files: " + std::string(e.what()), ErrorSeverity::ERROR, "integrate_pulled_files_with_bittrack");
   }
 }
 
@@ -1904,7 +1949,7 @@ bool create_github_file(const std::string &token, const std::string &username, c
   }
 
   std::string response_data;
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=main";
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=" + get_current_branch();
   std::string base64_content = base64_encode(content);
 
   std::string escaped_message = message;
@@ -1921,7 +1966,7 @@ bool create_github_file(const std::string &token, const std::string &username, c
     pos += 2;
   }
 
-  std::string json_data = "{\"message\":\"" + escaped_message + "\",\"content\":\"" + base64_content + "\",\"branch\":\"main\"}";
+  std::string json_data = "{\"message\":\"" + escaped_message + "\",\"content\":\"" + base64_content + "\",\"branch\":\"" + get_current_branch() + "\"}";
 
   struct curl_slist *headers = nullptr;
   headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
@@ -1941,14 +1986,14 @@ bool create_github_file(const std::string &token, const std::string &username, c
 
   if (res != CURLE_OK)
   {
-    std::cerr << "CURL Error: " << curl_easy_strerror(res) << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "CURL Error: " + std::string(curl_easy_strerror(res)), ErrorSeverity::ERROR, "create_github_file");
     return false;
   }
 
   bool success = validate_github_operation_success(response_data);
   if (!success)
   {
-    std::cerr << "Failed to create file " << filename << " - GitHub API error" << std::endl;
+    ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Failed to create file " + filename + " - GitHub API error", ErrorSeverity::ERROR, "create_github_file");
   }
   return success;
 }
@@ -1958,7 +2003,7 @@ bool is_local_behind_remote()
   std::string remote_url = get_remote_origin();
   if (remote_url.empty())
   {
-    std::cerr << "Error: No remote origin set. Use set_remote_origin(url) first.\n";
+    ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "No remote origin set. Use set_remote_origin(url) first", ErrorSeverity::ERROR, "is_local_behind_remote");
     return false;
   }
 
@@ -1971,18 +2016,18 @@ bool is_local_behind_remote()
     }
     if (token.empty())
     {
-      std::cerr << "Error: GitHub token not configured. Use 'bittrack --config github.token <token>'" << std::endl;
+      ErrorHandler::printError(ErrorCode::CONFIG_ERROR, "GitHub token not configured. Use 'bittrack --config github.token <token>'", ErrorSeverity::ERROR, "is_local_behind_remote");
       return false;
     }
 
     std::string username, repo_name;
     if (extract_github_info_from_url(remote_url, username, repo_name).empty())
     {
-      std::cerr << "Error: Could not parse GitHub repository URL" << std::endl;
+      ErrorHandler::printError(ErrorCode::INVALID_REMOTE_URL, "Could not parse GitHub repository URL", ErrorSeverity::ERROR, "is_local_behind_remote");
       return false;
     }
 
-    std::string remote_commit = get_github_last_commit_sha(token, username, repo_name, "heads/main");
+    std::string remote_commit = get_github_last_commit_sha(token, username, repo_name, "heads/" + get_current_branch());
     if (remote_commit.empty())
     {
       return false;

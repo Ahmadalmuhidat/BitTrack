@@ -25,7 +25,7 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
   std::ifstream inputFile(file_path, std::ios::binary);
   if (!inputFile)
   {
-    std::cerr << "Error: Unable to open file: " << file_path << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Unable to open file: " + file_path, ErrorSeverity::ERROR, "store_snapshot");
   }
   std::stringstream buffer;
   buffer << inputFile.rdbuf();
@@ -34,7 +34,7 @@ void store_snapshot(const std::string &file_path, const std::string &commit_hash
   std::ofstream snapshotFile(snapshot_path, std::ios::binary);
   if (!snapshotFile)
   {
-    std::cerr << "Error: Unable to create snapshot file: " << snapshot_path << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Unable to create snapshot file: " + snapshot_path.string(), ErrorSeverity::ERROR, "store_snapshot");
   }
   snapshotFile << buffer.str();
   snapshotFile.close();
@@ -96,16 +96,16 @@ void commit_changes(const std::string &author, const std::string &message)
 {
   if (has_unpushed_commits())
   {
-    std::cerr << "Error: Cannot create new commit while there are unpushed commits." << std::endl;
-    std::cerr << "Please push your current commit before creating a new one." << std::endl;
-    std::cerr << "Use 'bittrack --push' to push your changes." << std::endl;
+    ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "Cannot create new commit while there are unpushed commits", ErrorSeverity::ERROR, "commit_changes");
+    ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "Please push your current commit before creating a new one", ErrorSeverity::INFO, "commit_changes");
+    ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "Use 'bittrack --push' to push your changes", ErrorSeverity::INFO, "commit_changes");
     return;
   }
 
   std::ifstream staging_file(".bittrack/index");
   if (!staging_file)
   {
-    std::cerr << "no files staged for commit!" << std::endl;
+    ErrorHandler::printError(ErrorCode::STAGING_FAILED, "no files staged for commit!", ErrorSeverity::ERROR, "commit_changes");
     return;
   }
 
@@ -217,7 +217,7 @@ void commit_changes(const std::string &author, const std::string &message)
 
   if (!has_staged_files)
   {
-    std::cerr << "No files to commit!" << std::endl;
+    ErrorHandler::printError(ErrorCode::STAGING_FAILED, "No files to commit!", ErrorSeverity::ERROR, "commit_changes");
     return;
   }
 

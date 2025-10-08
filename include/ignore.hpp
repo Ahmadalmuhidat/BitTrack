@@ -11,6 +11,8 @@
 #include <cctype>
 #include <regex>
 
+#include "error.hpp"
+
 struct IgnorePattern {
   std::string pattern;
   bool is_negation;  // true if pattern starts with !

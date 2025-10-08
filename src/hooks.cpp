@@ -4,7 +4,7 @@ void install_hook(HookType type, const std::string &script_path)
 {
   if (!std::filesystem::exists(script_path))
   {
-    std::cerr << "Error: Script file '" << script_path << "' does not exist." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "Script file '" + script_path + "' does not exist", ErrorSeverity::ERROR, "install_hook");
     return;
   }
 
@@ -106,8 +106,8 @@ void run_all_hooks(const std::string &event, const std::vector<std::string> &arg
         HookResult result = execute_hook(entry.path().string(), args);
         if (!result.success)
         {
-          std::cerr << "Hook failed: " << hook_name << std::endl;
-          std::cerr << "Error: " << result.error << std::endl;
+          ErrorHandler::printError(ErrorCode::HOOK_ERROR, "Hook failed: " + hook_name, ErrorSeverity::ERROR, "run_all_hooks");
+          ErrorHandler::printError(ErrorCode::HOOK_ERROR, "Error: " + result.error, ErrorSeverity::ERROR, "run_all_hooks");
           return;
         }
       }

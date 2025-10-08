@@ -10,6 +10,7 @@
 #include "../include/merge.hpp"
 #include "../include/hooks.hpp"
 #include "../include/maintenance.hpp"
+#include "../include/error.hpp"
 
 bool check_repository_exists()
 {
@@ -572,7 +573,7 @@ void hooks_operations(int argc, const char *argv[], int &i)
           type = HookType::POST_BRANCH;
         else
         {
-          std::cerr << "Error: Unknown hook type: " << hook_type << std::endl;
+          ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Unknown hook type: " + hook_type, ErrorSeverity::ERROR, "hooks_operations");
           return;
         }
 
@@ -612,7 +613,7 @@ void hooks_operations(int argc, const char *argv[], int &i)
           type = HookType::POST_BRANCH;
         else
         {
-          std::cerr << "Error: Unknown hook type: " << hook_type << std::endl;
+          ErrorHandler::printError(ErrorCode::INVALID_ARGUMENTS, "Unknown hook type: " + hook_type, ErrorSeverity::ERROR, "hooks_operations");
           return;
         }
 
