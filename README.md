@@ -1,4 +1,3 @@
-# BitTrack – Personal Version Control System
 A comprehensive, lightweight version control system built from scratch in C++—offering full offline control without cloud dependency. BitTrack provides Git-like functionality with a focus on simplicity, performance, and educational value.
 
 ## Features
