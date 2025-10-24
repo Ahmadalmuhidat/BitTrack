@@ -16,22 +16,24 @@
 #include "utils.hpp"
 #include "error.hpp"
 
+// Result of a merge operation
 struct MergeResult
 {
-  bool success;
-  bool has_conflicts;
-  std::string merge_commit;
-  std::vector<std::string> conflicted_files;
-  std::string message;
+  bool success; // true if merge was successful
+  bool has_conflicts; // true if there were conflicts
+  std::string merge_commit; // hash of the merge commit
+  std::vector<std::string> conflicted_files; // list of files with conflicts
+  std::string message; // merge message
   
   MergeResult(): success(false), has_conflicts(false) {}
 };
 
+// Details of a merge conflict
 struct MergeConflict
 {
-  std::string file_path;
-  std::string conflict_type;
-  std::vector<std::string> conflict_markers;
+  std::string file_path; // path of the file with conflict
+  std::string conflict_type; // type of conflict (e.g., content, binary)
+  std::vector<std::string> conflict_markers; // conflict markers in the file
   
   MergeConflict(const std::string& path, const std::string& type): file_path(path), conflict_type(type) {}
 };
@@ -44,6 +46,7 @@ void show_conflicts();
 std::vector<std::string> get_conflicted_files();
 void abort_merge();
 void continue_merge();
+void write_conflict(const std::string &path, const std::string &ours,const std::string &theirs);
 std::string find_merge_base(const std::string& commit1, const std::string& commit2);
 bool is_ancestor(const std::string& ancestor, const std::string& descendant);
 bool is_fast_forward(const std::string& source, const std::string& target);

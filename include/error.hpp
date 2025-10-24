@@ -12,6 +12,7 @@
 
 #include "stage.hpp"
 
+// Error codes used in BitTrack
 enum class ErrorCode
 {
   SUCCESS = 0,
@@ -59,6 +60,7 @@ enum class ErrorCode
   REMOTE_DOWNLOAD_FAILED = 42
 };
 
+// Severity levels for errors
 enum class ErrorSeverity
 {
   INFO,
@@ -67,6 +69,7 @@ enum class ErrorSeverity
   FATAL
 };
 
+// Custom exception class for BitTrack errors
 class BitTrackError : public std::exception
 {
 private:
@@ -85,6 +88,7 @@ public:
   const char* what() const noexcept override { return message.c_str(); }
 };
 
+// Error handling utility class
 class ErrorHandler
 {
 public:

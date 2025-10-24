@@ -24,10 +24,8 @@ std::string get_remote_origin();
 void add_remote(const std::string& name, const std::string& url);
 void remove_remote(const std::string& name);
 void list_remotes();
-
 bool remote_has_branch(const std::string& branchName);
 bool create_remote_branch(const std::string& branchName);
-
 void push();
 void pull();
 void push_to_remote(const std::string& remote_name = "origin", const std::string& branch_name = "main");

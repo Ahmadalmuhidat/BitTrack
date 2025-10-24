@@ -32,7 +32,7 @@ void save_staged_files(const std::unordered_map<std::string, std::string>& stage
 bool validate_file_for_staging(const std::string& file_path);
 std::string calculate_file_hash(const std::string& file_path);
 bool is_file_unchanged_from_commit(const std::string& file_path, const std::string& file_hash);
-void stage_single_file_impl(const std::string& file_path, std::unordered_map<std::string, std::string>& staged_files);
+void stage_single_file(const std::string& file_path, std::unordered_map<std::string, std::string>& staged_files);
 void stage_all_files(std::unordered_map<std::string, std::string>& staged_files);
 
 #endif

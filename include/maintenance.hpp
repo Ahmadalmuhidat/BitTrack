@@ -20,15 +20,16 @@
 #include "hash.hpp"
 #include "ignore.hpp"
 
+// Statistics about the repository
 struct RepoStats
 {
-  size_t total_objects;
-  size_t total_size;
-  size_t commit_count;
-  size_t branch_count;
-  size_t tag_count;
-  std::string largest_file;
-  size_t largest_file_size;
+  size_t total_objects; // total number of objects
+  size_t total_size; // total size of all objects in bytes
+  size_t commit_count; // total number of commits
+  size_t branch_count; // total number of branches
+  size_t tag_count; // total number of tags
+  std::string largest_file; // path of the largest file
+  size_t largest_file_size; // size of the largest file in bytes
   
   RepoStats(): total_objects(0), total_size(0), commit_count(0), branch_count(0), tag_count(0), largest_file_size(0) {}
 };

@@ -8,12 +8,14 @@
 #include <map>
 #include <string>
 
+// Configuration scope enumeration
 enum class ConfigScope
 {
   GLOBAL,
   REPOSITORY
 };
 
+// Represents a configuration entry
 struct ConfigEntry
 {
   std::string key;

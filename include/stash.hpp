@@ -14,15 +14,17 @@
 #include "stage.hpp"
 #include "commit.hpp"
 #include "branch.hpp"
+#include "utils.hpp"
 
+// Represents a single stash entry
 struct StashEntry
 {
-  std::string id;
-  std::string message;
-  std::string branch;
-  std::string commit_hash;
-  std::time_t timestamp;
-  std::vector<std::string> files;
+  std::string id; // unique identifier for the stash
+  std::string message; // stash message
+  std::string branch; // branch where the stash was created
+  std::string commit_hash; // commit hash at the time of stashing
+  std::time_t timestamp; // time when the stash was created
+  std::vector<std::string> files; // list of files in the stash
   
   StashEntry() : timestamp(0) {}
 };
@@ -44,7 +46,6 @@ void backup_staged_files(const std::string& stash_id);
 void restore_working_directory(const std::string& stash_id);
 void remove_staged_files_from_working_directory();
 std::vector<std::string> get_all_tracked_files();
-std::string format_timestamp(std::time_t timestamp);
 std::string get_stash_dir();
 std::string get_stash_file_path(const std::string& stash_id);
 

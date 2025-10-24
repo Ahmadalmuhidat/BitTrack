@@ -23,7 +23,6 @@ std::vector<std::string> get_branches_list();
 void add_branch(const std::string& branch_name);
 void remove_branch(const std::string& branch_name);
 void switch_branch(const std::string& branch_name);
-void create_branch(const std::string& branch_name);
 void rename_branch(const std::string& old_name, const std::string& new_name);
 void show_branch_info(const std::string& branch_name);
 bool branch_exists(const std::string& branch_name);
