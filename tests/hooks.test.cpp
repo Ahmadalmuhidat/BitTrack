@@ -1,5 +1,6 @@
 #include "../include/hooks.hpp"
 
+// test installing default hooks
 bool test_hooks_install_default()
 {
   install_default_hooks();
@@ -11,6 +12,7 @@ bool test_hooks_install_default()
   return pre_commit_exists && post_commit_exists && pre_push_exists;
 }
 
+// test listing hooks
 bool test_hooks_list()
 {
   install_default_hooks();
@@ -20,6 +22,7 @@ bool test_hooks_list()
   return true;
 }
 
+// test uninstalling a hook
 bool test_hooks_uninstall()
 {
   install_default_hooks();
@@ -33,6 +36,7 @@ bool test_hooks_uninstall()
   return exists_before && !exists_after;
 }
 
+// test running a specific hook
 bool test_hooks_run()
 {
   install_default_hooks();
@@ -42,6 +46,7 @@ bool test_hooks_run()
   return true;
 }
 
+// test running all hooks of a specific type
 bool test_hooks_run_all()
 {
   install_default_hooks();
@@ -51,20 +56,21 @@ bool test_hooks_run_all()
   return true;
 }
 
+// test getting the path of a hook
 bool test_hooks_get_path()
 {
   std::string path = get_hook_path(HookType::PRE_COMMIT);
-
   return !path.empty() && path.find("pre-commit") != std::string::npos;
 }
 
+// test getting the name of a hook
 bool test_hooks_get_name()
 {
   std::string name = get_hook_name(HookType::PRE_COMMIT);
-
   return name == "pre-commit";
 }
 
+// test checking if a hook is executable
 bool test_hooks_is_executable()
 {
   install_default_hooks();
@@ -75,6 +81,7 @@ bool test_hooks_is_executable()
   return is_executable;
 }
 
+// test creating a pre-commit hook
 bool test_hooks_create_pre_commit()
 {
   create_pre_commit_hook();
@@ -84,6 +91,7 @@ bool test_hooks_create_pre_commit()
   return exists;
 }
 
+// test creating a post-commit hook
 bool test_hooks_create_post_commit()
 {
   create_post_commit_hook();
@@ -93,6 +101,7 @@ bool test_hooks_create_post_commit()
   return exists;
 }
 
+// test creating a pre-push hook
 bool test_hooks_create_pre_push()
 {
   create_pre_push_hook();

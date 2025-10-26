@@ -1164,7 +1164,7 @@ bool push_to_github_api(const std::string &token, const std::string &username, c
         commit_message,
         author_name,
         author_email,
-        commit_timestamp); // Create new commit on GitHub
+        commit_timestamp);
     if (new_commit_sha.empty())
     {
       ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not create commit " + current_commit, ErrorSeverity::ERROR, "push_to_github_api");

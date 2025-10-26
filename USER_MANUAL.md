@@ -1126,19 +1126,19 @@ Can span multiple lines.
 ```
 .bittrack/
 ├── objects/          # Object storage
-│   ├── <hash1>      # Object files
-│   └── <hash2>      # Object files
+│   ├── <hash1>       # Object files
+│   └── <hash2>       # Object files
 ├── commits/          # Commit data
-│   ├── <commit1>    # Commit files
-│   └── history      # Commit history
+│   ├── <commit1>     # Commit files
+│   └── history       # Commit history
 ├── refs/heads/       # Branch references
-│   ├── main       # Master branch
-│   └── <branch>     # Other branches
+│   ├── main          # main branch
+│   └── <branch>      # Other branches
 ├── tags/             # Tag storage
-│   └── <tag>        # Tag files
+│   └── <tag>         # Tag files
 ├── hooks/            # Hook scripts
-│   ├── pre-commit   # Pre-commit hook
-│   └── post-commit  # Post-commit hook
+│   ├── pre-commit    # Pre-commit hook
+│   └── post-commit   # Post-commit hook
 ├── config            # Repository configuration
 ├── HEAD              # Current branch reference
 ├── history           # Commit history

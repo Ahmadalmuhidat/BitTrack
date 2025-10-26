@@ -3,6 +3,7 @@
 #include <fstream>
 #include <filesystem>
 
+// create a stash and verify it exists
 bool test_stash_creation()
 {
   std::ofstream file("stash_test.txt");
@@ -20,6 +21,7 @@ bool test_stash_creation()
   return !stashes.empty();
 }
 
+// list stashes and verify at least two exist
 bool test_stash_listing()
 {
   std::ofstream file1("stash_test1.txt");
@@ -42,6 +44,7 @@ bool test_stash_listing()
   return stashes.size() >= 2;
 }
 
+// apply a stash and verify the working directory is restored
 bool test_stash_apply()
 {
   std::ofstream file("stash_apply_test.txt");
@@ -67,6 +70,7 @@ bool test_stash_apply()
   return content == "original content";
 }
 
+// pop a stash and verify it is removed from the stash list
 bool test_stash_pop()
 {
   std::ofstream file("stash_pop_test.txt");
@@ -89,6 +93,7 @@ bool test_stash_pop()
   return final_count < initial_count;
 }
 
+// drop a stash and verify it is removed from the stash list
 bool test_stash_drop()
 {
   std::ofstream file("stash_drop_test.txt");
@@ -111,6 +116,7 @@ bool test_stash_drop()
   return final_count < initial_count;
 }
 
+// clear all stashes and verify the stash list is empty
 bool test_stash_clear()
 {
   std::ofstream file1("stash_clear_test1.txt");
@@ -135,6 +141,7 @@ bool test_stash_clear()
   return stashes.empty();
 }
 
+// check if stashes exist and verify the result
 bool test_stash_has_stashes()
 {
   bool initially_empty = !stash_has_stashes();

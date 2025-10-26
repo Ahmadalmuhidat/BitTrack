@@ -5,11 +5,12 @@
 #include <fstream>
 #include <filesystem>
 
+// merge a branch into main and verify success
 bool test_merge_branches()
 {
-  std::ofstream master_file("merge_test.txt");
-  master_file << "main content" << std::endl;
-  master_file.close();
+  std::ofstream main_file("merge_test.txt");
+  main_file << "main content" << std::endl;
+  main_file.close();
 
   stage("merge_test.txt");
   commit_changes("test_user", "main commit");
@@ -34,6 +35,7 @@ bool test_merge_branches()
   return result.success;
 }
 
+// merge two commits and verify success
 bool test_merge_commits()
 {
   std::ofstream file("merge_commit_test.txt");
@@ -61,6 +63,7 @@ bool test_merge_commits()
   return true;
 }
 
+// abort an ongoing merge and verify success
 bool test_merge_abort()
 {
   std::ofstream file("merge_abort_test.txt");
@@ -77,6 +80,7 @@ bool test_merge_abort()
   return true;
 }
 
+// continue an ongoing merge and verify success
 bool test_merge_continue()
 {
   std::ofstream file("merge_continue_test.txt");
@@ -93,27 +97,28 @@ bool test_merge_continue()
   return true;
 }
 
+// show merge conflicts and verify output
 bool test_merge_show_conflicts()
 {
   show_conflicts();
-
   return true;
 }
 
+// check for merge conflicts and verify result
 bool test_merge_has_conflicts()
 {
   bool conflicts_exist = has_conflicts();
-
   return !conflicts_exist;
 }
 
+// get list of conflicted files and verify it's empty
 bool test_merge_get_conflicted_files()
 {
   std::vector<std::string> conflicted_files = get_conflicted_files();
-
   return conflicted_files.empty();
 }
 
+// perform a three-way merge and verify success
 bool test_merge_three_way()
 {
   std::ofstream base_file("three_way_base.txt");
@@ -137,6 +142,7 @@ bool test_merge_three_way()
   return true;
 }
 
+// perform a fast-forward merge and verify success
 bool test_merge_fast_forward()
 {
   std::ofstream file("fast_forward_test.txt");

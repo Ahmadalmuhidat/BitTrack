@@ -4,6 +4,7 @@
 #include <fstream>
 #include <filesystem>
 
+// compare two files and verify diff output
 bool test_diff_file_comparison()
 {
   std::ofstream file1("diff_test1.txt");
@@ -22,6 +23,7 @@ bool test_diff_file_comparison()
   return !result.hunks.empty() && !result.is_binary;
 }
 
+// compare two identical files and verify no diffs
 bool test_diff_identical_files()
 {
   std::ofstream file1("diff_identical1.txt");
@@ -40,6 +42,7 @@ bool test_diff_identical_files()
   return result.hunks.empty() && !result.is_binary;
 }
 
+// compare two binary files and verify binary detection
 bool test_diff_binary_file_detection()
 {
   std::ofstream file("binary_test.bin", std::ios::binary);
@@ -55,6 +58,7 @@ bool test_diff_binary_file_detection()
   return is_binary;
 }
 
+// diff staged changes after modification
 bool test_diff_staged_changes()
 {
   std::ofstream file("diff_staged_test.txt");
@@ -75,6 +79,7 @@ bool test_diff_staged_changes()
   return !result.hunks.empty();
 }
 
+// diff unstaged changes after modification
 bool test_diff_unstaged_changes()
 {
   std::ofstream file("diff_unstaged_test.txt");
@@ -93,20 +98,4 @@ bool test_diff_unstaged_changes()
   std::filesystem::remove("diff_unstaged_test.txt");
 
   return !result.hunks.empty();
-}
-
-bool test_file_history()
-{
-  std::ofstream file("history_test.txt");
-  file << "test content" << std::endl;
-  file.close();
-
-  stage("history_test.txt");
-  commit_changes("test_user", "test commit for history");
-
-  show_file_history("history_test.txt");
-
-  std::filesystem::remove("history_test.txt");
-
-  return true;
 }

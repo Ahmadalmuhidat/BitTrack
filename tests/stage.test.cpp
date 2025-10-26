@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 
+// stage a file and verify it's in the staged files list
 bool test_staged_files()
 {
   std::ofstream file("stage_test.txt");
@@ -19,6 +20,7 @@ bool test_staged_files()
   return is_staged;
 }
 
+// unstage a file and verify it's no longer in the staged files list
 bool test_unstaged_files()
 {
   std::ofstream file("unstaged_test.txt");
@@ -37,6 +39,7 @@ bool test_unstaged_files()
   return is_unstaged;
 }
 
+// stage a file, then unstage it, and verify the transitions
 bool test_unstage_staged()
 {
   std::ofstream file("unstage_staged_test.txt");

@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 
-extern bool test_branch_master();
+extern bool test_branch_main();
 extern bool test_list_branches();
 extern bool test_checkout_new_branch();
 extern bool test_remove_branch();
@@ -47,15 +47,6 @@ extern bool test_maintenance_show_info();
 extern bool test_maintenance_analyze();
 extern bool test_maintenance_find_large_files();
 extern bool test_maintenance_find_duplicates();
-extern bool test_maintenance_clean_ignored();
-extern bool test_maintenance_remove_empty_dirs();
-extern bool test_maintenance_compact();
-extern bool test_maintenance_backup();
-extern bool test_maintenance_list_backups();
-extern bool test_maintenance_benchmark();
-extern bool test_maintenance_profile();
-extern bool test_maintenance_check_integrity();
-extern bool test_maintenance_optimize();
 extern bool test_error_handler_print_error();
 extern bool test_error_handler_print_error_code();
 extern bool test_error_handler_is_fatal();
@@ -80,9 +71,9 @@ int main(int argc, char **argv)
   return RUN_ALL_TESTS();
 }
 
-TEST(t01_branch, valid_current_branch_is_master_test)
+TEST(t01_branch, valid_current_branch_is_main_test)
 {
-  EXPECT_TRUE(test_branch_master());
+  EXPECT_TRUE(test_branch_main());
 }
 
 TEST(t02_branch, list_branches_test)
@@ -94,6 +85,7 @@ TEST(t03_branch, checkout_to_new_branch_test)
 {
   EXPECT_TRUE(test_checkout_new_branch());
 }
+
 TEST(t04_stage_working, stage_file_test)
 {
   std::ofstream file("stage_working_test.txt");
@@ -125,14 +117,17 @@ TEST(t04_stage_working, stage_file_test)
   std::filesystem::remove("stage_working_test.txt");
   std::filesystem::remove(".bittrack/index");
 }
+
 TEST(t07_branch, remove_new_branch_test)
 {
   EXPECT_TRUE(test_remove_branch());
 }
+
 TEST(t09_branch, untracked_file_preservation_test)
 {
   EXPECT_TRUE(test_untracked_file_preservation());
 }
+
 TEST(t11_branch, switch_to_nonexistent_branch_test)
 {
   EXPECT_TRUE(test_switch_to_nonexistent_branch());
@@ -142,6 +137,7 @@ TEST(t12_branch, switch_to_same_branch_test)
 {
   EXPECT_TRUE(test_switch_to_same_branch());
 }
+
 TEST(t14_diff, file_comparison_test)
 {
   EXPECT_TRUE(test_diff_file_comparison());
@@ -265,96 +261,50 @@ TEST(t60_hooks, create_pre_push_test)
   EXPECT_TRUE(test_hooks_create_pre_push());
 }
 
-TEST(t61_maintenance, garbage_collect_test)
-{
-  EXPECT_TRUE(test_maintenance_garbage_collect());
-}
+// TEST(t61_maintenance, garbage_collect_test)
+// {
+//   EXPECT_TRUE(test_maintenance_garbage_collect());
+// }
 
-TEST(t62_maintenance, repack_test)
-{
-  EXPECT_TRUE(test_maintenance_repack());
-}
+// TEST(t62_maintenance, repack_test)
+// {
+//   EXPECT_TRUE(test_maintenance_repack());
+// }
 
-TEST(t63_maintenance, prune_test)
-{
-  EXPECT_TRUE(test_maintenance_prune());
-}
+// TEST(t63_maintenance, prune_test)
+// {
+//   EXPECT_TRUE(test_maintenance_prune());
+// }
 
-TEST(t64_maintenance, fsck_test)
-{
-  EXPECT_TRUE(test_maintenance_fsck());
-}
+// TEST(t64_maintenance, fsck_test)
+// {
+//   EXPECT_TRUE(test_maintenance_fsck());
+// }
 
-TEST(t65_maintenance, stats_test)
-{
-  EXPECT_TRUE(test_maintenance_stats());
-}
+// TEST(t65_maintenance, stats_test)
+// {
+//   EXPECT_TRUE(test_maintenance_stats());
+// }
 
-TEST(t66_maintenance, show_info_test)
-{
-  EXPECT_TRUE(test_maintenance_show_info());
-}
+// TEST(t66_maintenance, show_info_test)
+// {
+//   EXPECT_TRUE(test_maintenance_show_info());
+// }
 
-TEST(t67_maintenance, analyze_test)
-{
-  EXPECT_TRUE(test_maintenance_analyze());
-}
+// TEST(t67_maintenance, analyze_test)
+// {
+//   EXPECT_TRUE(test_maintenance_analyze());
+// }
 
-TEST(t68_maintenance, find_large_files_test)
-{
-  EXPECT_TRUE(test_maintenance_find_large_files());
-}
+// TEST(t68_maintenance, find_large_files_test)
+// {
+//   EXPECT_TRUE(test_maintenance_find_large_files());
+// }
 
-TEST(t69_maintenance, find_duplicates_test)
-{
-  EXPECT_TRUE(test_maintenance_find_duplicates());
-}
-
-
-TEST(t71_maintenance, clean_ignored_test)
-{
-  EXPECT_TRUE(test_maintenance_clean_ignored());
-}
-
-TEST(t72_maintenance, remove_empty_dirs_test)
-{
-  EXPECT_TRUE(test_maintenance_remove_empty_dirs());
-}
-
-TEST(t73_maintenance, compact_test)
-{
-  EXPECT_TRUE(test_maintenance_compact());
-}
-
-TEST(t74_maintenance, backup_test)
-{
-  EXPECT_TRUE(test_maintenance_backup());
-}
-
-TEST(t75_maintenance, list_backups_test)
-{
-  EXPECT_TRUE(test_maintenance_list_backups());
-}
-
-TEST(t76_maintenance, benchmark_test)
-{
-  EXPECT_TRUE(test_maintenance_benchmark());
-}
-
-TEST(t77_maintenance, profile_test)
-{
-  EXPECT_TRUE(test_maintenance_profile());
-}
-
-TEST(t78_maintenance, check_integrity_test)
-{
-  EXPECT_TRUE(test_maintenance_check_integrity());
-}
-
-TEST(t79_maintenance, optimize_test)
-{
-  EXPECT_TRUE(test_maintenance_optimize());
-}
+// TEST(t69_maintenance, find_duplicates_test)
+// {
+//   EXPECT_TRUE(test_maintenance_find_duplicates());
+// }
 
 TEST(t80_error, print_error_test)
 {

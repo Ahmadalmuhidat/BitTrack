@@ -1,1 +1,3 @@
-g++ -std=c++17 -I$(brew --prefix openssl)/include -L$(brew --prefix openssl)/lib -lssl -lcrypto -lcurl -lz libs/miniz/miniz.c src/*.cpp -o build/bittrack
+g++ -std=c++17 -I$(brew --prefix openssl)/include -L$(brew --prefix openssl)/lib \
+  -lssl -lcrypto -lcurl -lz libs/miniz/miniz.c src/*.cpp \
+  -o build/bittrack

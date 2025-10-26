@@ -3,6 +3,7 @@
 #include <fstream>
 #include <filesystem>
 
+// commit a staged file and verify it's no longer staged
 bool test_commit_staged_files()
 {
   std::ofstream file("commit_test.txt");

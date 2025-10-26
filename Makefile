@@ -6,7 +6,8 @@ compile: build
 
 test: build
 	./bin/build.test.sh
-	./build/run_tests
+	./build/bittrack init
+	yes | ./build/run_tests
 
 clean:
 	rm -rf build

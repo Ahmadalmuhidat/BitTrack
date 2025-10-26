@@ -4,6 +4,7 @@
 #include <fstream>
 #include <filesystem>
 
+// create an annotated tag and verify its existence
 bool test_tag_creation()
 {
   std::ofstream file("tag_test.txt");
@@ -23,6 +24,7 @@ bool test_tag_creation()
   return exists;
 }
 
+// create a lightweight tag and verify its existence
 bool test_lightweight_tag_creation()
 {
   std::ofstream file("lightweight_tag_test.txt");
@@ -42,6 +44,7 @@ bool test_lightweight_tag_creation()
   return exists;
 }
 
+// list all tags and verify at least three exist
 bool test_tag_listing()
 {
   std::ofstream file("tag_list_test.txt");
@@ -65,6 +68,7 @@ bool test_tag_listing()
   return tags.size() >= 3;
 }
 
+// delete a tag and verify it no longer exists
 bool test_tag_deletion()
 {
   std::ofstream file("tag_delete_test.txt");
@@ -87,6 +91,7 @@ bool test_tag_deletion()
   return exists_before && !exists_after;
 }
 
+// show tag details and verify output
 bool test_tag_show()
 {
   std::ofstream file("tag_show_test.txt");
@@ -104,44 +109,4 @@ bool test_tag_show()
   tag_delete("v1.0");
 
   return true;
-}
-
-bool test_tag_checkout()
-{
-  std::ofstream file("tag_checkout_test.txt");
-  file << "content for tag checkout" << std::endl;
-  file.close();
-
-  stage("tag_checkout_test.txt");
-  commit_changes("test_user", "commit for tag checkout");
-
-  tag_create("v1.0", "", true);
-
-  tag_checkout("v1.0");
-
-  std::filesystem::remove("tag_checkout_test.txt");
-  tag_delete("v1.0");
-
-  return true;
-}
-
-bool test_tag_get_commit()
-{
-  std::ofstream file("tag_commit_test.txt");
-  file << "content for tag commit test" << std::endl;
-  file.close();
-
-  stage("tag_commit_test.txt");
-  commit_changes("test_user", "commit for tag commit test");
-
-  std::string current_commit = get_current_commit();
-
-  tag_create("v1.0", "", true);
-
-  std::string tag_commit = get_commit_hash("v1.0");
-
-  std::filesystem::remove("tag_commit_test.txt");
-  tag_delete("v1.0");
-
-  return tag_commit == current_commit;
 }

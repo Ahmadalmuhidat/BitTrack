@@ -4,21 +4,21 @@
 #include <fstream>
 #include <filesystem>
 
-bool test_branch_master()
+// get list of branches and check if "main" exists
+bool test_branch_main()
 {
-  std::vector<std::string> branches = get_branches_list();
-  bool master_exists = std::find(branches.begin(), branches.end(), "main") != branches.end();
-
-  return master_exists;
+  std::string current_branch = get_current_branch();
+  return current_branch == "main";
 }
 
+// get list of branches and check if it's not empty
 bool test_list_branches()
 {
   std::vector<std::string> branches = get_branches_list();
-
   return !branches.empty();
 }
 
+// create a new branch and check if it exists
 bool test_checkout_new_branch()
 {
   add_branch("test_branch");
@@ -31,6 +31,7 @@ bool test_checkout_new_branch()
   return branch_exists;
 }
 
+// remove a branch and check if it no longer exists
 bool test_remove_branch()
 {
   add_branch("remove_test_branch");
@@ -46,30 +47,32 @@ bool test_remove_branch()
   return existed_before && !exists_after;
 }
 
+// switch to an existing branch and verify the switch
 bool test_working_directory_update()
 {
-  std::ofstream file("test_master.txt");
+  std::ofstream file("test_main.txt");
   file << "main content" << std::endl;
   file.close();
 
-  stage("test_master.txt");
+  stage("test_main.txt");
   commit_changes("test_user", "main commit");
 
   add_branch("working_dir_branch");
   switch_branch("working_dir_branch");
 
-  if (!std::filesystem::exists("test_master.txt"))
+  if (!std::filesystem::exists("test_main.txt"))
   {
     return false;
   }
 
   switch_branch("main");
   remove_branch("working_dir_branch");
-  std::filesystem::remove("test_master.txt");
+  std::filesystem::remove("test_main.txt");
 
   return true;
 }
 
+// create an untracked file, switch branches, and verify the file is preserved
 bool test_untracked_file_preservation()
 {
   std::ofstream untracked_file("untracked.txt");
@@ -91,6 +94,7 @@ bool test_untracked_file_preservation()
   return preserved;
 }
 
+// stage a file, switch branches, and verify uncommitted changes are detected
 bool test_uncommitted_changes_detection()
 {
   std::ofstream staged_file("staged_uncommitted.txt");
@@ -110,20 +114,21 @@ bool test_uncommitted_changes_detection()
   return has_uncommitted;
 }
 
+// attempt to switch to a nonexistent branch and verify error handling
 bool test_switch_to_nonexistent_branch()
 {
   switch_branch("nonexistent_branch");
-
   return true;
 }
 
+// switch to the same branch and verify no changes occur
 bool test_switch_to_same_branch()
 {
   switch_branch("main");
-
   return true;
 }
 
+// commit a file, modify it, delete it, and verify restoration from the commit
 bool test_file_restoration_from_commit()
 {
   std::ofstream file("restoration_test.txt");
