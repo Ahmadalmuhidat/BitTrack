@@ -501,7 +501,7 @@ void add_branch(const std::string &branch_name)
   }
   else
   {
-    std::cout << branch_name << " is already there" << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_ALREADY_EXISTS, branch_name + " is already there", ErrorSeverity::ERROR, "add_branch");
   }
 }
 
@@ -513,7 +513,7 @@ void remove_branch(const std::string &branch_name)
   // check if the branch exists
   if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
-    std::cout << branch_name << " is not found there" << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, branch_name + " is not found", ErrorSeverity::ERROR, "remove_branch");
     return;
   }
 
@@ -523,7 +523,7 @@ void remove_branch(const std::string &branch_name)
   // check if trying to delete the current branch
   if (current_branch == branch_name)
   {
-    std::cout << "Cannot delete the current branch. Please switch to another branch first." << std::endl;
+    ErrorHandler::printError(ErrorCode::CANNOT_DELETE_CURRENT_BRANCH, "Cannot delete the current branch. Please switch to another branch first", ErrorSeverity::ERROR, "remove_branch");
     return;
   }
 
@@ -549,7 +549,7 @@ void switch_branch(const std::string &branch_name)
   // check if the branch exists
   if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
-    std::cout << "you must create the branch first" << std::endl;
+    ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "you must create the branch first", ErrorSeverity::ERROR, "switch_branch");
     return;
   }
   // check if already in the target branch
@@ -635,20 +635,20 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
     // validate branches and working directory state
     if (!branch_exists(source_branch))
     {
-      std::cout << "Error: Source branch '" << source_branch << "' does not exist." << std::endl;
+      ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "Source branch '" + source_branch + "' does not exist", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
     if (!branch_exists(target_branch))
     {
-      std::cout << "Error: Target branch '" << target_branch << "' does not exist." << std::endl;
+      ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "Target branch '" + target_branch + "' does not exist", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
     // check for uncommitted changes
     if (!ErrorHandler::validateNoUncommittedChanges())
     {
-      std::cout << "Error: You have uncommitted changes. Please commit or stash them before rebasing." << std::endl;
+      ErrorHandler::printError(ErrorCode::UNCOMMITTED_CHANGES, "You have uncommitted changes. Please commit or stash them before rebasing", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
@@ -656,7 +656,7 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
     std::string current_branch = get_current_branch();
     if (current_branch != source_branch)
     {
-      std::cout << "Error: You must be on the source branch '" << source_branch << "' to rebase." << std::endl;
+      ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "You must be on the source branch '" + source_branch + "' to rebase", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
@@ -664,7 +664,7 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
     std::string common_ancestor = find_common_ancestor(source_branch, target_branch);
     if (common_ancestor.empty())
     {
-      std::cout << "Error: Could not find common ancestor between branches." << std::endl;
+      ErrorHandler::printError(ErrorCode::INTERNAL_ERROR, "Could not find common ancestor between branches", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
@@ -682,7 +682,7 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
     std::string target_commit = get_branch_last_commit_hash(target_branch);
     if (target_commit.empty())
     {
-      std::cout << "Error: Target branch has no commits." << std::endl;
+      ErrorHandler::printError(ErrorCode::NO_COMMITS_FOUND, "Target branch has no commits", ErrorSeverity::ERROR, "rebase_branch");
       return;
     }
 
@@ -699,8 +699,8 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
         // apply the commit
         if (!apply_commit_during_rebase(commit_hash))
         {
-          std::cout << "Error: Failed to apply commit " << commit_hash << " during rebase." << std::endl;
-          std::cout << "Rebase aborted. Use 'bittrack --branch -rebase-abort' to rollback." << std::endl;
+          ErrorHandler::printError(ErrorCode::COMMIT_FAILED, "Failed to apply commit " + commit_hash + " during rebase", ErrorSeverity::ERROR, "rebase_branch");
+          ErrorHandler::printError(ErrorCode::COMMIT_FAILED, "Rebase aborted. Use 'bittrack --branch -rebase-abort' to rollback", ErrorSeverity::ERROR, "rebase_branch");
           return;
         }
       }
@@ -721,8 +721,8 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
     }
     catch (const std::exception &e)
     {
-      std::cout << "Error during rebase: " << e.what() << std::endl;
-      std::cout << "Rolling back to previous state..." << std::endl;
+      ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error during rebase: " + std::string(e.what()), ErrorSeverity::ERROR, "rebase_branch");
+      ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Rolling back to previous state...", ErrorSeverity::ERROR, "rebase_branch");
 
       // rollback to backup commit on source branch
       std::ofstream branch_file(".bittrack/refs/heads/" + source_branch);
@@ -735,13 +735,13 @@ void rebase_branch(const std::string &source_branch, const std::string &target_b
       // restore working directory to source branch state
       update_working_directory(source_branch);
 
-      std::cout << "Rollback completed." << std::endl;
+      ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Rollback completed", ErrorSeverity::ERROR, "rebase_branch");
       throw;
     }
   }
   catch (const std::exception &e)
   {
-    std::cout << "Error during rebase: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error during rebase: " + std::string(e.what()), ErrorSeverity::ERROR, "rebase_branch");
   }
 }
 
@@ -752,7 +752,7 @@ void show_branch_history(const std::string &branch_name)
     // check if branch exists
     if (!branch_exists(branch_name))
     {
-      std::cout << "Error: Branch '" << branch_name << "' does not exist." << std::endl;
+      ErrorHandler::printError(ErrorCode::BRANCH_NOT_FOUND, "Branch '" + branch_name + "' does not exist", ErrorSeverity::ERROR, "show_branch_history");
       return;
     }
 
@@ -788,7 +788,7 @@ void show_branch_history(const std::string &branch_name)
   }
   catch (const std::exception &e)
   {
-    std::cout << "Error reading branch history: " << e.what() << std::endl;
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error reading branch history: " + std::string(e.what()), ErrorSeverity::ERROR, "show_branch_history");
   }
 }
 

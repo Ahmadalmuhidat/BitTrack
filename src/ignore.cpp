@@ -306,7 +306,7 @@ void add_ignore_pattern(const std::string &pattern)
   }
   else
   {
-    std::cout << "Error: Could not open .bitignore file." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not open .bitignore file", ErrorSeverity::ERROR, "add_ignore_pattern");
   }
 }
 
@@ -317,7 +317,7 @@ void remove_ignore_pattern(const std::string &pattern)
 
   if (!bitignore_file.is_open())
   {
-    std::cout << "Error: Could not open .bitignore file." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not open .bitignore file", ErrorSeverity::ERROR, "remove_ignore_pattern");
     return;
   }
 
@@ -348,7 +348,7 @@ void list_ignore_patterns()
   std::ifstream bitignore_file(".bitignore");
   if (!bitignore_file.is_open())
   {
-    std::cout << "No .bitignore file found." << std::endl;
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "No .bitignore file found", ErrorSeverity::ERROR, "list_ignore_patterns");
     return;
   }
 

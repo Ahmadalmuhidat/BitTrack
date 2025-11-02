@@ -5,7 +5,7 @@ void tag_create(const std::string &name, const std::string &commit_hash, bool an
   // Check if tag already exists
   if (tag_exists(name))
   {
-    std::cout << "Error: Tag '" << name << "' already exists" << std::endl;
+    ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' already exists", ErrorSeverity::ERROR, "tag_create");
     return;
   }
 
@@ -13,7 +13,7 @@ void tag_create(const std::string &name, const std::string &commit_hash, bool an
   std::string target_commit = commit_hash.empty() ? get_current_commit() : commit_hash;
   if (target_commit.empty())
   {
-    std::cout << "Error: No commit to tag" << std::endl;
+    ErrorHandler::printError(ErrorCode::NO_COMMITS_FOUND, "No commit to tag", ErrorSeverity::ERROR, "tag_create");
     return;
   }
 
@@ -70,7 +70,7 @@ void tag_delete(const std::string &name)
   // Check if tag exists
   if (!tag_exists(name))
   {
-    std::cout << "Error: Tag '" << name << "' does not exist" << std::endl;
+    ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' does not exist", ErrorSeverity::ERROR, "tag_delete");
     return;
   }
 
@@ -85,7 +85,7 @@ void tag_details(const std::string &name)
   Tag tag = get_tag(name);
   if (tag.name.empty())
   {
-    std::cout << "Error: Tag '" << name << "' not found" << std::endl;
+    ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' not found", ErrorSeverity::ERROR, "tag_details");
     return;
   }
 
