@@ -1,10 +1,17 @@
 #ifndef HASH_HPP
 #define HASH_HPP
 
-#include <openssl/evp.h>
-#include <openssl/sha.h>
 #include <string>
 #include <unordered_map>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
 
 std::string to_hex_string(unsigned char *hash, std::size_t length);
 std::string generate_commit_hash_with_files(

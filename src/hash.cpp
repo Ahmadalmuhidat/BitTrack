@@ -1,11 +1,4 @@
 #include "../include/hash.hpp"
-#include <chrono>
-#include <filesystem>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <vector>
 
 std::string to_hex_string(unsigned char *hash, std::size_t length) {
   // Convert the hash bytes to a hexadecimal string

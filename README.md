@@ -20,6 +20,91 @@ A comprehensive, lightweight version control system built from scratch in C++ - 
 - **Remote Operations**: Push/pull to remote repositories
 - **Configuration Management**: User and repository-specific settings
 
+### Usage
+```bash
+bittrack <command> [options]
+```
+
+#### Core Commands
+- **Initialize Repository**
+  ```bash
+  bittrack init
+  ```
+- **Check Status**
+  ```bash
+  bittrack --status
+  ```
+- **Stage Files**
+  ```bash
+  bittrack --stage <file>
+  ```
+- **Unstage Files**
+  ```bash
+  bittrack --unstage <file>
+  ```
+- **Commit Changes**
+  ```bash
+  bittrack --commit
+  bittrack --commit -m "Commit message"
+  ```
+- **View History**
+  ```bash
+  bittrack --log
+  ```
+- **Show Differences**
+  ```bash
+  bittrack --diff               # Diff working directory
+  bittrack --diff --staged      # Diff staged changes
+  bittrack --diff --unstaged    # Diff unstaged changes
+  bittrack --diff <file1> <file2> # Compare two files
+  ```
+
+#### Branching
+- **List Branches**
+  ```bash
+  bittrack --branch -l
+  ```
+- **Create Branch**
+  ```bash
+  bittrack --branch -c <name>
+  ```
+- **Switch Branch**
+  ```bash
+  bittrack --checkout <name>
+  ```
+- **Merge Branch**
+  ```bash
+  bittrack --branch -merge <source> <target>
+  ```
+- **Delete Branch**
+  ```bash
+  bittrack --branch -r <name>
+  ```
+
+#### Remote Operations
+- **Clone Repository**
+  ```bash
+  bittrack --clone <url> [path]
+  ```
+- **Add Remote**
+  ```bash
+  bittrack --remote -s <url>
+  ```
+- **Push Changes**
+  ```bash
+  bittrack --push [remote] [branch]
+  ```
+- **Pull Changes**
+  ```bash
+  bittrack --pull [remote] [branch]
+  ```
+
+#### Advanced
+- **Stashing**: `bittrack --stash` (save), `list`, `pop`, `apply`, `drop`, `clear`
+- **Tagging**: `bittrack --tag` (list), `-a <name> <msg>`, `-d <name>`
+- **Maintenance**: `bittrack --maintenance` (stats), `gc`, `fsck`, `prune`
+- **Configuration**: `bittrack --config <key> <value>`
+
 ## Requirements
 
 ### System Requirements
