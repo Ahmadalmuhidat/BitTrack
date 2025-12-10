@@ -614,6 +614,43 @@ BitTrack supports remote repository operations for collaboration.
 - Stores in `.bittrack/remote`
 - **Example**: `./build/bittrack --remote -s https://github.com/user/repo.git`
 
+### List Remote Branches
+```bash
+./build/bittrack --remote -l
+```
+- Lists all branches available on the remote
+- Useful for exploring remote repository state
+
+### Delete Remote Branch
+```bash
+./build/bittrack --remote -d <branch-name>
+```
+- Deletes specified branch from the remote repository
+- **Example**: `./build/bittrack --remote -d feature-deprecated`
+
+### Push Changes
+```bash
+./build/bittrack --push [remote] [branch]
+```
+- Pushes current branch commits to remote
+- **Arguments**:
+  - `remote`: Optional remote name (defaults to "origin")
+  - `branch`: Optional branch name (defaults to current branch)
+- **Features**:
+  - Automatically creates new remote branches if they don't exist
+  - Ensures clean history mapping
+- **Example**: `./build/bittrack --push origin feature-login`
+
+### Pull Changes
+```bash
+./build/bittrack --pull [remote] [branch]
+```
+- Fetches and merges changes from remote
+- **Arguments**:
+  - `remote`: Optional remote name (defaults to "origin")
+  - `branch`: Optional branch name (defaults to current branch)
+- **Example**: `./build/bittrack --pull origin main`
+
 ### Remote Features
 
 - **URL Validation**: Ensures proper remote URL format
@@ -621,6 +658,7 @@ BitTrack supports remote repository operations for collaboration.
 - **GitHub Integration**: Special handling for GitHub repositories
 - **Authentication**: Support for GitHub tokens and other auth methods
 - **Push/Pull Support**: Full implementation with conflict handling
+- **Branch Management**: Create, list, and delete remote branches
 
 ---
 
@@ -1082,8 +1120,12 @@ cat .bittrack/commits/history
 |---------|-------------|
 | `--remote -v` | Show remote URL |
 | `--remote -s <url>` | Set remote URL |
-| ` push` | Push to remote |
-| ` pull` | Pull from remote |
+| `--remote -l` | List remote branches |
+| `--remote -d <branch>` | Delete remote branch |
+| `--push [remote] [branch]` | Push to remote |
+| `--pull [remote] [branch]` | Pull from remote |
+| `--clone <url> [path]` | Clone remote repository |
+| `--fetch [remote]` | Fetch from remote |
 
 #### Hooks Commands
 | Command | Description |
