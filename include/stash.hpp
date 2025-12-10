@@ -19,34 +19,34 @@
 // Represents a single stash entry
 struct StashEntry
 {
-  std::string id; // unique identifier for the stash
-  std::string message; // stash message
-  std::string branch; // branch where the stash was created
-  std::string commit_hash; // commit hash at the time of stashing
-  std::time_t timestamp; // time when the stash was created
+  std::string id;                 // unique identifier for the stash
+  std::string message;            // stash message
+  std::string branch;             // branch where the stash was created
+  std::string commit_hash;        // commit hash at the time of stashing
+  std::time_t timestamp;          // time when the stash was created
   std::vector<std::string> files; // list of files in the stash
-  
+
   StashEntry() : timestamp(0) {}
 };
 
-void stash_changes(const std::string& message = "");
+void stash_changes(const std::string &message = "");
 void stash_list();
-void stash_show(const std::string& stash_id = "");
-void stash_apply(const std::string& stash_id = "");
-void stash_pop(const std::string& stash_id = "");
-void stash_drop(const std::string& stash_id = "");
+void stash_show(const std::string &stash_id = "");
+void stash_apply(const std::string &stash_id = "");
+void stash_pop(const std::string &stash_id = "");
+void stash_drop(const std::string &stash_id = "");
 void stash_clear();
 bool stash_has_stashes();
 std::vector<StashEntry> get_stash_entries();
-StashEntry get_stash_entry(const std::string& stash_id);
-void save_stash_entry(const StashEntry& entry);
-void delete_stash_entry(const std::string& stash_id);
+StashEntry get_stash_entry(const std::string &stash_id);
+void save_stash_entry(const StashEntry &entry);
+void delete_stash_entry(const std::string &stash_id);
 std::string generate_stash_id();
-void backup_staged_files(const std::string& stash_id);
-void restore_working_directory(const std::string& stash_id);
+void backup_staged_files(const std::string &stash_id);
+void restore_working_directory(const std::string &stash_id);
 void remove_staged_files_from_working_directory();
 std::vector<std::string> get_all_tracked_files();
 std::string get_stash_dir();
-std::string get_stash_file_path(const std::string& stash_id);
+std::string get_stash_file_path(const std::string &stash_id);
 
 #endif

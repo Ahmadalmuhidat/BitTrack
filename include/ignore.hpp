@@ -13,7 +13,8 @@
 #include <iostream>
 #include <sstream>
 
-struct IgnorePattern {
+struct IgnorePattern
+{
   std::string pattern;
   bool is_negation;  // true if pattern starts with !
   bool is_directory; // true if pattern ends with /
@@ -43,7 +44,8 @@ struct IgnorePattern {
     try
     {
       regex_pattern = std::regex(regex_str, std::regex_constants::icase);
-    } catch (const std::regex_error &)
+    }
+    catch (const std::regex_error &)
     {
       // if regex compilation fails, use simple string matching
       regex_str = ".*" + std::regex_replace(pattern, std::regex("\\*"), ".*") + ".*";

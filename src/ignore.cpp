@@ -1,19 +1,25 @@
 #include "../include/ignore.hpp"
 
 std::string
-IgnorePattern::convert_git_pattern_to_regex(const std::string &git_pattern) {
+IgnorePattern::convert_git_pattern_to_regex(const std::string &git_pattern)
+{
   std::string regex_pattern;
 
-  for (size_t i = 0; i < git_pattern.length(); ++i) {
+  for (size_t i = 0; i < git_pattern.length(); ++i)
+  {
     char c = git_pattern[i];
 
-    switch (c) {
+    switch (c)
+    {
     case '*':
-      if (i + 1 < git_pattern.length() && git_pattern[i + 1] == '*') {
+      if (i + 1 < git_pattern.length() && git_pattern[i + 1] == '*')
+      {
         // ** matches any number of directories
         regex_pattern += ".*";
         ++i; // Skip the second *
-      } else {
+      }
+      else
+      {
         // * matches any characters except /
         regex_pattern += "[^/]*";
       }
@@ -47,43 +53,56 @@ IgnorePattern::convert_git_pattern_to_regex(const std::string &git_pattern) {
   }
 
   // if pattern doesn't start with /, it can match anywhere in the path
-  if (git_pattern[0] != '/') {
+  if (git_pattern[0] != '/')
+  {
     regex_pattern = ".*" + regex_pattern;
-  } else {
+  }
+  else
+  {
     regex_pattern = "^" + regex_pattern;
   }
 
   // if pattern doesn't end with /, it can match files or directories
-  if (git_pattern.back() != '/') {
+  if (git_pattern.back() != '/')
+  {
     regex_pattern += "(/.*)?$";
-  } else {
+  }
+  else
+  {
     regex_pattern += ".*$";
   }
 
   return regex_pattern;
 }
 
-std::string normalize_path(const std::string &path) {
+std::string normalize_path(const std::string &path)
+{
   std::string normalized = path;
 
   // convert backslashes to forward slashes
   std::replace(normalized.begin(), normalized.end(), '\\', '/');
 
   // remove leading ./ if present
-  if (normalized.length() >= 2 && normalized.substr(0, 2) == "./") {
+  if (normalized.length() >= 2 && normalized.substr(0, 2) == "./")
+  {
     normalized = normalized.substr(2);
   }
 
   // remove duplicate slashes
   std::string result;
   bool last_was_slash = false;
-  for (char c : normalized) {
-    if (c == '/') {
-      if (!last_was_slash) {
+  for (char c : normalized)
+  {
+    if (c == '/')
+    {
+      if (!last_was_slash)
+      {
         result += c;
       }
       last_was_slash = true;
-    } else {
+    }
+    else
+    {
       result += c;
       last_was_slash = false;
     }
@@ -92,43 +111,52 @@ std::string normalize_path(const std::string &path) {
   return result;
 }
 
-bool matches_pattern(const std::string &filePath,
-                     const IgnorePattern &pattern) {
+bool matches_pattern(const std::string &filePath, const IgnorePattern &pattern)
+{
   std::string normalized_path = normalize_path(filePath);
 
   // for directory patterns, check if the path is within the directory
-  if (pattern.is_directory) {
+  if (pattern.is_directory)
+  {
     if (normalized_path.find(pattern.pattern + "/") == 0 ||
-        normalized_path == pattern.pattern) {
+        normalized_path == pattern.pattern)
+    {
       return true;
     }
   }
 
   // use regex matching
-  try {
+  try
+  {
     return std::regex_match(normalized_path, pattern.regex_pattern);
-  } catch (const std::regex_error &) {
+  }
+  catch (const std::regex_error &)
+  {
     // fallback to simple string matching
     return normalized_path.find(pattern.pattern) != std::string::npos;
   }
 }
 
-std::vector<std::string> read_bitignore(const std::string &filePath) {
+std::vector<std::string> read_bitignore(const std::string &filePath)
+{
   std::vector<std::string> patterns;
 
-  if (!std::filesystem::exists(filePath)) {
+  if (!std::filesystem::exists(filePath))
+  {
     return patterns;
   }
 
   std::ifstream bitignoreFile(filePath);
   std::string line;
 
-  while (std::getline(bitignoreFile, line)) {
+  while (std::getline(bitignoreFile, line))
+  {
     // remove trailing whitespace
     line.erase(line.find_last_not_of(" \t\r\n") + 1);
 
     // skip empty lines and comments
-    if (line.empty() || line[0] == '#') {
+    if (line.empty() || line[0] == '#')
+    {
       continue;
     }
 
@@ -139,11 +167,14 @@ std::vector<std::string> read_bitignore(const std::string &filePath) {
 }
 
 std::vector<IgnorePattern>
-parse_ignore_patterns(const std::vector<std::string> &raw_patterns) {
+parse_ignore_patterns(const std::vector<std::string> &raw_patterns)
+{
   std::vector<IgnorePattern> patterns;
 
-  for (const auto &raw_pattern : raw_patterns) {
-    if (!raw_pattern.empty()) {
+  for (const auto &raw_pattern : raw_patterns)
+  {
+    if (!raw_pattern.empty())
+    {
       patterns.emplace_back(raw_pattern);
     }
   }
@@ -152,8 +183,10 @@ parse_ignore_patterns(const std::vector<std::string> &raw_patterns) {
 }
 
 bool is_file_ignored_by_ignore_patterns(
-    const std::string &filePath, const std::vector<IgnorePattern> &patterns) {
-  if (filePath.empty()) {
+    const std::string &filePath, const std::vector<IgnorePattern> &patterns)
+{
+  if (filePath.empty())
+  {
     return false;
   }
 
@@ -161,12 +194,17 @@ bool is_file_ignored_by_ignore_patterns(
   bool ignored = false;
 
   // process patterns in order (later patterns can override earlier ones)
-  for (const auto &pattern : patterns) {
-    if (matches_pattern(normalized_path, pattern)) {
-      if (pattern.is_negation) {
+  for (const auto &pattern : patterns)
+  {
+    if (matches_pattern(normalized_path, pattern))
+    {
+      if (pattern.is_negation)
+      {
         // negation pattern - unignore this file
         ignored = false;
-      } else {
+      }
+      else
+      {
         // regular pattern - ignore this file
         ignored = true;
       }
@@ -176,44 +214,50 @@ bool is_file_ignored_by_ignore_patterns(
   return ignored;
 }
 
-bool is_file_ignored_by_patterns(const std::string &file_path,
-                                 const std::vector<std::string> &patterns) {
-  try {
-    if (file_path.empty()) {
+bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector<std::string> &patterns)
+{
+  try
+  {
+    if (file_path.empty())
+    {
       return false;
     }
 
     std::vector<IgnorePattern> ignorePatterns;
-    for (const auto &pattern : patterns) {
-      if (!pattern.empty()) {
+    for (const auto &pattern : patterns)
+    {
+      if (!pattern.empty())
+      {
         ignorePatterns.emplace_back(pattern);
       }
     }
 
     return ::is_file_ignored_by_ignore_patterns(file_path, ignorePatterns);
-  } catch (const std::exception &e) {
-    ErrorHandler::printError(
-        ErrorCode::UNEXPECTED_EXCEPTION,
-        "Error checking if file is ignored: " + std::string(e.what()),
-        ErrorSeverity::ERROR, "is_file_ignored_by_patterns");
+  }
+  catch (const std::exception &e)
+  {
+    ErrorHandler::printError(ErrorCode::UNEXPECTED_EXCEPTION, "Error checking if file is ignored: " + std::string(e.what()), ErrorSeverity::ERROR, "is_file_ignored_by_patterns");
     return false;
   }
 }
 
-bool should_ignore_file(const std::string &file_path) {
+bool should_ignore_file(const std::string &file_path)
+{
   std::string current_dir = std::filesystem::current_path().string();
   std::string bitignore_path = current_dir + "/.bitignore";
 
-  while (current_dir !=
-         std::filesystem::path(current_dir).parent_path().string()) {
+  while (current_dir != std::filesystem::path(current_dir).parent_path().string())
+  {
     bitignore_path = current_dir + "/.bitignore";
-    if (std::filesystem::exists(bitignore_path)) {
+    if (std::filesystem::exists(bitignore_path))
+    {
       break;
     }
     current_dir = std::filesystem::path(current_dir).parent_path().string();
   }
 
-  if (!std::filesystem::exists(bitignore_path)) {
+  if (!std::filesystem::exists(bitignore_path))
+  {
     return false;
   }
 
@@ -223,9 +267,11 @@ bool should_ignore_file(const std::string &file_path) {
   return is_file_ignored_by_ignore_patterns(file_path, patterns);
 }
 
-void create_default_bitignore() {
+void create_default_bitignore()
+{
   std::ofstream bitignore_file(".bitignore");
-  if (bitignore_file.is_open()) {
+  if (bitignore_file.is_open())
+  {
     bitignore_file << "# BitTrack ignore file\n";
     bitignore_file << "# Add patterns to ignore files and directories\n\n";
     bitignore_file << "# Compiled files\n";
@@ -252,41 +298,47 @@ void create_default_bitignore() {
   }
 }
 
-void add_ignore_pattern(const std::string &pattern) {
+void add_ignore_pattern(const std::string &pattern)
+{
   std::ofstream bitignore_file(".bitignore", std::ios::app);
-  if (bitignore_file.is_open()) {
+  if (bitignore_file.is_open())
+  {
     bitignore_file << pattern << "\n";
     bitignore_file.close();
     std::cout << "Added pattern to .bitignore: " << pattern << std::endl;
-  } else {
-    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR,
-                             "Could not open .bitignore file",
-                             ErrorSeverity::ERROR, "add_ignore_pattern");
+  }
+  else
+  {
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR, "Could not open .bitignore file", ErrorSeverity::ERROR, "add_ignore_pattern");
   }
 }
 
-void remove_ignore_pattern(const std::string &pattern) {
+void remove_ignore_pattern(const std::string &pattern)
+{
   std::vector<std::string> patterns;
   std::ifstream bitignore_file(".bitignore");
 
-  if (!bitignore_file.is_open()) {
-    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR,
-                             "Could not open .bitignore file",
-                             ErrorSeverity::ERROR, "remove_ignore_pattern");
+  if (!bitignore_file.is_open())
+  {
+    ErrorHandler::printError(ErrorCode::FILE_READ_ERROR, "Could not open .bitignore file", ErrorSeverity::ERROR, "remove_ignore_pattern");
     return;
   }
 
   std::string line;
-  while (std::getline(bitignore_file, line)) {
-    if (line != pattern) {
+  while (std::getline(bitignore_file, line))
+  {
+    if (line != pattern)
+    {
       patterns.push_back(line);
     }
   }
   bitignore_file.close();
 
   std::ofstream out_file(".bitignore");
-  if (out_file.is_open()) {
-    for (const auto &p : patterns) {
+  if (out_file.is_open())
+  {
+    for (const auto &p : patterns)
+    {
       out_file << p << "\n";
     }
     out_file.close();
@@ -294,20 +346,22 @@ void remove_ignore_pattern(const std::string &pattern) {
   }
 }
 
-void list_ignore_patterns() {
+void list_ignore_patterns()
+{
   std::ifstream bitignore_file(".bitignore");
-  if (!bitignore_file.is_open()) {
-    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND,
-                             "No .bitignore file found", ErrorSeverity::ERROR,
-                             "list_ignore_patterns");
+  if (!bitignore_file.is_open())
+  {
+    ErrorHandler::printError(ErrorCode::FILE_NOT_FOUND, "No .bitignore file found", ErrorSeverity::ERROR, "list_ignore_patterns");
     return;
   }
 
   std::cout << "Current ignore patterns:" << std::endl;
   std::string line;
   int line_num = 1;
-  while (std::getline(bitignore_file, line)) {
-    if (!line.empty() && line[0] != '#') {
+  while (std::getline(bitignore_file, line))
+  {
+    if (!line.empty() && line[0] != '#')
+    {
       std::cout << line_num << ": " << line << std::endl;
     }
     line_num++;
