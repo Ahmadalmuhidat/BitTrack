@@ -1,9 +1,9 @@
 #include "../include/tag.hpp"
 
-void tag_create(const std::string &name, const std::string &commit_hash, bool annotated)
+void tagCreate(const std::string &name, const std::string &commit_hash, bool annotated)
 {
   // Check if tag already exists
-  if (tag_exists(name))
+  if (tagExists(name))
   {
     ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' already exists", ErrorSeverity::ERROR, "tag_create");
     return;
@@ -32,15 +32,15 @@ void tag_create(const std::string &name, const std::string &commit_hash, bool an
   }
 
   // Save the tag
-  save_tag(tag);
+  tagSave(tag);
 
   std::cout << "Created " << (annotated ? "annotated" : "lightweight") << " tag: " << name << " -> " << target_commit << std::endl;
 }
 
-void tag_list()
+void tagList()
 {
   // Retrieve all tags
-  std::vector<Tag> tags = get_all_tags();
+  std::vector<Tag> tags = getAllTags();
 
   if (tags.empty())
   {
@@ -65,24 +65,24 @@ void tag_list()
   }
 }
 
-void tag_delete(const std::string &name)
+void tagDelete(const std::string &name)
 {
   // Check if tag exists
-  if (!tag_exists(name))
+  if (!tagExists(name))
   {
     ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' does not exist", ErrorSeverity::ERROR, "tag_delete");
     return;
   }
 
   // Delete the tag
-  delete_tag_file(name);
+  deleteTagFile(name);
   std::cout << "Deleted tag: " << name << std::endl;
 }
 
-void tag_details(const std::string &name)
+void tagDetails(const std::string &name)
 {
   // Retrieve the tag
-  Tag tag = get_tag(name);
+  Tag tag = getTag(name);
   if (tag.name.empty())
   {
     ErrorHandler::printError(ErrorCode::TAG_ERROR, "Tag '" + name + "' not found", ErrorSeverity::ERROR, "tag_details");
@@ -98,16 +98,16 @@ void tag_details(const std::string &name)
   if (tag.type == TagType::ANNOTATED)
   {
     std::cout << "Author: " << tag.author << std::endl;
-    std::cout << "Date: " << format_timestamp(tag.timestamp) << std::endl;
+    std::cout << "Date: " << formatTimestamp(tag.timestamp) << std::endl;
     std::cout << "Message: " << tag.message << std::endl;
   }
 }
 
-std::vector<Tag> get_all_tags()
+std::vector<Tag> getAllTags()
 {
   // Retrieve all tags from the tags directory
   std::vector<Tag> tags;
-  std::string tags_dir = get_tags_dir();
+  std::string tags_dir = getTagsDir();
 
   // Check if tags directory exists
   if (!std::filesystem::exists(tags_dir))
@@ -116,28 +116,25 @@ std::vector<Tag> get_all_tags()
   }
 
   // Iterate through tag files and retrieve tag information
-  for (const auto &entry : std::filesystem::directory_iterator(tags_dir))
+  for (const auto &entry : ErrorHandler::safeListDirectoryFiles(tags_dir))
   {
-    // Only process regular files
-    if (entry.is_regular_file())
+    // Get tag name from file name
+    std::string tag_name = entry.filename().string();
+    Tag tag = getTag(tag_name);
+    if (!tag.name.empty())
     {
-      // Get tag name from file name
-      std::string tag_name = entry.path().filename().string();
-      Tag tag = get_tag(tag_name);
-      if (!tag.name.empty())
-      {
-        tags.push_back(tag);
-      }
+      tags.push_back(tag);
     }
   }
+
   return tags;
 }
 
-Tag get_tag(const std::string &name)
+Tag getTag(const std::string &name)
 {
   // Retrieve tag information from the tag file
   Tag tag;
-  std::string tag_file = get_tag_file_path(name);
+  std::string tag_file = getTagFilePath(name);
 
   // Check if tag file exists
   if (!std::filesystem::exists(tag_file))
@@ -146,11 +143,12 @@ Tag get_tag(const std::string &name)
   }
 
   // Parse the tag file
-  std::ifstream file(tag_file);
+  std::string file = ErrorHandler::safeReadFile(tag_file);
+  std::istringstream file_content(file);
   std::string line;
 
   // Read tag file lines
-  if (std::getline(file, line))
+  if (std::getline(file_content, line))
   {
     if (line.find("object ") == 0)
     {
@@ -159,7 +157,7 @@ Tag get_tag(const std::string &name)
   }
 
   // Read type line
-  if (std::getline(file, line))
+  if (std::getline(file_content, line))
   {
     if (line.find("type ") == 0)
     {
@@ -169,7 +167,7 @@ Tag get_tag(const std::string &name)
   }
 
   // Read tag name line
-  if (std::getline(file, line))
+  if (std::getline(file_content, line))
   {
     if (line.find("tag ") == 0)
     {
@@ -178,7 +176,7 @@ Tag get_tag(const std::string &name)
   }
 
   // Read tagger line
-  if (std::getline(file, line))
+  if (std::getline(file_content, line))
   {
     if (line.find("tagger ") == 0)
     {
@@ -191,7 +189,7 @@ Tag get_tag(const std::string &name)
   bool in_message = false;
 
   // Read the rest of the file for the message
-  while (std::getline(file, line))
+  while (std::getline(file_content, line))
   {
     if (in_message)
     {
@@ -216,56 +214,46 @@ Tag get_tag(const std::string &name)
   return tag;
 }
 
-void save_tag(const Tag &tag)
+void tagSave(const Tag &tag)
 {
   // Save tag information to the tag file
-  std::string tag_file = get_tag_file_path(tag.name);
-  std::filesystem::create_directories(std::filesystem::path(tag_file).parent_path());
-
-  // Write tag data to file
-  std::ofstream file(tag_file);
+  std::string tag_file = getTagFilePath(tag.name);
+  ErrorHandler::safeCreateDirectories(std::filesystem::path(tag_file).parent_path().string());
 
   // Write annotated tag format
   if (tag.type == TagType::ANNOTATED)
   {
-    file << "object " << tag.commit_hash << std::endl;
-    file << "type commit" << std::endl;
-    file << "tag " << tag.name << std::endl;
-    file << "tagger " << tag.author << " " << tag.timestamp << std::endl;
-    file << std::endl;
-    file << tag.message;
+    ErrorHandler::safeWriteFile(tag_file,
+                                "object " + tag.commit_hash + "\n" +
+                                    "type commit\n" +
+                                    "tag " + tag.name + "\n" +
+                                    "tagger " + tag.author + " " + std::to_string(tag.timestamp) + "\n\n" +
+                                    tag.message);
   }
   else
   {
-    file << tag.commit_hash << std::endl;
-  }
-
-  file.close();
-}
-
-void delete_tag_file(const std::string &name)
-{
-  // Delete the tag file
-  std::string tag_file = get_tag_file_path(name);
-  if (std::filesystem::exists(tag_file))
-  {
-    std::filesystem::remove(tag_file);
+    ErrorHandler::safeWriteFile(tag_file, tag.commit_hash + "\n");
   }
 }
 
-std::string get_tag_file_path(const std::string &name)
+void deleteTagFile(const std::string &name)
 {
-  // Construct the full path to the tag file and return it
-  return get_tags_dir() + "/" + name;
+  std::string tag_file = getTagFilePath(name);
+  ErrorHandler::safeRemoveFile(tag_file);
 }
 
-std::string get_tags_dir()
+std::string getTagFilePath(const std::string &name)
+{
+  return getTagsDir() + "/" + name;
+}
+
+std::string getTagsDir()
 {
   return ".bittrack/refs/tags";
 }
 
-bool tag_exists(const std::string &name)
+bool tagExists(const std::string &name)
 {
   // Check if the tag file exists
-  return std::filesystem::exists(get_tag_file_path(name));
+  return std::filesystem::exists(getTagFilePath(name));
 }

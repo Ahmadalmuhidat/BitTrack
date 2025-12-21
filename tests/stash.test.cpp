@@ -3,7 +3,7 @@
 #include <fstream>
 #include <filesystem>
 
-// create a stash and verify it exists
+// Create a stash and verify it exists
 bool test_stash_creation()
 {
   std::ofstream file("stash_test.txt");
@@ -12,31 +12,31 @@ bool test_stash_creation()
 
   stage("stash_test.txt");
 
-  stash_changes("Test stash message");
+  stashChanges("Test stash message");
 
-  std::vector<StashEntry> stashes = get_stash_entries();
+  std::vector<StashEntry> stashes = getStashEntries();
 
   std::filesystem::remove("stash_test.txt");
 
   return !stashes.empty();
 }
 
-// list stashes and verify at least two exist
+// List stashes and verify at least two exist
 bool test_stash_listing()
 {
   std::ofstream file1("stash_test1.txt");
   file1 << "content 1" << std::endl;
   file1.close();
   stage("stash_test1.txt");
-  stash_changes("First stash");
+  stashChanges("First stash");
 
   std::ofstream file2("stash_test2.txt");
   file2 << "content 2" << std::endl;
   file2.close();
   stage("stash_test2.txt");
-  stash_changes("Second stash");
+  stashChanges("Second stash");
 
-  std::vector<StashEntry> stashes = get_stash_entries();
+  std::vector<StashEntry> stashes = getStashEntries();
 
   std::filesystem::remove("stash_test1.txt");
   std::filesystem::remove("stash_test2.txt");
@@ -52,13 +52,13 @@ bool test_stash_apply()
   file.close();
 
   stage("stash_apply_test.txt");
-  stash_changes("Test stash for apply");
+  stashChanges("Test stash for apply");
 
   std::ofstream modified_file("stash_apply_test.txt");
   modified_file << "modified content" << std::endl;
   modified_file.close();
 
-  stash_apply("0");
+  stashApply("0");
 
   std::ifstream restored_file("stash_apply_test.txt");
   std::string content;
@@ -78,14 +78,14 @@ bool test_stash_pop()
   file.close();
 
   stage("stash_pop_test.txt");
-  stash_changes("Test stash for pop");
+  stashChanges("Test stash for pop");
 
-  std::vector<StashEntry> initial_stashes = get_stash_entries();
+  std::vector<StashEntry> initial_stashes = getStashEntries();
   size_t initial_count = initial_stashes.size();
 
-  stash_pop("0");
+  stashPop("0");
 
-  std::vector<StashEntry> final_stashes = get_stash_entries();
+  std::vector<StashEntry> final_stashes = getStashEntries();
   size_t final_count = final_stashes.size();
 
   std::filesystem::remove("stash_pop_test.txt");
@@ -101,14 +101,14 @@ bool test_stash_drop()
   file.close();
 
   stage("stash_drop_test.txt");
-  stash_changes("Test stash for drop");
+  stashChanges("Test stash for drop");
 
-  std::vector<StashEntry> initial_stashes = get_stash_entries();
+  std::vector<StashEntry> initial_stashes = getStashEntries();
   size_t initial_count = initial_stashes.size();
 
-  stash_drop("0");
+  stashDrop("0");
 
-  std::vector<StashEntry> final_stashes = get_stash_entries();
+  std::vector<StashEntry> final_stashes = getStashEntries();
   size_t final_count = final_stashes.size();
 
   std::filesystem::remove("stash_drop_test.txt");
@@ -123,17 +123,17 @@ bool test_stash_clear()
   file1 << "content 1" << std::endl;
   file1.close();
   stage("stash_clear_test1.txt");
-  stash_changes("First stash");
+  stashChanges("First stash");
 
   std::ofstream file2("stash_clear_test2.txt");
   file2 << "content 2" << std::endl;
   file2.close();
   stage("stash_clear_test2.txt");
-  stash_changes("Second stash");
+  stashChanges("Second stash");
 
-  stash_clear();
+  stashClear();
 
-  std::vector<StashEntry> stashes = get_stash_entries();
+  std::vector<StashEntry> stashes = getStashEntries();
 
   std::filesystem::remove("stash_clear_test1.txt");
   std::filesystem::remove("stash_clear_test2.txt");
@@ -141,21 +141,21 @@ bool test_stash_clear()
   return stashes.empty();
 }
 
-// check if stashes exist and verify the result
+// Check if stashes exist and verify the result
 bool test_stash_has_stashes()
 {
-  bool initially_empty = !stash_has_stashes();
+  bool initially_empty = !stashHasStashes();
 
   std::ofstream file("stash_has_test.txt");
   file << "content" << std::endl;
   file.close();
   stage("stash_has_test.txt");
-  stash_changes("Test stash");
+  stashChanges("Test stash");
 
-  bool has_stashes = stash_has_stashes();
+  bool has_stashes = stashHasStashes();
 
   std::filesystem::remove("stash_has_test.txt");
-  stash_clear();
+  stashClear();
 
   return initially_empty && has_stashes;
 }

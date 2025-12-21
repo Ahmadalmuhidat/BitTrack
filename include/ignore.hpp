@@ -40,34 +40,34 @@ struct IgnorePattern
     }
 
     // convert Git pattern to regex
-    std::string regex_str = convert_git_pattern_to_regex(pattern);
+    std::string regex_str = convertGitPatternToRegex(pattern);
     try
     {
       regex_pattern = std::regex(regex_str, std::regex_constants::icase);
     }
     catch (const std::regex_error &)
     {
-      // if regex compilation fails, use simple string matching
+      // If regex compilation fails, use simple string matching
       regex_str = ".*" + std::regex_replace(pattern, std::regex("\\*"), ".*") + ".*";
       regex_pattern = std::regex(regex_str, std::regex_constants::icase);
     }
   }
 
 private:
-  std::string convert_git_pattern_to_regex(const std::string &git_pattern);
+  std::string convertGitPatternToRegex(const std::string &git_pattern);
 };
 
-std::vector<std::string> read_bitignore(const std::string &filePath);
+std::vector<std::string> readBitignore(const std::string &filePath);
 std::vector<IgnorePattern>
-parse_ignore_patterns(const std::vector<std::string> &raw_patterns);
-bool is_file_ignored_by_ignore_patterns(const std::string &filePath, const std::vector<IgnorePattern> &patterns);
-bool should_ignore_file(const std::string &file_path);
-std::string normalize_path(const std::string &path);
-bool matches_pattern(const std::string &filePath, const IgnorePattern &pattern);
-void create_default_bitignore();
-void add_ignore_pattern(const std::string &pattern);
-void remove_ignore_pattern(const std::string &pattern);
-void list_ignore_patterns();
-bool is_file_ignored_by_patterns(const std::string &file_path, const std::vector<std::string> &patterns);
+parseIgnorePatterns(const std::vector<std::string> &raw_patterns);
+bool isFileIgnoredByIgnorePatterns(const std::string &filePath, const std::vector<IgnorePattern> &patterns);
+bool shouldIgnoreFile(const std::string &file_path);
+std::string normalizePath(const std::string &path);
+bool matchesPattern(const std::string &filePath, const IgnorePattern &pattern);
+void createDefaultBitignore();
+void addIgnorePattern(const std::string &pattern);
+void removeIgnorePattern(const std::string &pattern);
+void listIgnorePatterns();
+bool isFileIgnoredByPatterns(const std::string &file_path, const std::vector<std::string> &patterns);
 
 #endif

@@ -15,7 +15,7 @@ bool test_diff_file_comparison()
   file2 << "line 1\nmodified line 2\nline 3" << std::endl;
   file2.close();
 
-  DiffResult result = compare_files("diff_test1.txt", "diff_test2.txt");
+  DiffResult result = compareFiles("diff_test1.txt", "diff_test2.txt");
 
   std::filesystem::remove("diff_test1.txt");
   std::filesystem::remove("diff_test2.txt");
@@ -34,7 +34,7 @@ bool test_diff_identical_files()
   file2 << "identical content" << std::endl;
   file2.close();
 
-  DiffResult result = compare_files("diff_identical1.txt", "diff_identical2.txt");
+  DiffResult result = compareFiles("diff_identical1.txt", "diff_identical2.txt");
 
   std::filesystem::remove("diff_identical1.txt");
   std::filesystem::remove("diff_identical2.txt");
@@ -51,7 +51,7 @@ bool test_diff_binary_file_detection()
   file << "characters" << std::endl;
   file.close();
 
-  bool is_binary = is_binary_file("binary_test.bin");
+  bool is_binary = isBinaryFile("binary_test.bin");
 
   std::filesystem::remove("binary_test.bin");
 
@@ -71,7 +71,7 @@ bool test_diff_staged_changes()
   modified_file << "modified content" << std::endl;
   modified_file.close();
 
-  DiffResult result = diff_staged();
+  DiffResult result = diffStaged();
 
   unstage("diff_staged_test.txt");
   std::filesystem::remove("diff_staged_test.txt");

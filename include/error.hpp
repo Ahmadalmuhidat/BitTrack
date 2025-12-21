@@ -1,20 +1,19 @@
 #ifndef ERROR_HPP
 #define ERROR_HPP
 
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <regex>
-#include <filesystem>
-#include <string>
 #include <exception>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <regex>
+#include <sstream>
+#include <string>
 
 #include "stage.hpp"
 
 // Error codes used in BitTrack
-enum class ErrorCode
-{
+enum class ErrorCode {
   SUCCESS = 0,
   NOT_IN_REPOSITORY = 1,
   REPOSITORY_ALREADY_EXISTS = 2,
@@ -57,21 +56,15 @@ enum class ErrorCode
   REMOTE_CONNECTION_FAILED = 39,
   REMOTE_AUTHENTICATION_FAILED = 40,
   REMOTE_UPLOAD_FAILED = 41,
-  REMOTE_DOWNLOAD_FAILED = 42
+  REMOTE_DOWNLOAD_FAILED = 42,
+  DIRECTORY_NOT_FOUND = 43
 };
 
 // Severity levels for errors
-enum class ErrorSeverity
-{
-  INFO,
-  WARNING,
-  ERROR,
-  FATAL
-};
+enum class ErrorSeverity { INFO, WARNING, ERROR, FATAL };
 
 // Custom exception class for BitTrack errors
-class BitTrackError : public std::exception
-{
+class BitTrackError : public std::exception {
 private:
   ErrorCode code;
   std::string message;
@@ -79,54 +72,71 @@ private:
   std::string context;
 
 public:
-  BitTrackError(ErrorCode c, const std::string& msg, ErrorSeverity sev = ErrorSeverity::ERROR, const std::string& ctx = "")
-  : code(c), message(msg), severity(sev), context(ctx) {}
+  BitTrackError(ErrorCode c, const std::string &msg,
+                ErrorSeverity sev = ErrorSeverity::ERROR,
+                const std::string &ctx = "")
+      : code(c), message(msg), severity(sev), context(ctx) {}
 
   ErrorCode getCode() const { return code; }
   ErrorSeverity getSeverity() const { return severity; }
-  const std::string& getContext() const { return context; }
-  const char* what() const noexcept override { return message.c_str(); }
+  const std::string &getContext() const { return context; }
+  const char *what() const noexcept override { return message.c_str(); }
 };
 
 // Error handling utility class
-class ErrorHandler
-{
+class ErrorHandler {
 public:
-  static void printError(const BitTrackError& error);
-  static void printError(ErrorCode code, const std::string& message, ErrorSeverity severity, const std::string& context);
+  static void printError(const BitTrackError &error);
+  static void printError(ErrorCode code, const std::string &message,
+                         ErrorSeverity severity, const std::string &context);
   static bool isFatal(ErrorCode code);
   static std::string getErrorMessage(ErrorCode code);
-  static bool validateArguments(int argc, int required, const std::string& command);
-  static bool validateFilePath(const std::string& filePath);
-  static bool validateBranchName(const std::string& branchName);
-  static bool validateCommitMessage(const std::string& message);
-  static bool validateRemoteUrl(const std::string& url);
-  static bool safeCreateDirectories(const std::filesystem::path& path);
-  static bool safeCopyFile(const std::filesystem::path& from, const std::filesystem::path& to);
-  static bool safeRemoveFile(const std::filesystem::path& path);
-  static bool safeWriteFile(const std::filesystem::path& path, const std::string& content);
-  static std::string safeReadFile(const std::filesystem::path& path);
+  static bool validateArguments(int argc, int required,
+                                const std::string &command);
+  static bool validateFilePath(const std::string &filePath);
+  static bool validateBranchName(const std::string &branchName);
+  static bool validateCommitMessage(const std::string &message);
+  static bool validateRemoteUrl(const std::string &url);
+  static bool safeCreateDirectories(const std::filesystem::path &path);
+  static bool safeCopyFile(const std::filesystem::path &from,
+                           const std::filesystem::path &to);
+  static bool safeRemoveFile(const std::filesystem::path &path);
+  static bool safeRemoveFolder(const std::filesystem::path &path);
+  static bool safeWriteFile(const std::filesystem::path &path,
+                            const std::string &content);
+  static bool safeAppendFile(const std::filesystem::path &path,
+                             const std::string &content);
+  static bool safeRename(const std::filesystem::path &from,
+                         const std::filesystem::path &to);
+  static std::string safeReadFile(const std::filesystem::path &path);
+  static std::string safeReadFirstLine(const std::filesystem::path &path);
+  static std::vector<std::filesystem::path>
+  safeListDirectoryFiles(const std::filesystem::path &path);
   static bool validateRepository();
-  static bool validateBranchExists(const std::string& branchName);
+  static bool validateBranchExists(const std::string &branchName);
   static bool validateNoUncommittedChanges();
-  static void handleFilesystemError(const std::filesystem::filesystem_error& e, const std::string& context);
+  static void handleFilesystemError(const std::filesystem::filesystem_error &e,
+                                    const std::string &context);
 };
 
-#define HANDLE_EXCEPTION(context) \
-  catch (const std::filesystem::filesystem_error& e) \
-  { \
-    ErrorHandler::handleFilesystemError(e, context); \
-    throw; \
-  } \
-  catch (const std::exception& e) \
-  { \
-    throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error in " + std::string(context) + ": " + e.what(), ErrorSeverity::ERROR, context); \
+#define HANDLE_EXCEPTION(context)                                              \
+  catch (const std::filesystem::filesystem_error &e) {                         \
+    ErrorHandler::handleFilesystemError(e, context);                           \
+    throw;                                                                     \
+  }                                                                            \
+  catch (const std::exception &e) {                                            \
+    throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION,                       \
+                        "Unexpected error in " + std::string(context) + ": " + \
+                            e.what(),                                          \
+                        ErrorSeverity::ERROR, context);                        \
   }
 
-#define VALIDATE_ARGS(argc, required, command) ErrorHandler::validateArguments(argc, required, command)
+#define VALIDATE_ARGS(argc, required, command)                                 \
+  ErrorHandler::validateArguments(argc, required, command)
 #define VALIDATE_FILE_PATH(path) ErrorHandler::validateFilePath(path)
 #define VALIDATE_BRANCH_NAME(name) ErrorHandler::validateBranchName(name)
-#define VALIDATE_COMMIT_MESSAGE(message) ErrorHandler::validateCommitMessage(message)
+#define VALIDATE_COMMIT_MESSAGE(message)                                       \
+  ErrorHandler::validateCommitMessage(message)
 #define VALIDATE_REMOTE_URL(url) ErrorHandler::validateRemoteUrl(url)
 
 #endif

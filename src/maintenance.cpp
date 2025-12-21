@@ -1,11 +1,11 @@
 #include "../include/maintenance.hpp"
 
-void garbage_collect()
+void garbageCollect()
 {
   std::cout << "Running garbage collection..." << std::endl;
 
-  // get list of unreachable objects
-  std::vector<std::string> unreachable = get_unreachable_objects();
+  // Get list of unreachable objects
+  std::vector<std::string> unreachable = getUnreachableObjects();
 
   if (unreachable.empty())
   {
@@ -20,15 +20,15 @@ void garbage_collect()
     if (std::filesystem::exists(obj))
     {
       freed_space += std::filesystem::file_size(obj);
-      std::filesystem::remove(obj);
+      ErrorHandler::safeRemoveFile(obj);
     }
   }
 
   std::cout << "Removed " << unreachable.size() << " unreachable objects" << std::endl;
-  std::cout << "Freed " << format_size(freed_space) << " of space" << std::endl;
+  std::cout << "Freed " << formatSize(freed_space) << " of space" << std::endl;
 }
 
-void repack_repository()
+void repackRepository()
 {
   std::cout << "Repacking repository..." << std::endl;
 
@@ -46,35 +46,34 @@ void repack_repository()
   size_t original_size = 0;
   size_t repacked_size = 0;
 
+  std::vector<std::filesystem::path> objects = ErrorHandler::safeListDirectoryFiles(objects_dir);
+
   // calculate original stats
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
+  for (const auto &entry : objects)
   {
-    if (entry.is_regular_file())
-    {
-      original_count++;
-      original_size += std::filesystem::file_size(entry.path());
-    }
+    original_count++;
+    original_size += std::filesystem::file_size(entry);
   }
 
   // repack objects into a single directory
   std::string packed_dir = objects_dir + "/packed";
-  std::filesystem::create_directories(packed_dir);
+  std::vector<std::filesystem::path> packed_files = ErrorHandler::safeListDirectoryFiles(packed_dir);
 
   // move objects to packed directory
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
+  for (const auto &entry : packed_files)
   {
-    // skip already packed objects
-    if (entry.is_regular_file() && entry.path().parent_path().string() != packed_dir)
+    // Skip already packed objects
+    if (entry.parent_path().string() != packed_dir)
     {
       // move object
-      std::string filename = entry.path().filename().string();
+      std::string filename = entry.filename().string();
       std::string new_path = packed_dir + "/" + filename;
 
       // avoid overwriting existing files
       if (!std::filesystem::exists(new_path))
       {
         // move file
-        std::filesystem::rename(entry.path(), new_path);
+        std::filesystem::rename(entry, new_path);
         repacked_count++;
         repacked_size += std::filesystem::file_size(new_path);
       }
@@ -82,17 +81,17 @@ void repack_repository()
   }
 
   std::cout << "Repacked " << repacked_count << " objects" << std::endl;
-  std::cout << "Original size: " << format_size(original_size) << std::endl;
-  std::cout << "Repacked size: " << format_size(repacked_size) << std::endl;
+  std::cout << "Original size: " << formatSize(original_size) << std::endl;
+  std::cout << "Repacked size: " << formatSize(repacked_size) << std::endl;
   std::cout << "Repository repacked successfully" << std::endl;
 }
 
-void prune_objects()
+void pruneObjects()
 {
   std::cout << "Pruning objects..." << std::endl;
 
-  // get list of unreachable objects
-  std::vector<std::string> unreachable = get_unreachable_objects();
+  // Get list of unreachable objects
+  std::vector<std::string> unreachable = getUnreachableObjects();
 
   // remove unreachable objects
   for (const auto &obj : unreachable)
@@ -106,30 +105,26 @@ void prune_objects()
   std::cout << "Pruned " << unreachable.size() << " objects" << std::endl;
 }
 
-void fsck_repository()
+void fsckRepository()
 {
   std::cout << "Checking repository integrity..." << std::endl;
 
-  // check for missing or corrupted objects
+  // Check for missing or corrupted objects
   std::vector<std::string> missing_objects;
 
-  // check all objects
+  // Check all objects
   std::string objects_dir = ".bittrack/objects";
   if (std::filesystem::exists(objects_dir))
   {
-    // iterate through all objects
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
+    std::vector<std::filesystem::path> objects = ErrorHandler::safeListDirectoryFiles(objects_dir);
+    // Iterate through all objects
+    for (const auto &entry : objects)
     {
-      // check if file is accessible
-      if (entry.is_regular_file())
+      // try to open the file
+      std::ifstream file(entry);
+      if (!file.good())
       {
-        // try to open the file
-        std::ifstream file(entry.path());
-        if (!file.good())
-        {
-          missing_objects.push_back(entry.path().string());
-        }
-        file.close();
+        missing_objects.push_back(entry);
       }
     }
   }
@@ -149,57 +144,56 @@ void fsck_repository()
   }
 }
 
-void show_repository_info()
+void showRepositoryInfo()
 {
   std::cout << "Repository Information:" << std::endl;
-  std::cout << "  Current branch: " << get_current_branch() << std::endl;
+  std::cout << "  Current branch: " << getCurrentBranch() << std::endl;
   std::cout << "  Current commit: " << get_current_commit() << std::endl;
 
   size_t total_size = 0;
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(".bittrack"))
+  std::vector<std::filesystem::path> repository_directories = ErrorHandler::safeListDirectoryFiles(".bittrack");
+  for (const auto &entry : repository_directories)
   {
-    if (entry.is_regular_file())
-    {
-      total_size += std::filesystem::file_size(entry.path());
-    }
+    total_size += std::filesystem::file_size(entry);
   }
-  std::cout << "  Repository size: " << format_size(total_size) << std::endl;
+  std::cout << "  Repository size: " << formatSize(total_size) << std::endl;
   std::cout << "  Last modified: " << std::endl;
 }
 
-void analyze_repository()
+void analyzeRepository()
 {
   std::cout << "Analyzing repository..." << std::endl;
 
-  RepoStats stats = calculate_repository_stats();
+  RepoStats stats = calculateRepositoryStats();
 
   std::cout << "Analysis Results:" << std::endl;
-  std::cout << "  Repository size: " << format_size(stats.total_size) << std::endl;
-  std::cout << "  Average commit size: " << format_size(stats.total_size / std::max(stats.commit_count, size_t(1))) << std::endl;
+  std::cout << "  Repository size: " << formatSize(stats.total_size) << std::endl;
+  std::cout << "  Average commit size: " << formatSize(stats.total_size / std::max(stats.commit_count, size_t(1))) << std::endl;
   std::cout << "  Files per commit: " << stats.total_objects / std::max(stats.commit_count, size_t(1)) << std::endl;
 
-  find_large_files();
-  find_duplicate_files();
+  findLargeFiles();
+  findDuplicateFiles();
 }
 
-void find_large_files(size_t threshold)
+void findLargeFiles(size_t threshold)
 {
-  std::cout << "Finding files larger than " << format_size(threshold) << "..." << std::endl;
+  std::cout << "Finding files larger than " << formatSize(threshold) << "..." << std::endl;
 
   // store large files
   std::vector<std::pair<std::string, size_t>> large_files;
 
   // scan files in repository
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
+  std::vector<std::filesystem::path> repository_files = ErrorHandler::safeListDirectoryFiles(".");
+  for (const auto &entry : repository_files)
   {
-    // skip .bittrack directory
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
+    // Skip .bittrack directory
+    if (entry.string().find(".bittrack") != 0)
     {
-      // check file size
-      size_t file_size = std::filesystem::file_size(entry.path());
+      // Check file size
+      size_t file_size = std::filesystem::file_size(entry);
       if (file_size > threshold)
       {
-        large_files.push_back({entry.path().string(), file_size});
+        large_files.push_back({entry.string(), file_size});
       }
     }
   }
@@ -212,21 +206,23 @@ void find_large_files(size_t threshold)
 
   // sort large files by size descending
   std::sort(large_files.begin(), large_files.end(), [](const auto &a, const auto &b)
-            { return a.second > b.second; });
+  {
+    return a.second > b.second;
+  });
   std::cout << "Large files:" << std::endl;
 
-  // display large files
+  // Display large files
   for (const auto &file : large_files)
   {
-    std::cout << "  " << file.first << " (" << format_size(file.second) << ")" << std::endl;
+    std::cout << "  " << file.first << " (" << formatSize(file.second) << ")" << std::endl;
   }
 }
 
-void find_duplicate_files()
+void findDuplicateFiles()
 {
   std::cout << "Finding duplicate files..." << std::endl;
 
-  std::vector<std::string> duplicates = get_duplicate_files();
+  std::vector<std::string> duplicates = getDuplicateFiles();
 
   if (duplicates.empty())
   {
@@ -241,41 +237,38 @@ void find_duplicate_files()
   }
 }
 
-void optimize_repository()
+void optimizeRepository()
 {
   std::cout << "Optimizing repository..." << std::endl;
 
-  garbage_collect();
-  repack_repository();
+  garbageCollect();
+  repackRepository();
 
   std::cout << "Repository optimization completed" << std::endl;
 }
 
-RepoStats calculate_repository_stats()
+RepoStats calculateRepositoryStats()
 {
   RepoStats stats;
 
   // calculate total objects and size
   std::string objects_dir = ".bittrack/objects";
-  if (std::filesystem::exists(objects_dir)) // check if objects directory exists
+  if (std::filesystem::exists(objects_dir)) // Check if objects directory exists
   {
-    // iterate through all objects
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
+    // Iterate through all objects
+    std::vector<std::filesystem::path> objects = ErrorHandler::safeListDirectoryFiles(objects_dir);
+    for (const auto &entry : objects)
     {
-      // check if file is regular
-      if (entry.is_regular_file())
-      {
-        // update stats
-        stats.total_objects++;
-        size_t file_size = std::filesystem::file_size(entry.path());
-        stats.total_size += file_size;
+      // update stats
+      stats.total_objects++;
+      size_t file_size = std::filesystem::file_size(entry);
+      stats.total_size += file_size;
 
-        // check for largest file
-        if (file_size > stats.largest_file_size)
-        {
-          stats.largest_file_size = file_size;
-          stats.largest_file = entry.path().string();
-        }
+      // Check for largest file
+      if (file_size > stats.largest_file_size)
+      {
+        stats.largest_file_size = file_size;
+        stats.largest_file = entry.string();
       }
     }
   }
@@ -312,14 +305,14 @@ RepoStats calculate_repository_stats()
   return stats;
 }
 
-std::vector<std::string> get_unreachable_objects()
+std::vector<std::string> getUnreachableObjects()
 {
   // store unreachable objects
   std::vector<std::string> unreachable;
 
   // gather all objects
-  std::string objects_dir = ".bittrack/objects";
-  if (!std::filesystem::exists(objects_dir))
+  std::string objects_dir_path = ".bittrack/objects";
+  if (!std::filesystem::exists(objects_dir_path))
   {
     return unreachable;
   }
@@ -329,7 +322,7 @@ std::vector<std::string> get_unreachable_objects()
 
   // add current commit
   std::string current_commit = get_current_commit();
-  if (!current_commit.empty()) // check if current commit is valid
+  if (!current_commit.empty()) // Check if current commit is valid
   {
     reachable_objects.insert(current_commit);
   }
@@ -342,11 +335,11 @@ std::vector<std::string> get_unreachable_objects()
     {
       if (entry.is_regular_file())
       {
-        // read commit hash from branch file
+        // Read commit hash from branch file
         std::ifstream file(entry.path());
         std::string commit_hash;
 
-        if (std::getline(file, commit_hash)) // check if line was read successfully
+        if (std::getline(file, commit_hash)) // Check if line was read successfully
         {
           reachable_objects.insert(commit_hash);
         }
@@ -355,42 +348,39 @@ std::vector<std::string> get_unreachable_objects()
     }
   }
 
-  // add commits from tags
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(objects_dir))
+  std::vector<std::filesystem::path> objects_dir = ErrorHandler::safeListDirectoryFiles(objects_dir_path);
+  for (const auto &entry : objects_dir)
   {
-    if (entry.is_regular_file())
-    {
-      // get object hash
-      std::string object_path = entry.path().string();
-      std::string object_hash = entry.path().filename().string();
+    // Get object hash
+    std::string object_path = entry.string();
+    std::string object_hash = entry.filename().string();
 
-      // check if object is reachable
-      if (reachable_objects.find(object_hash) == reachable_objects.end())
-      {
-        unreachable.push_back(object_path);
-      }
+    // Check if object is reachable
+    if (reachable_objects.find(object_hash) == reachable_objects.end())
+    {
+      unreachable.push_back(object_path);
     }
   }
 
   return unreachable;
 }
 
-std::vector<std::string> get_duplicate_files()
+std::vector<std::string> getDuplicateFiles()
 {
   // store duplicate files
   std::vector<std::string> duplicates;
   std::map<std::string, std::vector<std::string>> file_hashes;
 
-  // scan files in repository
-  for (const auto &entry : std::filesystem::recursive_directory_iterator("."))
+  std::vector<std::filesystem::path> repository_files = ErrorHandler::safeListDirectoryFiles(".");
+  for (const auto &entry : repository_files)
   {
-    if (entry.is_regular_file() && entry.path().string().find(".bittrack") != 0)
+    if (entry.string().find(".bittrack") != 0)
     {
       try
       {
         // compute file hash
-        std::string file_hash = hash_file(entry.path().string());
-        file_hashes[file_hash].push_back(entry.path().string());
+        std::string file_hash = hashFile(entry.string());
+        file_hashes[file_hash].push_back(entry.string());
       }
       catch (...)
       {
@@ -402,7 +392,7 @@ std::vector<std::string> get_duplicate_files()
   // collect duplicates
   for (const auto &pair : file_hashes)
   {
-    // if more than one file has the same hash, they are duplicates
+    // If more than one file has the same hash, they are duplicates
     if (pair.second.size() > 1)
     {
       // add all but the first file to duplicates
@@ -416,7 +406,7 @@ std::vector<std::string> get_duplicate_files()
   return duplicates;
 }
 
-std::string format_size(size_t bytes)
+std::string formatSize(size_t bytes)
 {
   // define size units
   const char *units[] = {"B", "KB", "MB", "GB", "TB"};

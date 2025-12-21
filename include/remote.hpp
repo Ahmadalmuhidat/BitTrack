@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "../libs/miniz/miniz.h"
 #include "branch.hpp"
 #include "commit.hpp"
 #include "config.hpp"
@@ -24,8 +23,7 @@ std::string get_remote_origin();
 void add_remote(const std::string &name, const std::string &url);
 void remove_remote(const std::string &name);
 void list_remotes();
-bool remote_has_branch(const std::string &branchName);
-bool create_remote_branch(const std::string &branchName);
+
 std::vector<std::string>
 list_remote_branches(const std::string &remote_name = "origin");
 bool delete_remote_branch(const std::string &branch_name, const std::string &remote_name = "origin");

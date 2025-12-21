@@ -22,7 +22,7 @@ struct MergeResult
   bool success;                              // true if merge was successful
   bool has_conflicts;                        // true if there were conflicts
   std::string merge_commit;                  // hash of the merge commit
-  std::vector<std::string> conflicted_files; // list of files with conflicts
+  std::vector<std::string> conflicted_files; // List of files with conflicts
   std::string message;                       // merge message
 
   MergeResult() : success(false), has_conflicts(false) {}
@@ -38,23 +38,23 @@ struct MergeConflict
   MergeConflict(const std::string &path, const std::string &type) : file_path(path), conflict_type(type) {}
 };
 
-MergeResult merge_branches(const std::string &source_branch, const std::string &target_branch);
-MergeResult merge_commits(const std::string &commit1, const std::string &commit2);
-MergeResult three_way_merge(const std::string &base, const std::string &ours, const std::string &theirs);
-bool has_conflicts();
-void show_conflicts();
-std::vector<std::string> get_conflicted_files();
-void abort_merge();
-void continue_merge();
-void write_conflict(const std::string &path, const std::string &ours, const std::string &theirs);
-std::string find_merge_base(const std::string &commit1, const std::string &commit2);
-bool is_ancestor(const std::string &ancestor, const std::string &descendant);
-bool is_fast_forward(const std::string &source, const std::string &target);
-void save_merge_state(const MergeResult &result);
-MergeResult load_merge_state();
-void clear_merge_state();
-bool is_merge_in_progress();
-std::vector<std::string> get_commit_files(const std::string &commit_hash);
-void create_merge_commit(const std::string &message, const std::vector<std::string> &parents);
+MergeResult mergeBranches(const std::string &source_branch, const std::string &target_branch);
+MergeResult mergeCommits(const std::string &commit1, const std::string &commit2);
+MergeResult threeWayMerge(const std::string &base, const std::string &ours, const std::string &theirs);
+bool hasConflicts();
+void showConflicts();
+std::vector<std::string> getConflictedFiles();
+void abortMerge();
+void continueMerge();
+void writeConflict(const std::string &path, const std::string &ours, const std::string &theirs);
+std::string findMergeBase(const std::string &commit1, const std::string &commit2);
+bool isAncestor(const std::string &ancestor, const std::string &descendant);
+bool isFastForward(const std::string &source, const std::string &target);
+void saveMergeState(const MergeResult &result);
+MergeResult loadMergeState();
+void clearMergeState();
+bool isMergeInProgress();
+std::vector<std::string> getCommitFiles(const std::string &commit_hash);
+void createMergeCommit(const std::string &message, const std::vector<std::string> &parents);
 
 #endif

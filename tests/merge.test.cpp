@@ -15,8 +15,8 @@ bool test_merge_branches()
   stage("merge_test.txt");
   commit_changes("test_user", "main commit");
 
-  add_branch("merge_branch");
-  switch_branch("merge_branch");
+  addBranch("merge_branch");
+  switchBranch("merge_branch");
 
   std::ofstream merge_file("merge_test.txt");
   merge_file << "merge branch content" << std::endl;
@@ -25,12 +25,12 @@ bool test_merge_branches()
   stage("merge_test.txt");
   commit_changes("test_user", "merge branch commit");
 
-  switch_branch("main");
+  switchBranch("main");
 
-  MergeResult result = merge_branches("merge_branch", "main");
+  MergeResult result = mergeBranches("merge_branch", "main");
 
   std::filesystem::remove("merge_test.txt");
-  remove_branch("merge_branch");
+  removeBranch("merge_branch");
 
   return result.success;
 }
@@ -56,7 +56,7 @@ bool test_merge_commits()
 
   std::string commit2 = get_current_commit();
 
-  MergeResult result = merge_commits(commit1, commit2);
+  MergeResult result = mergeCommits(commit1, commit2);
 
   std::filesystem::remove("merge_commit_test.txt");
 
@@ -73,7 +73,7 @@ bool test_merge_abort()
   stage("merge_abort_test.txt");
   commit_changes("test_user", "commit for abort test");
 
-  abort_merge();
+  abortMerge();
 
   std::filesystem::remove("merge_abort_test.txt");
 
@@ -90,7 +90,7 @@ bool test_merge_continue()
   stage("merge_continue_test.txt");
   commit_changes("test_user", "commit for continue test");
 
-  continue_merge();
+  continueMerge();
 
   std::filesystem::remove("merge_continue_test.txt");
 
@@ -100,21 +100,21 @@ bool test_merge_continue()
 // show merge conflicts and verify output
 bool test_merge_show_conflicts()
 {
-  show_conflicts();
+  showConflicts();
   return true;
 }
 
-// check for merge conflicts and verify result
+// Check for merge conflicts and verify result
 bool test_merge_has_conflicts()
 {
-  bool conflicts_exist = has_conflicts();
+  bool conflicts_exist = hasConflicts();
   return !conflicts_exist;
 }
 
-// get list of conflicted files and verify it's empty
+// Get list of conflicted files and verify it's empty
 bool test_merge_get_conflicted_files()
 {
-  std::vector<std::string> conflicted_files = get_conflicted_files();
+  std::vector<std::string> conflicted_files = getConflictedFiles();
   return conflicted_files.empty();
 }
 
@@ -133,7 +133,7 @@ bool test_merge_three_way()
   theirs_file << "theirs content" << std::endl;
   theirs_file.close();
 
-  MergeResult result = three_way_merge("base", "ours", "theirs");
+  MergeResult result = threeWayMerge("base", "ours", "theirs");
 
   std::filesystem::remove("three_way_base.txt");
   std::filesystem::remove("three_way_ours.txt");
@@ -152,12 +152,12 @@ bool test_merge_fast_forward()
   stage("fast_forward_test.txt");
   commit_changes("test_user", "fast forward commit");
 
-  add_branch("fast_forward_branch");
+  addBranch("fast_forward_branch");
 
-  MergeResult result = merge_branches("fast_forward_branch", "main");
+  MergeResult result = mergeBranches("fast_forward_branch", "main");
 
   std::filesystem::remove("fast_forward_test.txt");
-  remove_branch("fast_forward_branch");
+  removeBranch("fast_forward_branch");
 
   return true;
 }

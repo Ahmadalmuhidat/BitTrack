@@ -4,29 +4,29 @@
 #include <fstream>
 #include <filesystem>
 
-// get list of branches and check if "main" exists
+// Get list of branches and check if "main" exists
 bool test_branch_main()
 {
-  std::string current_branch = get_current_branch();
+  std::string current_branch = getCurrentBranch();
   return current_branch == "main";
 }
 
-// get list of branches and check if it's not empty
+// Get list of branches and check if it's not empty
 bool test_list_branches()
 {
-  std::vector<std::string> branches = get_branches_list();
+  std::vector<std::string> branches = getBranchesList();
   return !branches.empty();
 }
 
-// create a new branch and check if it exists
+// Create a new branch and check if it exists
 bool test_checkout_new_branch()
 {
-  add_branch("test_branch");
+  addBranch("test_branch");
 
-  std::vector<std::string> branches = get_branches_list();
+  std::vector<std::string> branches = getBranchesList();
   bool branch_exists = std::find(branches.begin(), branches.end(), "test_branch") != branches.end();
 
-  remove_branch("test_branch");
+  removeBranch("test_branch");
 
   return branch_exists;
 }
@@ -34,14 +34,14 @@ bool test_checkout_new_branch()
 // remove a branch and check if it no longer exists
 bool test_remove_branch()
 {
-  add_branch("remove_test_branch");
+  addBranch("remove_test_branch");
 
-  std::vector<std::string> branches_before = get_branches_list();
+  std::vector<std::string> branches_before = getBranchesList();
   bool existed_before = std::find(branches_before.begin(), branches_before.end(), "remove_test_branch") != branches_before.end();
 
-  remove_branch("remove_test_branch");
+  removeBranch("remove_test_branch");
 
-  std::vector<std::string> branches_after = get_branches_list();
+  std::vector<std::string> branches_after = getBranchesList();
   bool exists_after = std::find(branches_after.begin(), branches_after.end(), "remove_test_branch") != branches_after.end();
 
   return existed_before && !exists_after;
@@ -57,35 +57,35 @@ bool test_working_directory_update()
   stage("test_main.txt");
   commit_changes("test_user", "main commit");
 
-  add_branch("working_dir_branch");
-  switch_branch("working_dir_branch");
+  addBranch("working_dir_branch");
+  switchBranch("working_dir_branch");
 
   if (!std::filesystem::exists("test_main.txt"))
   {
     return false;
   }
 
-  switch_branch("main");
-  remove_branch("working_dir_branch");
+  switchBranch("main");
+  removeBranch("working_dir_branch");
   std::filesystem::remove("test_main.txt");
 
   return true;
 }
 
-// create an untracked file, switch branches, and verify the file is preserved
+// Create an untracked file, switch branches, and verify the file is preserved
 bool test_untracked_file_preservation()
 {
   std::ofstream untracked_file("untracked.txt");
   untracked_file << "untracked content" << std::endl;
   untracked_file.close();
 
-  add_branch("untracked_branch");
-  switch_branch("untracked_branch");
+  addBranch("untracked_branch");
+  switchBranch("untracked_branch");
 
   bool preserved = std::filesystem::exists("untracked.txt");
 
-  switch_branch("main");
-  remove_branch("untracked_branch");
+  switchBranch("main");
+  removeBranch("untracked_branch");
   if (std::filesystem::exists("untracked.txt"))
   {
     std::filesystem::remove("untracked.txt");
@@ -103,13 +103,13 @@ bool test_uncommitted_changes_detection()
 
   stage("staged_uncommitted.txt");
 
-  add_branch("uncommitted_branch");
+  addBranch("uncommitted_branch");
 
-  bool has_uncommitted = !get_staged_files().empty();
+  bool has_uncommitted = !getStagedFiles().empty();
 
   unstage("staged_uncommitted.txt");
   std::filesystem::remove("staged_uncommitted.txt");
-  remove_branch("uncommitted_branch");
+  removeBranch("uncommitted_branch");
 
   return has_uncommitted;
 }
@@ -117,14 +117,14 @@ bool test_uncommitted_changes_detection()
 // attempt to switch to a nonexistent branch and verify error handling
 bool test_switch_to_nonexistent_branch()
 {
-  switch_branch("nonexistent_branch");
+  switchBranch("nonexistent_branch");
   return true;
 }
 
 // switch to the same branch and verify no changes occur
 bool test_switch_to_same_branch()
 {
-  switch_branch("main");
+  switchBranch("main");
   return true;
 }
 

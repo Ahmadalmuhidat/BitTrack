@@ -13,11 +13,10 @@
 #include <openssl/evp.h>
 #include <openssl/sha.h>
 
-std::string to_hex_string(unsigned char *hash, std::size_t length);
-std::string generate_commit_hash_with_files(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes);
-std::string calculate_file_hash(const std::string &file_path);
-std::string generate_file_hash(const std::string &content);
-std::string sha256_hash(const std::string &input);
-std::string hash_file(const std::string &file_path);
+std::string toHexString(unsigned char *hash, std::size_t length);
+std::string generateCommitHashWithFiles(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes);
+std::string calculateFileHash(const std::string &file_path);
+std::string sha256Hash(const std::string &input);
+std::string hashFile(const std::string &file_path);
 
 #endif

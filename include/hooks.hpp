@@ -40,23 +40,23 @@ struct HookResult
 
 static std::map<HookType, std::string> hook_names;
 
-void install_hook(HookType type, const std::string &script_path);
-void uninstall_hook(HookType type);
-void list_hooks();
-HookResult run_hook(HookType type, const std::vector<std::string> &args = {});
-bool hook_exists(HookType type);
+void installHook(HookType type, const std::string &script_path);
+void uninstallHook(HookType type);
+void listHooks();
+HookResult runHook(HookType type, const std::vector<std::string> &args = {});
+bool hookExists(HookType type);
 HookResult execute_hook(const std::string &hook_path, const std::vector<std::string> &args = {});
-void run_all_hooks(const std::string &event, const std::vector<std::string> &args = {});
-void install_default_hooks();
-void create_pre_commit_hook();
-void create_post_commit_hook();
-void create_pre_push_hook();
-std::string get_hook_path(HookType type);
-std::string get_hooks_dir();
-std::string get_hook_name(HookType type);
-bool is_hook_executable(const std::string &hook_path);
-void make_hook_executable(const std::string &hook_path);
-std::string get_event_name(HookType type);
-void initialize_hook_names();
+void runAllHooks(const std::string &event, const std::vector<std::string> &args = {});
+void installDefaultHooks();
+void createPreCommitHook();
+void createPostCommitHook();
+void createPrePushHook();
+std::string getHookPath(HookType type);
+std::string getHooksDir();
+std::string getHookName(HookType type);
+bool isHookExecutable(const std::string &hook_path);
+void makeHookExecutable(const std::string &hook_path);
+std::string getEventName(HookType type);
+void initializeHookNames();
 
 #endif

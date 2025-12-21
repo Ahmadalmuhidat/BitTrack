@@ -21,14 +21,14 @@
 #include "stage.hpp"
 
 void commit_changes(const std::string &author, const std::string &message);
-void store_snapshot(const std::string &file_path, const std::string &commit_hash);
+void storeSnapshot(const std::string &file_path, const std::string &commit_hash);
 std::string get_current_commit();
 std::string get_last_commit(const std::string &branch_name = "");
-std::string get_commit_parent(const std::string &commit_hash);
-void show_commit_history();
+std::string getCommitParent(const std::string &commit_hash);
+void showCommitHistory();
 std::string generate_commit_hash(const std::string &author, const std::string &message, const std::string &timestamp);
 std::string get_current_timestamp();
 std::string get_current_user();
-std::vector<std::string> get_commit_files(const std::string &commit_hash);
+std::vector<std::string> getCommitFiles(const std::string &commit_hash);
 
 #endif

@@ -1,6 +1,6 @@
 #include "../include/hash.hpp"
 
-std::string to_hex_string(unsigned char *hash, std::size_t length)
+std::string toHexString(unsigned char *hash, std::size_t length)
 {
   // Convert the hash bytes to a hexadecimal string
   std::ostringstream hexStream;
@@ -12,7 +12,7 @@ std::string to_hex_string(unsigned char *hash, std::size_t length)
   return hexStream.str();
 }
 
-std::string generate_commit_hash_with_files(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
+std::string generateCommitHashWithFiles(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes)
 {
   // Get the current timestamp
   auto now = std::chrono::system_clock::now();
@@ -40,10 +40,10 @@ std::string generate_commit_hash_with_files(const std::string &author, const std
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256((unsigned char *)commitData.c_str(), commitData.size(), hash);
 
-  return to_hex_string(hash, SHA256_DIGEST_LENGTH);
+  return toHexString(hash, SHA256_DIGEST_LENGTH);
 }
 
-std::string hash_file(const std::string &FilePath)
+std::string hashFile(const std::string &FilePath)
 {
   // Read the file content
   std::ifstream file(FilePath, std::ios::binary);
@@ -55,10 +55,10 @@ std::string hash_file(const std::string &FilePath)
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256((unsigned char *)FileContent.c_str(), FileContent.size(), hash);
 
-  return to_hex_string(hash, SHA256_DIGEST_LENGTH);
+  return toHexString(hash, SHA256_DIGEST_LENGTH);
 }
 
-std::string sha256_hash(const std::string &input)
+std::string sha256Hash(const std::string &input)
 {
   // Compute the SHA-256 hash of the input string
   std::hash<std::string> hasher;

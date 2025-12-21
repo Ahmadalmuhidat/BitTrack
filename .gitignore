@@ -40,3 +40,5 @@ build/
 
 CMakeFiles/
 cmake_install.cmake
+
+test_repo/

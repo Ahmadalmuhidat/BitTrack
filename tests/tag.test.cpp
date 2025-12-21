@@ -4,7 +4,7 @@
 #include <fstream>
 #include <filesystem>
 
-// create an annotated tag and verify its existence
+// Create an annotated tag and verify its existence
 bool test_tag_creation()
 {
   std::ofstream file("tag_test.txt");
@@ -14,17 +14,17 @@ bool test_tag_creation()
   stage("tag_test.txt");
   commit_changes("test_user", "commit for tagging");
 
-  tag_create("v1.0", "", true);
+  tagCreate("v1.0", "", true);
 
-  bool exists = tag_exists("v1.0");
+  bool exists = tagExists("v1.0");
 
   std::filesystem::remove("tag_test.txt");
-  tag_delete("v1.0");
+  tagDelete("v1.0");
 
   return exists;
 }
 
-// create a lightweight tag and verify its existence
+// Create a lightweight tag and verify its existence
 bool test_lightweight_tag_creation()
 {
   std::ofstream file("lightweight_tag_test.txt");
@@ -34,17 +34,17 @@ bool test_lightweight_tag_creation()
   stage("lightweight_tag_test.txt");
   commit_changes("test_user", "commit for lightweight tagging");
 
-  tag_create("v1.1", "", false);
+  tagCreate("v1.1", "", false);
 
-  bool exists = tag_exists("v1.1");
+  bool exists = tagExists("v1.1");
 
   std::filesystem::remove("lightweight_tag_test.txt");
-  tag_delete("v1.1");
+  tagDelete("v1.1");
 
   return exists;
 }
 
-// list all tags and verify at least three exist
+// List all tags and verify at least three exist
 bool test_tag_listing()
 {
   std::ofstream file("tag_list_test.txt");
@@ -54,16 +54,16 @@ bool test_tag_listing()
   stage("tag_list_test.txt");
   commit_changes("test_user", "commit for tag listing");
 
-  tag_create("v1.0", "", true);
-  tag_create("v1.1", "", false);
-  tag_create("v2.0", "", true);
+  tagCreate("v1.0", "", true);
+  tagCreate("v1.1", "", false);
+  tagCreate("v2.0", "", true);
 
-  std::vector<Tag> tags = get_all_tags();
+  std::vector<Tag> tags = getAllTags();
 
   std::filesystem::remove("tag_list_test.txt");
-  tag_delete("v1.0");
-  tag_delete("v1.1");
-  tag_delete("v2.0");
+  tagDelete("v1.0");
+  tagDelete("v1.1");
+  tagDelete("v2.0");
 
   return tags.size() >= 3;
 }
@@ -78,13 +78,13 @@ bool test_tag_deletion()
   stage("tag_delete_test.txt");
   commit_changes("test_user", "commit for tag deletion");
 
-  tag_create("v1.0", "", true);
+  tagCreate("v1.0", "", true);
 
-  bool exists_before = tag_exists("v1.0");
+  bool exists_before = tagExists("v1.0");
 
-  tag_delete("v1.0");
+  tagDelete("v1.0");
 
-  bool exists_after = tag_exists("v1.0");
+  bool exists_after = tagExists("v1.0");
 
   std::filesystem::remove("tag_delete_test.txt");
 
@@ -101,12 +101,12 @@ bool test_tag_show()
   stage("tag_show_test.txt");
   commit_changes("test_user", "commit for tag show");
 
-  tag_create("v1.0", "", true);
+  tagCreate("v1.0", "", true);
 
-  tag_details("v1.0");
+  tagDetails("v1.0");
 
   std::filesystem::remove("tag_show_test.txt");
-  tag_delete("v1.0");
+  tagDelete("v1.0");
 
   return true;
 }

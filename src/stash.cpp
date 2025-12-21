@@ -1,77 +1,75 @@
 #include "../include/stash.hpp"
 
-void stash_changes(const std::string &message)
-{
+void stashChanges(const std::string &message) {
   // Get staged files
-  std::vector<std::string> staged_files = get_staged_files();
-  if (staged_files.empty())
-  {
+  std::vector<std::string> staged_files = getStagedFiles();
+  if (staged_files.empty()) {
     std::cout << "No staged changes to stash" << std::endl;
     return;
   }
 
   // Create stash entry
   StashEntry entry;
-  entry.id = generate_stash_id();
-  entry.message = message.empty() ? "WIP on " + get_current_branch() : message;
-  entry.branch = get_current_branch();
+  entry.id = generateStashId();
+  entry.message = message.empty() ? "WIP on " + getCurrentBranch() : message;
+  entry.branch = getCurrentBranch();
   entry.commit_hash = get_current_commit();
   entry.timestamp = std::time(nullptr);
   entry.files = staged_files;
 
-  backup_staged_files(entry.id);                // Backup staged files
-  remove_staged_files_from_working_directory(); // Remove staged files from working directory
+  backupStagedFiles(entry.id);             // Backup staged files
+  removeStagedFilesFromWorkingDirectory(); // Remove staged files from working
+                                           // directory
 
-  std::ofstream clear_staging_file(".bittrack/index", std::ios::trunc); // Clear staging area
-  clear_staging_file.close();
+  if (!ErrorHandler::safeWriteFile(".bittrack/index",
+                                   "")) { // Clear staging area
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR,
+                             "Could not clear staging area during stash",
+                             ErrorSeverity::ERROR, "stashChanges");
+  }
 
   // Save stash entry
-  save_stash_entry(entry);
+  saveStashEntry(entry);
 
-  std::cout << "Stashed " << staged_files.size() << " staged files: " << entry.message << std::endl;
+  std::cout << "Stashed " << staged_files.size()
+            << " staged files: " << entry.message << std::endl;
 }
 
-void stash_list()
-{
+void stashList() {
   // Get stash entries
-  std::vector<StashEntry> entries = get_stash_entries();
+  std::vector<StashEntry> entries = getStashEntries();
 
-  if (entries.empty())
-  {
+  if (entries.empty()) {
     std::cout << "No stashes found" << std::endl;
     return;
   }
 
   // Display stash entries
   std::cout << "Stash list:" << std::endl;
-  for (const auto &entry : entries)
-  {
-    std::cout << "  " << entry.id << ": " << entry.message << " (" << format_timestamp(entry.timestamp) << ")" << std::endl;
+  for (const auto &entry : entries) {
+    std::cout << "  " << entry.id << ": " << entry.message << " ("
+              << formatTimestamp(entry.timestamp) << ")" << std::endl;
   }
 }
 
-void stash_show(const std::string &stash_id)
-{
+void stashShow(const std::string &stash_id) {
   // If no stash ID provided, show the latest stash
-  if (stash_id.empty())
-  {
+  if (stash_id.empty()) {
     // Get stash entries
-    std::vector<StashEntry> entries = get_stash_entries();
-    if (entries.empty())
-    {
+    std::vector<StashEntry> entries = getStashEntries();
+    if (entries.empty()) {
       std::cout << "No stashes found" << std::endl;
       return;
     }
 
     // Show latest stash
-    stash_show(entries[0].id);
+    stashShow(entries[0].id);
     return;
   }
 
   // Get stash entry
-  StashEntry entry = get_stash_entry(stash_id);
-  if (entry.id.empty())
-  {
+  StashEntry entry = getStashEntry(stash_id);
+  if (entry.id.empty()) {
     std::cout << "Stash not found: " << stash_id << std::endl;
     return;
   }
@@ -81,150 +79,124 @@ void stash_show(const std::string &stash_id)
   std::cout << "Message: " << entry.message << std::endl;
   std::cout << "Branch: " << entry.branch << std::endl;
   std::cout << "Commit: " << entry.commit_hash << std::endl;
-  std::cout << "Timestamp: " << format_timestamp(entry.timestamp) << std::endl;
+  std::cout << "Timestamp: " << formatTimestamp(entry.timestamp) << std::endl;
   std::cout << "Files: " << entry.files.size() << std::endl;
 }
 
-void stash_apply(const std::string &stash_id)
-{
+void stashApply(const std::string &stash_id) {
   // If no stash ID provided, apply the latest stash
-  if (stash_id.empty())
-  {
+  if (stash_id.empty()) {
     // Get stash entries
-    std::vector<StashEntry> entries = get_stash_entries();
-    if (entries.empty())
-    {
+    std::vector<StashEntry> entries = getStashEntries();
+    if (entries.empty()) {
       std::cout << "No stashes found" << std::endl;
       return;
     }
 
     // Apply latest stash
-    stash_apply(entries[0].id);
+    stashApply(entries[0].id);
     return;
   }
 
   // Get stash entry
-  StashEntry entry = get_stash_entry(stash_id);
-  if (entry.id.empty())
-  {
+  StashEntry entry = getStashEntry(stash_id);
+  if (entry.id.empty()) {
     std::cout << "Stash not found: " << stash_id << std::endl;
     return;
   }
 
   // Restore working directory from stash
-  restore_working_directory(entry.id);
+  restoreWorkingDirectory(entry.id);
 
   // Stage the restored files
-  for (const auto &file : entry.files)
-  {
-    if (std::filesystem::exists(file))
-    {
+  for (const auto &file : entry.files) {
+    if (std::filesystem::exists(file)) {
       stage(file);
     }
   }
 
-  std::cout << "Applied stash: " << entry.message << " (" << entry.files.size() << " files staged)" << std::endl;
+  std::cout << "Applied stash: " << entry.message << " (" << entry.files.size()
+            << " files staged)" << std::endl;
 }
 
-void stash_pop(const std::string &stash_id)
-{
+void stashPop(const std::string &stash_id) {
   // Apply the stash
-  stash_apply(stash_id);
-  if (!stash_id.empty())
-  {
+  stashApply(stash_id);
+  if (!stash_id.empty()) {
     // Drop the specified stash
-    stash_drop(stash_id);
-  }
-  else
-  {
+    stashDrop(stash_id);
+  } else {
     // Get stash entries
-    std::vector<StashEntry> entries = get_stash_entries();
-    if (!entries.empty())
-    {
+    std::vector<StashEntry> entries = getStashEntries();
+    if (!entries.empty()) {
       // Drop the latest stash
-      stash_drop(entries[0].id);
+      stashDrop(entries[0].id);
     }
   }
 }
 
-void stash_drop(const std::string &stash_id)
-{
-  if (stash_id.empty())
-  {
+void stashDrop(const std::string &stash_id) {
+  if (stash_id.empty()) {
     std::cout << "Stash ID required for drop operation" << std::endl;
     return;
   }
 
   // Get stash entry
-  StashEntry entry = get_stash_entry(stash_id);
-  if (entry.id.empty())
-  {
+  StashEntry entry = getStashEntry(stash_id);
+  if (entry.id.empty()) {
     std::cout << "Stash not found: " << stash_id << std::endl;
     return;
   }
 
   // Remove stash files
-  std::string stash_dir = get_stash_file_path(stash_id);
-  if (std::filesystem::exists(stash_dir))
-  {
-    std::filesystem::remove_all(stash_dir); // Delete stash directory
-  }
+  std::string stash_dir = getStashFilePath(stash_id);
+  ErrorHandler::safeRemoveFile(stash_dir); // Delete stash directory
 
   // Delete stash entry from index
-  delete_stash_entry(stash_id);
+  deleteStashEntry(stash_id);
 
   std::cout << "Dropped stash: " << stash_id << std::endl;
 }
 
-void stash_clear()
-{
+void stashClear() {
   // Get all stash entries
-  std::vector<StashEntry> entries = get_stash_entries();
+  std::vector<StashEntry> entries = getStashEntries();
 
-  for (const auto &entry : entries)
-  {
-    std::string stash_dir = get_stash_file_path(entry.id); // Remove stash files
-    if (std::filesystem::exists(stash_dir))
-    {
-      std::filesystem::remove_all(stash_dir); // Delete stash directory
-    }
+  for (const auto &entry : entries) {
+    std::string stash_dir = getStashFilePath(entry.id); // Remove stash files
+    ErrorHandler::safeRemoveFolder(stash_dir); // Delete stash directory
   }
 
   // Clear stash index
-  std::string stash_index = get_stash_dir() + "/index";
-  if (std::filesystem::exists(stash_index))
-  {
-    std::filesystem::remove(stash_index); // Delete index file
+  std::string stash_index = getStashDir() + "/index";
+  if (std::filesystem::exists(stash_index)) {
+    ErrorHandler::safeRemoveFile(stash_index); // Delete index file
   }
 
   std::cout << "Cleared all stashes" << std::endl;
 }
 
-bool stash_has_stashes()
-{
+bool stashHasStashes() {
   // Check if there are any stash entries
-  return !get_stash_entries().empty();
+  return !getStashEntries().empty();
 }
 
-std::vector<StashEntry> get_stash_entries()
-{
+std::vector<StashEntry> getStashEntries() {
   // Read stash entries from index file
   std::vector<StashEntry> entries;
-  std::string stash_index = get_stash_dir() + "/index";
+  std::string stash_index = getStashDir() + "/index";
 
-  if (!std::filesystem::exists(stash_index))
-  {
+  if (!std::filesystem::exists(stash_index)) {
     return entries;
   }
 
   // Parse stash index file
-  std::ifstream file(stash_index);
+  std::string file = ErrorHandler::safeReadFile(stash_index);
+  std::istringstream file_content(file);
   std::string line;
 
-  while (std::getline(file, line))
-  {
-    if (line.empty())
-    {
+  while (std::getline(file_content, line)) {
+    if (line.empty()) {
       continue;
     }
 
@@ -233,24 +205,19 @@ std::vector<StashEntry> get_stash_entries()
     std::istringstream iss(line);
     std::string token;
 
-    if (std::getline(iss, token, '|'))
-    {
+    if (std::getline(iss, token, '|')) {
       entry.id = token;
     }
-    if (std::getline(iss, token, '|'))
-    {
+    if (std::getline(iss, token, '|')) {
       entry.message = token;
     }
-    if (std::getline(iss, token, '|'))
-    {
+    if (std::getline(iss, token, '|')) {
       entry.branch = token;
     }
-    if (std::getline(iss, token, '|'))
-    {
+    if (std::getline(iss, token, '|')) {
       entry.commit_hash = token;
     }
-    if (std::getline(iss, token, '|'))
-    {
+    if (std::getline(iss, token, '|')) {
       entry.timestamp = std::stoll(token);
     }
 
@@ -260,36 +227,28 @@ std::vector<StashEntry> get_stash_entries()
   return entries;
 }
 
-StashEntry get_stash_entry(const std::string &stash_id)
-{
+StashEntry getStashEntry(const std::string &stash_id) {
   // Find stash entry by ID
-  std::vector<StashEntry> entries = get_stash_entries();
+  std::vector<StashEntry> entries = getStashEntries();
 
-  for (const auto &entry : entries)
-  {
-    if (entry.id == stash_id)
-    {
+  for (const auto &entry : entries) {
+    if (entry.id == stash_id) {
       // Load associated files
       StashEntry result = entry;
 
       // List files in the stash directory
-      std::string stash_dir = get_stash_file_path(stash_id);
+      std::string stash_dir = getStashFilePath(stash_id);
 
-      if (std::filesystem::exists(stash_dir))
-      {
+      if (std::filesystem::exists(stash_dir)) {
         // Recursively list files
-        for (const auto &file_entry : std::filesystem::recursive_directory_iterator(stash_dir))
-        {
-          // Only add regular files
-          if (file_entry.is_regular_file())
-          {
-            // Get relative path
-            std::string rel_path = std::filesystem::relative(file_entry.path(), stash_dir).string();
-            result.files.push_back(rel_path);
-          }
+        for (const auto &file_entry :
+             ErrorHandler::safeListDirectoryFiles(stash_dir)) {
+          // Get relative path
+          std::string rel_path =
+              std::filesystem::relative(file_entry, stash_dir).string();
+          result.files.push_back(rel_path);
         }
       }
-
       return result;
     }
   }
@@ -297,103 +256,104 @@ StashEntry get_stash_entry(const std::string &stash_id)
   return StashEntry();
 }
 
-void save_stash_entry(const StashEntry &entry)
-{
+void saveStashEntry(const StashEntry &entry) {
   // Append stash entry to index file
-  std::string stash_dir = get_stash_dir();
+  std::string stash_dir = getStashDir();
   std::string stash_index = stash_dir + "/index";
-  std::filesystem::create_directories(stash_dir); // Ensure stash directory exists
+  ErrorHandler::safeCreateDirectories(
+      stash_dir); // Ensure stash directory exists
 
   // Format: id|message|branch|commit_hash|timestamp
-  std::ofstream file(stash_index, std::ios::app);
-  file << entry.id << "|" << entry.message << "|" << entry.branch << "|" << entry.commit_hash << "|" << entry.timestamp << std::endl;
-  file.close();
+  std::string entry_line = entry.id + "|" + entry.message + "|" + entry.branch +
+                           "|" + entry.commit_hash + "|" +
+                           std::to_string(entry.timestamp) + "\n";
+
+  if (!ErrorHandler::safeAppendFile(stash_index, entry_line)) {
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR,
+                             "Could not save stash entry", ErrorSeverity::ERROR,
+                             "saveStashEntry");
+  }
 }
 
-void delete_stash_entry(const std::string &stash_id)
-{
+void deleteStashEntry(const std::string &stash_id) {
   // Remove stash entry from index file
-  std::vector<StashEntry> entries = get_stash_entries();
-  std::string stash_index = get_stash_dir() + "/index";
+  std::vector<StashEntry> entries = getStashEntries();
+  std::string stash_index = getStashDir() + "/index";
 
   // Rewrite index file without the specified stash entry
-  std::ofstream file(stash_index);
-  for (const auto &entry : entries)
-  {
+  std::string new_content = "";
+  for (const auto &entry : entries) {
     // Skip the entry to be deleted
-    if (entry.id != stash_id)
-    {
-      file << entry.id << "|" << entry.message << "|" << entry.branch << "|" << entry.commit_hash << "|" << entry.timestamp << std::endl;
+    if (entry.id != stash_id) {
+      new_content += entry.id + "|" + entry.message + "|" + entry.branch + "|" +
+                     entry.commit_hash + "|" + std::to_string(entry.timestamp) +
+                     "\n";
     }
   }
-  file.close();
+
+  if (!ErrorHandler::safeWriteFile(stash_index, new_content)) {
+    ErrorHandler::printError(ErrorCode::FILE_WRITE_ERROR,
+                             "Could not update stash index after deletion",
+                             ErrorSeverity::ERROR, "deleteStashEntry");
+  }
 }
 
-std::string generate_stash_id()
-{
+std::string generateStashId() {
   return "stash_" + std::to_string(std::time(nullptr));
 }
 
-void backup_staged_files(const std::string &stash_id)
-{
+void backupStagedFiles(const std::string &stash_id) {
   // Create stash directory
-  std::string stash_dir = get_stash_file_path(stash_id);
-  std::filesystem::create_directories(stash_dir); // Ensure stash directory exists
+  std::string stash_dir = getStashFilePath(stash_id);
+  ErrorHandler::safeCreateDirectories(
+      stash_dir); // Ensure stash directory exists
 
   // Get staged files
-  std::vector<std::string> staged_files = get_staged_files();
+  std::vector<std::string> staged_files = getStagedFiles();
 
   // Copy staged files to stash directory
-  for (const auto &file : staged_files)
-  {
+  for (const auto &file : staged_files) {
     // Check if file exists
-    if (std::filesystem::exists(file))
-    {
+    if (std::filesystem::exists(file)) {
       // Create destination path
       std::string dest_path = stash_dir + "/" + file;
-      std::filesystem::create_directories(std::filesystem::path(dest_path).parent_path());
-      std::filesystem::copy_file(file, dest_path, std::filesystem::copy_options::overwrite_existing);
+      ErrorHandler::safeCreateDirectories(
+          std::filesystem::path(dest_path).parent_path());
+      ErrorHandler::safeCopyFile(file, dest_path);
     }
   }
 }
 
-void restore_working_directory(const std::string &stash_id)
-{
+void restoreWorkingDirectory(const std::string &stash_id) {
   // Get stash directory
-  std::string stash_dir = get_stash_file_path(stash_id);
+  std::string stash_dir = getStashFilePath(stash_id);
 
-  if (!std::filesystem::exists(stash_dir))
-  {
+  if (!std::filesystem::exists(stash_dir)) {
     std::cout << "Stash directory not found: " << stash_dir << std::endl;
     return;
   }
 
   // Restore files from stash directory to working directory
-  for (const auto &entry : std::filesystem::recursive_directory_iterator(stash_dir))
-  {
-    if (entry.is_regular_file())
-    {
-      // Get relative path
-      std::string rel_path = std::filesystem::relative(entry.path(), stash_dir).string();
-      std::filesystem::path parent_path = std::filesystem::path(rel_path).parent_path();
+  for (const auto &entry : ErrorHandler::safeListDirectoryFiles(stash_dir)) {
+    // Get relative path
+    std::string rel_path = std::filesystem::relative(entry, stash_dir).string();
+    std::filesystem::path parent_path =
+        std::filesystem::path(rel_path).parent_path();
 
-      // Create parent directories if they don't exist
-      if (!parent_path.empty())
-      {
-        std::filesystem::create_directories(parent_path);
-      }
-      // Copy file back to working directory
-      std::filesystem::copy_file(entry.path(), rel_path, std::filesystem::copy_options::overwrite_existing);
+    // Create parent directories if they don't exist
+    if (!parent_path.empty()) {
+      ErrorHandler::safeCreateDirectories(parent_path);
     }
+    // Copy file back to working directory
+    ErrorHandler::safeCopyFile(entry, rel_path);
   }
 }
 
-std::vector<std::string> get_all_tracked_files()
-{
+std::vector<std::string> getAllTrackedFiles() {
   // Get all tracked files (staged and unstaged)
   std::vector<std::string> files;
-  std::vector<std::string> staged = get_staged_files();
-  std::vector<std::string> unstaged = get_unstaged_files();
+  std::vector<std::string> staged = getStagedFiles();
+  std::vector<std::string> unstaged = getUnstagedFiles();
 
   // Combine and deduplicate
   files.insert(files.end(), staged.begin(), staged.end());
@@ -406,27 +366,20 @@ std::vector<std::string> get_all_tracked_files()
   return files;
 }
 
-void remove_staged_files_from_working_directory()
-{
+void removeStagedFilesFromWorkingDirectory() {
   // Get staged files
-  std::vector<std::string> staged_files = get_staged_files();
+  std::vector<std::string> staged_files = getStagedFiles();
 
   // Remove staged files from working directory
-  for (const auto &file : staged_files)
-  {
-    if (std::filesystem::exists(file))
-    {
-      std::filesystem::remove(file);
+  for (const auto &file : staged_files) {
+    if (std::filesystem::exists(file)) {
+      ErrorHandler::safeRemoveFile(file);
     }
   }
 }
 
-std::string get_stash_dir()
-{
-  return ".bittrack/stash";
-}
+std::string getStashDir() { return ".bittrack/stash"; }
 
-std::string get_stash_file_path(const std::string &stash_id)
-{
-  return get_stash_dir() + "/" + stash_id;
+std::string getStashFilePath(const std::string &stash_id) {
+  return getStashDir() + "/" + stash_id;
 }

@@ -1,6 +1,6 @@
 #include "../include/hooks.hpp"
 
-void install_hook(HookType type, const std::string &script_path)
+void installHook(HookType type, const std::string &script_path)
 {
   // Check if the script file exists
   if (!std::filesystem::exists(script_path))
@@ -10,38 +10,38 @@ void install_hook(HookType type, const std::string &script_path)
   }
 
   // Copy the script to the hooks directory
-  std::string hook_path = get_hook_path(type);
-  std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());                   // Ensure the hooks directory exists
-  std::filesystem::copy_file(script_path, hook_path, std::filesystem::copy_options::overwrite_existing); // Copy and overwrite if exists
+  std::string hook_path = getHookPath(type);
+  ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
+  ErrorHandler::safeCopyFile(script_path, hook_path); // Copy and overwrite if exists
 
   // Make the hook executable
-  make_hook_executable(hook_path);
-  std::cout << "Installed hook: " << get_hook_name(type) << std::endl;
+  makeHookExecutable(hook_path);
+  std::cout << "Installed hook: " << getHookName(type) << std::endl;
 }
 
-void uninstall_hook(HookType type)
+void uninstallHook(HookType type)
 {
   // Remove the hook file if it exists
-  std::string hook_path = get_hook_path(type);
+  std::string hook_path = getHookPath(type);
 
   // Check if the hook file exists
   if (std::filesystem::exists(hook_path))
   {
     // Remove the hook file
-    std::filesystem::remove(hook_path);
-    std::cout << "Uninstalled hook: " << get_hook_name(type) << std::endl;
+    ErrorHandler::safeRemoveFile(hook_path);
+    std::cout << "Uninstalled hook: " << getHookName(type) << std::endl;
   }
   else
   {
     // Hook file does not exist
-    std::cout << "Hook not found: " << get_hook_name(type) << std::endl;
+    std::cout << "Hook not found: " << getHookName(type) << std::endl;
   }
 }
 
-void list_hooks()
+void listHooks()
 {
   // List all hooks in the hooks directory
-  std::string hooks_dir = get_hooks_dir();
+  std::string hooks_dir = getHooksDir();
 
   // Check if the hooks directory exists
   if (!std::filesystem::exists(hooks_dir))
@@ -51,7 +51,6 @@ void list_hooks()
   }
 
   std::cout << "Installed hooks:" << std::endl;
-
   for (const auto &entry : std::filesystem::directory_iterator(hooks_dir))
   {
     // Only list regular files
@@ -61,7 +60,7 @@ void list_hooks()
       std::cout << "  " << hook_name;
 
       // Check if the hook is executable
-      if (is_hook_executable(entry.path().string()))
+      if (isHookExecutable(entry.path().string()))
       {
         std::cout << " (executable)";
       }
@@ -75,10 +74,10 @@ void list_hooks()
   }
 }
 
-HookResult run_hook(HookType type, const std::vector<std::string> &args)
+HookResult runHook(HookType type, const std::vector<std::string> &args)
 {
   // Get the hook path
-  std::string hook_path = get_hook_path(type);
+  std::string hook_path = getHookPath(type);
 
   // Check if the hook file exists
   if (!std::filesystem::exists(hook_path))
@@ -90,7 +89,7 @@ HookResult run_hook(HookType type, const std::vector<std::string> &args)
   }
 
   // Check if the hook is executable
-  if (!is_hook_executable(hook_path))
+  if (!isHookExecutable(hook_path))
   {
     // If the hook is not executable, return an error
     HookResult result;
@@ -102,10 +101,10 @@ HookResult run_hook(HookType type, const std::vector<std::string> &args)
   return execute_hook(hook_path, args);
 }
 
-void run_all_hooks(const std::string &event, const std::vector<std::string> &args)
+void runAllHooks(const std::string &event, const std::vector<std::string> &args)
 {
   // Run all hooks matching the event prefix
-  std::string hooks_dir = get_hooks_dir();
+  std::string hooks_dir = getHooksDir();
 
   // Check if the hooks directory exists
   if (!std::filesystem::exists(hooks_dir))
@@ -139,92 +138,92 @@ void run_all_hooks(const std::string &event, const std::vector<std::string> &arg
   }
 }
 
-void install_default_hooks()
+void installDefaultHooks()
 {
-  create_pre_commit_hook();
-  create_post_commit_hook();
-  create_pre_push_hook();
+  createPreCommitHook();
+  createPostCommitHook();
+  createPrePushHook();
 
   std::cout << "Installed default hooks." << std::endl;
 }
 
-void create_pre_commit_hook()
+void createPreCommitHook()
 {
-  std::string hook_path = get_hook_path(HookType::PRE_COMMIT);
-  std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());
-  std::ofstream hook_file(hook_path);
+  std::string hook_path = getHookPath(HookType::PRE_COMMIT);
+  ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
+  ErrorHandler::safeWriteFile(
+    hook_path,
+    "#!/bin/bash\n"
+    "# Pre-commit hook\n"
+    "echo \"Running pre-commit checks...\"\n"
+    "\n"
+    "# Check for TODO comments\n"
+    "if grep -r \"TODO\\|FIXME\" . --exclude-dir=.bittrack; then\n"
+    "  echo \"Warning: Found TODO/FIXME comments\"\n"
+    "fi\n"
+    "\n"
+    "# Check for large files\n"
+    "find . -name \"*.txt\" -size +1M -not -path \"./.bittrack/*\" | while read file; do\n"
+    "  echo \"Warning: Large file detected: $file\"\n"
+    "done\n"
+    "\n"
+    "echo \"Pre-commit checks completed.\"\n"
+    "exit 0\n"
+  );
 
-  hook_file << "#!/bin/bash\n";
-  hook_file << "# Pre-commit hook\n";
-  hook_file << "echo \"Running pre-commit checks...\"\n";
-  hook_file << "\n";
-  hook_file << "# Check for TODO comments\n";
-  hook_file << "if grep -r \"TODO\\|FIXME\" . --exclude-dir=.bittrack; then\n";
-  hook_file << "  echo \"Warning: Found TODO/FIXME comments\"\n";
-  hook_file << "fi\n";
-  hook_file << "\n";
-  hook_file << "# Check for large files\n";
-  hook_file << "find . -name \"*.txt\" -size +1M -not -path \"./.bittrack/*\" | while read file; do\n";
-  hook_file << "  echo \"Warning: Large file detected: $file\"\n";
-  hook_file << "done\n";
-  hook_file << "\n";
-  hook_file << "echo \"Pre-commit checks completed.\"\n";
-  hook_file << "exit 0\n";
-
-  hook_file.close();
-  make_hook_executable(hook_path);
+  makeHookExecutable(hook_path);
 }
 
-void create_post_commit_hook()
+void createPostCommitHook()
 {
-  std::string hook_path = get_hook_path(HookType::POST_COMMIT);
-  std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());
-  std::ofstream hook_file(hook_path);
+  std::string hook_path = getHookPath(HookType::POST_COMMIT);
+  ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
+  ErrorHandler::safeWriteFile(
+    hook_path,
+    "#!/bin/bash\n"
+    "# Post-commit hook\n"
+    "echo \"Post-commit actions...\"\n"
+    "\n"
+    "# Update commit count\n"
+    "if [ -f .bittrack/commit_count ]; then\n"
+    "  count=$(cat .bittrack/commit_count)\n"
+    "  echo $((count + 1)) > .bittrack/commit_count\n"
+    "else\n"
+    "  echo \"1\" > .bittrack/commit_count\n"
+    "fi\n"
+    "\n"
+    "echo \"Commit completed successfully.\"\n"
+    "exit 0\n"
+  );
 
-  hook_file << "#!/bin/bash\n";
-  hook_file << "# Post-commit hook\n";
-  hook_file << "echo \"Post-commit actions...\"\n";
-  hook_file << "\n";
-  hook_file << "# Update commit count\n";
-  hook_file << "if [ -f .bittrack/commit_count ]; then\n";
-  hook_file << "  count=$(cat .bittrack/commit_count)\n";
-  hook_file << "  echo $((count + 1)) > .bittrack/commit_count\n";
-  hook_file << "else\n";
-  hook_file << "  echo \"1\" > .bittrack/commit_count\n";
-  hook_file << "fi\n";
-  hook_file << "\n";
-  hook_file << "echo \"Commit completed successfully.\"\n";
-  hook_file << "exit 0\n";
-
-  hook_file.close();
-  make_hook_executable(hook_path);
+  makeHookExecutable(hook_path);
 }
 
-void create_pre_push_hook()
+void createPrePushHook()
 {
-  std::string hook_path = get_hook_path(HookType::PRE_PUSH);
-  std::filesystem::create_directories(std::filesystem::path(hook_path).parent_path());
-  std::ofstream hook_file(hook_path);
+  std::string hook_path = getHookPath(HookType::PRE_PUSH);
+  ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
+  ErrorHandler::safeWriteFile(
+    hook_path,
+    "#!/bin/bash\n"
+    "# Pre-push hook\n"
+    "echo \"Running pre-push checks...\"\n"
+    "\n"
+    "# Check if tests pass\n"
+    "if [ -f Makefile ] && grep -q \"test\" Makefile; then\n"
+    "  echo \"Running tests...\"\n"
+    "  make test\n"
+    "  if [ $? -ne 0 ]; then\n"
+    "    echo \"Error: Tests failed. Push aborted.\"\n"
+    "    exit 1\n"
+    "  fi\n"
+    "fi\n"
+    "\n"
+    "echo \"Pre-push checks completed.\"\n"
+    "exit 0\n"
+  );
 
-  hook_file << "#!/bin/bash\n";
-  hook_file << "# Pre-push hook\n";
-  hook_file << "echo \"Running pre-push checks...\"\n";
-  hook_file << "\n";
-  hook_file << "# Check if tests pass\n";
-  hook_file << "if [ -f Makefile ] && grep -q \"test\" Makefile; then\n";
-  hook_file << "  echo \"Running tests...\"\n";
-  hook_file << "  make test\n";
-  hook_file << "  if [ $? -ne 0 ]; then\n";
-  hook_file << "    echo \"Error: Tests failed. Push aborted.\"\n";
-  hook_file << "    exit 1\n";
-  hook_file << "  fi\n";
-  hook_file << "fi\n";
-  hook_file << "\n";
-  hook_file << "echo \"Pre-push checks completed.\"\n";
-  hook_file << "exit 0\n";
-
-  hook_file.close();
-  make_hook_executable(hook_path);
+  makeHookExecutable(hook_path);
 }
 
 HookResult execute_hook(const std::string &hook_path, const std::vector<std::string> &args)
@@ -267,31 +266,31 @@ HookResult execute_hook(const std::string &hook_path, const std::vector<std::str
   return result;
 }
 
-bool hook_exists(HookType type)
+bool hookExists(HookType type)
 {
-  std::string hook_path = get_hook_path(type);
+  std::string hook_path = getHookPath(type);
   return std::filesystem::exists(hook_path);
 }
 
-std::string get_hook_path(HookType type)
+std::string getHookPath(HookType type)
 {
-  initialize_hook_names();
+  initializeHookNames();
   std::string hook_name = hook_names[type];
-  return get_hooks_dir() + "/" + hook_name;
+  return getHooksDir() + "/" + hook_name;
 }
 
-std::string get_hooks_dir()
+std::string getHooksDir()
 {
   return ".bittrack/hooks";
 }
 
-std::string get_hook_name(HookType type)
+std::string getHookName(HookType type)
 {
-  initialize_hook_names();
+  initializeHookNames();
   return hook_names[type];
 }
 
-bool is_hook_executable(const std::string &hook_path)
+bool isHookExecutable(const std::string &hook_path)
 {
   // Check if the hook file exists
   if (!std::filesystem::exists(hook_path))
@@ -304,7 +303,7 @@ bool is_hook_executable(const std::string &hook_path)
   return (perms & std::filesystem::perms::owner_exec) != std::filesystem::perms::none;
 }
 
-void make_hook_executable(const std::string &hook_path)
+void makeHookExecutable(const std::string &hook_path)
 {
   // Check if the hook file exists
   if (std::filesystem::exists(hook_path))
@@ -316,7 +315,7 @@ void make_hook_executable(const std::string &hook_path)
   }
 }
 
-void initialize_hook_names()
+void initializeHookNames()
 {
   // Initialize the hook names map if it's empty
   if (hook_names.empty())
@@ -334,9 +333,9 @@ void initialize_hook_names()
   }
 }
 
-std::string get_event_name(HookType type)
+std::string getEventName(HookType type)
 {
-  initialize_hook_names();
+  initializeHookNames();
   std::string hook_name = hook_names[type];
 
   if (hook_name.find("pre-") == 0)

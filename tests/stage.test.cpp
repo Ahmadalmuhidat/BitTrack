@@ -11,7 +11,7 @@ bool test_staged_files()
 
   stage("stage_test.txt");
 
-  std::vector<std::string> staged_files = get_staged_files();
+  std::vector<std::string> staged_files = getStagedFiles();
   bool is_staged = std::find(staged_files.begin(), staged_files.end(), "stage_test.txt") != staged_files.end();
 
   unstage("stage_test.txt");
@@ -31,7 +31,7 @@ bool test_unstaged_files()
 
   unstage("unstaged_test.txt");
 
-  std::vector<std::string> staged_files = get_staged_files();
+  std::vector<std::string> staged_files = getStagedFiles();
   bool is_unstaged = std::find(staged_files.begin(), staged_files.end(), "unstaged_test.txt") == staged_files.end();
 
   std::filesystem::remove("unstaged_test.txt");
@@ -48,12 +48,12 @@ bool test_unstage_staged()
 
   stage("unstage_staged_test.txt");
 
-  std::vector<std::string> staged_before = get_staged_files();
+  std::vector<std::string> staged_before = getStagedFiles();
   bool was_staged = std::find(staged_before.begin(), staged_before.end(), "unstage_staged_test.txt") != staged_before.end();
 
   unstage("unstage_staged_test.txt");
 
-  std::vector<std::string> staged_after = get_staged_files();
+  std::vector<std::string> staged_after = getStagedFiles();
   bool is_unstaged = std::find(staged_after.begin(), staged_after.end(), "unstage_staged_test.txt") == staged_after.end();
 
   std::filesystem::remove("unstage_staged_test.txt");
