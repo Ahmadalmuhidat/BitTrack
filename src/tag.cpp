@@ -10,7 +10,7 @@ void tagCreate(const std::string &name, const std::string &commit_hash, bool ann
   }
 
   // Determine the commit to tag
-  std::string target_commit = commit_hash.empty() ? get_current_commit() : commit_hash;
+  std::string target_commit = commit_hash.empty() ? getCurrentCommit() : commit_hash;
   if (target_commit.empty())
   {
     ErrorHandler::printError(ErrorCode::NO_COMMITS_FOUND, "No commit to tag", ErrorSeverity::ERROR, "tag_create");

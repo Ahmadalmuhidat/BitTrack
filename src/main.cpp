@@ -680,7 +680,7 @@ int main(int argc, const char *argv[]) {
 
           VALIDATE_COMMIT_MESSAGE(message);
 
-          commit_changes("almuhidat", message);
+          commitChanges("almuhidat", message);
         } catch (const BitTrackError &e) {
           ErrorHandler::printError(e);
           throw;
@@ -691,7 +691,7 @@ int main(int argc, const char *argv[]) {
         showStagedFilesHashes();
         break;
       } else if (arg == "--current-commit") {
-        std::cout << get_current_commit() << std::endl;
+        std::cout << getCurrentCommit() << std::endl;
         break;
       } else if (arg == "--log") {
         showCommitHistory();

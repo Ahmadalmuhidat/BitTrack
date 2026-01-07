@@ -12,7 +12,7 @@ bool test_tag_creation()
   file.close();
 
   stage("tag_test.txt");
-  commit_changes("test_user", "commit for tagging");
+  commitChanges("test_user", "commit for tagging");
 
   tagCreate("v1.0", "", true);
 
@@ -32,7 +32,7 @@ bool test_lightweight_tag_creation()
   file.close();
 
   stage("lightweight_tag_test.txt");
-  commit_changes("test_user", "commit for lightweight tagging");
+  commitChanges("test_user", "commit for lightweight tagging");
 
   tagCreate("v1.1", "", false);
 
@@ -52,7 +52,7 @@ bool test_tag_listing()
   file.close();
 
   stage("tag_list_test.txt");
-  commit_changes("test_user", "commit for tag listing");
+  commitChanges("test_user", "commit for tag listing");
 
   tagCreate("v1.0", "", true);
   tagCreate("v1.1", "", false);
@@ -76,7 +76,7 @@ bool test_tag_deletion()
   file.close();
 
   stage("tag_delete_test.txt");
-  commit_changes("test_user", "commit for tag deletion");
+  commitChanges("test_user", "commit for tag deletion");
 
   tagCreate("v1.0", "", true);
 
@@ -99,7 +99,7 @@ bool test_tag_show()
   file.close();
 
   stage("tag_show_test.txt");
-  commit_changes("test_user", "commit for tag show");
+  commitChanges("test_user", "commit for tag show");
 
   tagCreate("v1.0", "", true);
 

@@ -67,7 +67,7 @@ DiffResult diffStaged() {
   }
 
   // Get current commit
-  std::string current_commit = get_current_commit();
+  std::string current_commit = getCurrentCommit();
   if (current_commit.empty()) {
     // No commits yet, diff staged against empty
     for (const auto &file : staged_files) {
@@ -212,7 +212,7 @@ DiffResult diffWorkingDirectory() {
   DiffResult result("working", "last commit");
 
   // Get current commit
-  std::string current_commit = get_current_commit();
+  std::string current_commit = getCurrentCommit();
   if (current_commit.empty()) {
     return result;
   }

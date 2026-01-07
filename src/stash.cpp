@@ -13,7 +13,7 @@ void stashChanges(const std::string &message) {
   entry.id = generateStashId();
   entry.message = message.empty() ? "WIP on " + getCurrentBranch() : message;
   entry.branch = getCurrentBranch();
-  entry.commit_hash = get_current_commit();
+  entry.commit_hash = getCurrentCommit();
   entry.timestamp = std::time(nullptr);
   entry.files = staged_files;
 

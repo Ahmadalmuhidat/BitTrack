@@ -55,7 +55,7 @@ bool test_working_directory_update()
   file.close();
 
   stage("test_main.txt");
-  commit_changes("test_user", "main commit");
+  commitChanges("test_user", "main commit");
 
   addBranch("working_dir_branch");
   switchBranch("working_dir_branch");
@@ -136,7 +136,7 @@ bool test_file_restoration_from_commit()
   file.close();
 
   stage("restoration_test.txt");
-  commit_changes("test_user", "restoration commit");
+  commitChanges("test_user", "restoration commit");
 
   std::ofstream modified_file("restoration_test.txt");
   modified_file << "modified content" << std::endl;

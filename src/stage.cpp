@@ -114,7 +114,7 @@ std::string calculateFileHash(const std::string &file_path) {
 bool isFileUnchangedFromCommit(const std::string &file_path,
                                const std::string &file_hash) {
   // Get the current commit hash
-  std::string currentCommit = get_current_commit();
+  std::string currentCommit = getCurrentCommit();
   if (currentCommit.empty()) {
     return false;
   }
@@ -463,7 +463,7 @@ std::vector<std::string> getUnstagedFiles() {
 
   try {
     // Get the current commit and staged files
-    std::string currentCommit = get_current_commit();
+    std::string currentCommit = getCurrentCommit();
     std::vector<std::string> stagedFiles = getStagedFiles();
     std::set<std::string> stagedSet(stagedFiles.begin(), stagedFiles.end());
 

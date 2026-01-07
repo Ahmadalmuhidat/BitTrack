@@ -13,7 +13,7 @@ bool test_merge_branches()
   main_file.close();
 
   stage("merge_test.txt");
-  commit_changes("test_user", "main commit");
+  commitChanges("test_user", "main commit");
 
   addBranch("merge_branch");
   switchBranch("merge_branch");
@@ -23,7 +23,7 @@ bool test_merge_branches()
   merge_file.close();
 
   stage("merge_test.txt");
-  commit_changes("test_user", "merge branch commit");
+  commitChanges("test_user", "merge branch commit");
 
   switchBranch("main");
 
@@ -43,18 +43,18 @@ bool test_merge_commits()
   file.close();
 
   stage("merge_commit_test.txt");
-  commit_changes("test_user", "first commit");
+  commitChanges("test_user", "first commit");
 
-  std::string commit1 = get_current_commit();
+  std::string commit1 = getCurrentCommit();
 
   std::ofstream modified_file("merge_commit_test.txt");
   modified_file << "modified content" << std::endl;
   modified_file.close();
 
   stage("merge_commit_test.txt");
-  commit_changes("test_user", "second commit");
+  commitChanges("test_user", "second commit");
 
-  std::string commit2 = get_current_commit();
+  std::string commit2 = getCurrentCommit();
 
   MergeResult result = mergeCommits(commit1, commit2);
 
@@ -71,7 +71,7 @@ bool test_merge_abort()
   file.close();
 
   stage("merge_abort_test.txt");
-  commit_changes("test_user", "commit for abort test");
+  commitChanges("test_user", "commit for abort test");
 
   abortMerge();
 
@@ -88,7 +88,7 @@ bool test_merge_continue()
   file.close();
 
   stage("merge_continue_test.txt");
-  commit_changes("test_user", "commit for continue test");
+  commitChanges("test_user", "commit for continue test");
 
   continueMerge();
 
@@ -150,7 +150,7 @@ bool test_merge_fast_forward()
   file.close();
 
   stage("fast_forward_test.txt");
-  commit_changes("test_user", "fast forward commit");
+  commitChanges("test_user", "fast forward commit");
 
   addBranch("fast_forward_branch");
 

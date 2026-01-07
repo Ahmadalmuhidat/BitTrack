@@ -148,7 +148,7 @@ void showRepositoryInfo()
 {
   std::cout << "Repository Information:" << std::endl;
   std::cout << "  Current branch: " << getCurrentBranch() << std::endl;
-  std::cout << "  Current commit: " << get_current_commit() << std::endl;
+  std::cout << "  Current commit: " << getCurrentCommit() << std::endl;
 
   size_t total_size = 0;
   std::vector<std::filesystem::path> repository_directories = ErrorHandler::safeListDirectoryFiles(".bittrack");
@@ -321,7 +321,7 @@ std::vector<std::string> getUnreachableObjects()
   std::set<std::string> reachable_objects;
 
   // add current commit
-  std::string current_commit = get_current_commit();
+  std::string current_commit = getCurrentCommit();
   if (!current_commit.empty()) // Check if current commit is valid
   {
     reachable_objects.insert(current_commit);

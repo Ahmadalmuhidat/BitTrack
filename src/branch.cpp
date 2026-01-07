@@ -585,7 +585,7 @@ void rebaseBranch(const std::string &source_branch,
       return;
     }
 
-    std::string backup_commit = get_current_commit();
+    std::string backup_commit = getCurrentCommit();
 
     try {
       // perform the rebase operation
@@ -611,7 +611,7 @@ void rebaseBranch(const std::string &source_branch,
       switchBranch(source_branch);
 
       // update source branch to point to new HEAD
-      std::string new_head = get_current_commit();
+      std::string new_head = getCurrentCommit();
       ErrorHandler::safeWriteFile(".bittrack/refs/heads/" + source_branch,
                                   new_head + "\n");
 
@@ -938,10 +938,10 @@ bool applyCommitDuringRebase(const std::string &commit_hash) {
     }
 
     // Create a new commit with the same author and message
-    commit_changes(author, message);
+    commitChanges(author, message);
 
     // verify the new commit was created
-    std::string new_commit_hash = get_current_commit();
+    std::string new_commit_hash = getCurrentCommit();
     if (new_commit_hash.empty()) {
       ErrorHandler::printError(
           ErrorCode::COMMIT_FAILED, "Failed to create new commit during rebase",

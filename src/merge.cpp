@@ -48,7 +48,7 @@ MergeResult mergeBranches(const std::string &source_branch, const std::string &t
   {
     std::string merge_message = "Merge branch '" + source_branch + "' into " + target_branch;
     createMergeCommit(merge_message, {target_commit, source_commit});
-    result.merge_commit = get_current_commit();
+    result.merge_commit = getCurrentCommit();
   }
 
   return result;
@@ -317,7 +317,7 @@ std::string findMergeBase(const std::string &commit1, const std::string &commit2
     }
 
     // Move to the parent commit
-    current = get_last_commit(current);
+    current = getLastCommit(current);
   }
 
   return "";
@@ -341,7 +341,7 @@ bool isAncestor(const std::string &ancestor, const std::string &descendant)
     }
 
     // Move to the parent commit
-    current = get_last_commit(current);
+    current = getLastCommit(current);
   }
 
   return false;
@@ -412,7 +412,7 @@ bool isMergeInProgress()
 void createMergeCommit(const std::string &message, const std::vector<std::string> &parents)
 {
   // Create a new commit object for the merge commit
-  std::string commit_hash = generate_commit_hash(get_current_user(), message, get_current_timestamp());
+  std::string commit_hash = generateCommitHash(getCurrentUser(), message, getCurrentTimestamp());
   std::string commit_dir = ".bittrack/objects/" + commit_hash;
   ErrorHandler::safeCreateDirectories(commit_dir);
 
@@ -422,8 +422,8 @@ void createMergeCommit(const std::string &message, const std::vector<std::string
     commit_file,
     "commit " + commit_hash + "\n" +
     "message " + message + "\n" +
-    "timestamp " + get_current_timestamp() + "\n" +
-    "author " + get_current_user() + "\n"
+    "timestamp " + getCurrentTimestamp() + "\n" +
+    "author " + getCurrentUser() + "\n"
   );
 
   // Write parent commits
