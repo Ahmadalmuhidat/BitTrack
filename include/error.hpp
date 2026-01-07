@@ -13,7 +13,8 @@
 #include "stage.hpp"
 
 // Error codes used in BitTrack
-enum class ErrorCode {
+enum class ErrorCode
+{
   SUCCESS = 0,
   NOT_IN_REPOSITORY = 1,
   REPOSITORY_ALREADY_EXISTS = 2,
@@ -61,10 +62,17 @@ enum class ErrorCode {
 };
 
 // Severity levels for errors
-enum class ErrorSeverity { INFO, WARNING, ERROR, FATAL };
+enum class ErrorSeverity
+{
+  INFO,
+  WARNING,
+  ERROR,
+  FATAL
+};
 
 // Custom exception class for BitTrack errors
-class BitTrackError : public std::exception {
+class BitTrackError : public std::exception
+{
 private:
   ErrorCode code;
   std::string message;
@@ -81,7 +89,8 @@ public:
 };
 
 // Error handling utility class
-class ErrorHandler {
+class ErrorHandler
+{
 public:
   static void printError(const BitTrackError &error);
   static void printError(ErrorCode code, const std::string &message, ErrorSeverity severity, const std::string &context);
@@ -109,13 +118,15 @@ public:
   static void handleFilesystemError(const std::filesystem::filesystem_error &e, const std::string &context);
 };
 
-#define HANDLE_EXCEPTION(context)                                              \
-  catch (const std::filesystem::filesystem_error &e) {                         \
-    ErrorHandler::handleFilesystemError(e, context);                           \
-    throw;                                                                     \
-  }                                                                            \
-  catch (const std::exception &e) {                                            \
-    throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error in " + std::string(context) + ": " + e.what(), ErrorSeverity::ERROR, context);              \
+#define HANDLE_EXCEPTION(context)                                                                                                                         \
+  catch (const std::filesystem::filesystem_error &e)                                                                                                      \
+  {                                                                                                                                                       \
+    ErrorHandler::handleFilesystemError(e, context);                                                                                                      \
+    throw;                                                                                                                                                \
+  }                                                                                                                                                       \
+  catch (const std::exception &e)                                                                                                                         \
+  {                                                                                                                                                       \
+    throw BitTrackError(ErrorCode::UNEXPECTED_EXCEPTION, "Unexpected error in " + std::string(context) + ": " + e.what(), ErrorSeverity::ERROR, context); \
   }
 
 #define VALIDATE_ARGS(argc, required, command) ErrorHandler::validateArguments(argc, required, command)

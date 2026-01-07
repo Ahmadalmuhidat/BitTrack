@@ -15,14 +15,16 @@
 #include "stage.hpp"
 
 // Types of lines in a diff
-enum class DiffLineType {
+enum class DiffLineType
+{
   CONTEXT,  // unchanged line
   ADDITION, // added line
   DELETION  // deleted line
 };
 
 // Represents a single line in a diff
-struct DiffLine {
+struct DiffLine
+{
   DiffLineType type;   // type of diff line
   int line_number;     // line number in the file
   std::string content; // content of the line
@@ -31,7 +33,8 @@ struct DiffLine {
 };
 
 // Represents a hunk of differences between two files
-struct DiffHunk {
+struct DiffHunk
+{
   int old_start; // starting line number in old file
   int old_count; // number of lines in old file
   int new_start; // starting line number in new file
@@ -43,7 +46,8 @@ struct DiffHunk {
 };
 
 // Represents the result of a diff operation between two files
-struct DiffResult {
+struct DiffResult
+{
   std::string file1;           // first file path
   std::string file2;           // second file path
   std::vector<DiffHunk> hunks; // List of diff hunks
