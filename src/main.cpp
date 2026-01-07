@@ -239,7 +239,7 @@ void remoteOperations(int argc, const char *argv[], int &i) {
     std::string subFlag = argv[++i];
 
     if (subFlag == "-v") {
-      std::string remote = get_remote_origin();
+      std::string remote = getRemoteOrigin();
       if (remote.empty()) {
         std::cout << "No remote origin set" << std::endl;
       } else {
@@ -255,9 +255,9 @@ void remoteOperations(int argc, const char *argv[], int &i) {
                             "--remote -s");
       }
 
-      set_remote_origin(url);
+      setRemoteOrigin(url);
     } else if (subFlag == "-l") {
-      std::vector<std::string> branches = list_remote_branches();
+      std::vector<std::string> branches = listRemoteBranches();
       if (branches.empty()) {
         std::cout << "No remote branches found." << std::endl;
       } else {
@@ -269,7 +269,7 @@ void remoteOperations(int argc, const char *argv[], int &i) {
     } else if (subFlag == "-d") {
       VALIDATE_ARGS(argc, i + 2, "--remote -d");
       std::string branch_name = argv[++i];
-      if (delete_remote_branch(branch_name)) {
+      if (deleteRemoteBranch(branch_name)) {
         std::cout << "Deleted remote branch '" << branch_name << "'"
                   << std::endl;
       } else {
@@ -740,7 +740,7 @@ int main(int argc, const char *argv[]) {
             VALIDATE_BRANCH_NAME(branch_name);
           }
 
-          push_to_remote(remote_name, branch_name);
+          pushToRemote(remote_name, branch_name);
         } catch (const BitTrackError &e) {
           ErrorHandler::printError(e);
           throw;
@@ -761,7 +761,7 @@ int main(int argc, const char *argv[]) {
             VALIDATE_BRANCH_NAME(branch_name);
           }
 
-          pull_from_remote(remote_name, branch_name);
+          pullFromRemote(remote_name, branch_name);
         } catch (const BitTrackError &e) {
           ErrorHandler::printError(e);
           throw;
@@ -779,7 +779,7 @@ int main(int argc, const char *argv[]) {
             local_path = argv[++i];
           }
 
-          clone_repository(url, local_path);
+          cloneRepository(url, local_path);
         } catch (const BitTrackError &e) {
           ErrorHandler::printError(e);
           throw;
@@ -794,7 +794,7 @@ int main(int argc, const char *argv[]) {
             remote_name = argv[++i];
           }
 
-          fetch_from_remote(remote_name);
+          fetchFromRemote(remote_name);
         } catch (const BitTrackError &e) {
           ErrorHandler::printError(e);
           throw;

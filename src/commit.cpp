@@ -170,7 +170,7 @@ std::string getLastCommit(const std::string &branch)
 void commitChanges(const std::string &author, const std::string &message)
 {
   // Check for unpushed commits
-  if (has_unpushed_commits())
+  if (hasUnpushedCommits())
   {
     ErrorHandler::printError(
         ErrorCode::UNCOMMITTED_CHANGES,
