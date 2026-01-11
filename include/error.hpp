@@ -80,7 +80,11 @@ private:
   std::string context;
 
 public:
-  BitTrackError(ErrorCode c, const std::string &msg, ErrorSeverity sev = ErrorSeverity::ERROR, const std::string &ctx = "") : code(c), message(msg), severity(sev), context(ctx) {}
+  BitTrackError(
+      ErrorCode c,
+      const std::string &msg,
+      ErrorSeverity sev = ErrorSeverity::ERROR,
+      const std::string &ctx = "") : code(c), message(msg), severity(sev), context(ctx) {}
 
   ErrorCode getCode() const { return code; }
   ErrorSeverity getSeverity() const { return severity; }
@@ -93,29 +97,44 @@ class ErrorHandler
 {
 public:
   static void printError(const BitTrackError &error);
-  static void printError(ErrorCode code, const std::string &message, ErrorSeverity severity, const std::string &context);
+  static void printError(
+      ErrorCode code,
+      const std::string &message,
+      ErrorSeverity severity,
+      const std::string &context);
   static bool isFatal(ErrorCode code);
   static std::string getErrorMessage(ErrorCode code);
-  static bool validateArguments(int argc, int required, const std::string &command);
+  static bool validateArguments(
+      int argc, int required,
+      const std::string &command);
   static bool validateFilePath(const std::string &filePath);
   static bool validateBranchName(const std::string &branchName);
   static bool validateCommitMessage(const std::string &message);
   static bool validateRemoteUrl(const std::string &url);
   static bool safeCreateDirectories(const std::filesystem::path &path);
-  static bool safeCopyFile(const std::filesystem::path &from, const std::filesystem::path &to);
+  static bool safeCopyFile(
+      const std::filesystem::path &from,
+      const std::filesystem::path &to);
   static bool safeRemoveFile(const std::filesystem::path &path);
   static bool safeRemoveFolder(const std::filesystem::path &path);
-  static bool safeWriteFile(const std::filesystem::path &path, const std::string &content);
-  static bool safeAppendFile(const std::filesystem::path &path, const std::string &content);
-  static bool safeRename(const std::filesystem::path &from, const std::filesystem::path &to);
+  static bool safeWriteFile(
+      const std::filesystem::path &path,
+      const std::string &content);
+  static bool safeAppendFile(
+      const std::filesystem::path &path,
+      const std::string &content);
+  static bool safeRename(
+      const std::filesystem::path &from,
+      const std::filesystem::path &to);
   static std::string safeReadFile(const std::filesystem::path &path);
   static std::string safeReadFirstLine(const std::filesystem::path &path);
-  static std::vector<std::filesystem::path>
-  safeListDirectoryFiles(const std::filesystem::path &path);
+  static std::vector<std::filesystem::path> safeListDirectoryFiles(const std::filesystem::path &path);
   static bool validateRepository();
   static bool validateBranchExists(const std::string &branchName);
   static bool validateNoUncommittedChanges();
-  static void handleFilesystemError(const std::filesystem::filesystem_error &e, const std::string &context);
+  static void handleFilesystemError(
+      const std::filesystem::filesystem_error &e,
+      const std::string &context);
 };
 
 #define HANDLE_EXCEPTION(context)                                                                                                                         \

@@ -1,6 +1,8 @@
 #include "../include/merge.hpp"
 
-MergeResult mergeBranches(const std::string &source_branch, const std::string &target_branch)
+MergeResult mergeBranches(
+    const std::string &source_branch,
+    const std::string &target_branch)
 {
   MergeResult result;
 
@@ -54,7 +56,9 @@ MergeResult mergeBranches(const std::string &source_branch, const std::string &t
   return result;
 }
 
-MergeResult mergeCommits(const std::string &commit1, const std::string &commit2)
+MergeResult mergeCommits(
+    const std::string &commit1,
+    const std::string &commit2)
 {
   MergeResult result;
 
@@ -71,17 +75,22 @@ MergeResult mergeCommits(const std::string &commit1, const std::string &commit2)
   return result;
 }
 
-void writeConflict(const std::string &path, const std::string &ours,const std::string &theirs)
+void writeConflict(
+    const std::string &path,
+    const std::string &ours,
+    const std::string &theirs)
 {
   std::ofstream conflict(path);
-  conflict << "<<<<<<< HEAD\n" << ours
-           << "\n=======\n"
-           << theirs
-           << "\n>>>>>>> theirs\n";
+  conflict << "<<<<<<< HEAD\n"
+           << ours << "\n=======\n"
+           << theirs << "\n>>>>>>> theirs\n";
   conflict.close();
 }
 
-MergeResult threeWayMerge(const std::string &base, const std::string &ours, const std::string &theirs)
+MergeResult threeWayMerge(
+    const std::string &base,
+    const std::string &ours,
+    const std::string &theirs)
 {
   MergeResult result;
   std::set<std::string> all_files;
@@ -299,7 +308,9 @@ void continueMerge()
   std::cout << "Merge continued successfully" << std::endl;
 }
 
-std::string findMergeBase(const std::string &commit1, const std::string &commit2)
+std::string findMergeBase(
+    const std::string &commit1,
+    const std::string &commit2)
 {
   std::string current = commit1;
   std::set<std::string> visited;
@@ -323,7 +334,9 @@ std::string findMergeBase(const std::string &commit1, const std::string &commit2
   return "";
 }
 
-bool isAncestor(const std::string &ancestor, const std::string &descendant)
+bool isAncestor(
+    const std::string &ancestor,
+    const std::string &descendant)
 {
   std::string current = descendant;
   std::set<std::string> visited;
@@ -347,7 +360,9 @@ bool isAncestor(const std::string &ancestor, const std::string &descendant)
   return false;
 }
 
-bool isFastForward(const std::string &source, const std::string &target)
+bool isFastForward(
+    const std::string &source,
+    const std::string &target)
 {
   // Check if source is an ancestor of target
   return isAncestor(target, source);
@@ -409,7 +424,9 @@ bool isMergeInProgress()
   return std::filesystem::exists(".bittrack/MERGE_HEAD");
 }
 
-void createMergeCommit(const std::string &message, const std::vector<std::string> &parents)
+void createMergeCommit(
+    const std::string &message,
+    const std::vector<std::string> &parents)
 {
   // Create a new commit object for the merge commit
   std::string commit_hash = generateCommitHash(getCurrentUser(), message, getCurrentTimestamp());
@@ -419,12 +436,11 @@ void createMergeCommit(const std::string &message, const std::vector<std::string
   // Write commit metadata
   std::string commit_file = commit_dir + "/commit.txt";
   ErrorHandler::safeWriteFile(
-    commit_file,
-    "commit " + commit_hash + "\n" +
-    "message " + message + "\n" +
-    "timestamp " + getCurrentTimestamp() + "\n" +
-    "author " + getCurrentUser() + "\n"
-  );
+      commit_file,
+      "commit " + commit_hash + "\n" +
+          "message " + message + "\n" +
+          "timestamp " + getCurrentTimestamp() + "\n" +
+          "author " + getCurrentUser() + "\n");
 
   // Write parent commits
   for (const auto &parent : parents)
@@ -433,12 +449,12 @@ void createMergeCommit(const std::string &message, const std::vector<std::string
   }
 
   // Update HEAD to point to the new merge commit
-  std::ofstream head_file(".bittrack/refs/heads/" + getCurrentBranch());
+  std::ofstream head_file(".bittrack/refs/heads/" + getCurrentBranchName());
   head_file << commit_hash << std::endl;
   head_file.close();
 
   // Insert commit record into history
-  insertCommitRecordToHistory(commit_hash, getCurrentBranch());
+  insertCommitRecordToHistory(commit_hash, getCurrentBranchName());
 
   std::cout << "Created merge commit: " << commit_hash << std::endl;
 }

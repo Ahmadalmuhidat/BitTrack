@@ -115,7 +115,7 @@ void status()
   }
 }
 
-void stageFile(int argc, const char *argv[], int &i)
+void stageFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -134,7 +134,7 @@ void stageFile(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("stage file")
 }
 
-void unstageFiles(int argc, const char *argv[], int &i)
+void unstageFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -153,7 +153,7 @@ void unstageFiles(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("unstage file")
 }
 
-void showStagedFilesHashes()
+void stagedFilesHashesFlag()
 {
   std::vector<std::string> staged_files = getStagedFiles();
 
@@ -171,7 +171,7 @@ void showStagedFilesHashes()
   }
 }
 
-void showCommitHistory()
+void commitsHistoryFlag()
 {
   std::cout << "Commit history:" << std::endl;
 
@@ -188,13 +188,13 @@ void showCommitHistory()
   }
 }
 
-void removeCurrentRepo()
+void removeRepositoryFlag()
 {
   ErrorHandler::safeRemoveFolder(".bittrack");
   std::cout << "Repository removed." << std::endl;
 }
 
-void branchOperations(int argc, const char *argv[], int &i)
+void branchFlag(int argc, const char *argv[], int &i)
 {
   VALIDATE_ARGS(argc, i + 2, "--branch");
 
@@ -203,7 +203,7 @@ void branchOperations(int argc, const char *argv[], int &i)
   if (subFlag == "-l")
   {
     std::vector<std::string> branches = getBranchesList();
-    std::string current_branch = getCurrentBranch();
+    std::string current_branch = getCurrentBranchName();
 
     for (const auto &branch : branches)
     {
@@ -253,7 +253,7 @@ void branchOperations(int argc, const char *argv[], int &i)
     std::string name = argv[++i];
     VALIDATE_BRANCH_NAME(name);
 
-    showBranchInfo(name);
+    printBranchInfo(name);
   }
   else if (subFlag == "-h")
   {
@@ -262,7 +262,7 @@ void branchOperations(int argc, const char *argv[], int &i)
     std::string name = argv[++i];
     VALIDATE_BRANCH_NAME(name);
 
-    showBranchHistory(name);
+    printBranchHistory(name);
   }
   else if (subFlag == "-merge")
   {
@@ -304,7 +304,7 @@ void branchOperations(int argc, const char *argv[], int &i)
   }
 }
 
-void remoteOperations(int argc, const char *argv[], int &i)
+void remoteFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -313,7 +313,7 @@ void remoteOperations(int argc, const char *argv[], int &i)
 
     if (subFlag == "-v")
     {
-      std::string remote = getRemoteOrigin();
+      std::string remote = getRemoteOriginUrl();
       if (remote.empty())
       {
         std::cout << "No remote origin set" << std::endl;
@@ -389,13 +389,13 @@ void remoteOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("remote operations")
 }
 
-void checkout(const char *argv[], int &i)
+void checkoutFlag(const char *argv[], int &i)
 {
   try
   {
     std::string name = argv[++i];
     VALIDATE_BRANCH_NAME(name);
-    switchBranch(name);
+    checkoutToBranch(name);
   }
   catch (const BitTrackError &e)
   {
@@ -405,7 +405,7 @@ void checkout(const char *argv[], int &i)
   HANDLE_EXCEPTION("checkout")
 }
 
-void diffOperations(int argc, const char *argv[], int &i)
+void diffFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -415,31 +415,31 @@ void diffOperations(int argc, const char *argv[], int &i)
 
       if (subFlag == "--staged")
       {
-        DiffResult result = diffStaged();
-        show_diff(result);
+        DiffResult result = diffStagedFiles();
+        printDiff(result);
       }
       else if (subFlag == "--unstaged")
       {
-        DiffResult result = diff_unstaged();
-        show_diff(result);
+        DiffResult result = diffUnstagedFiles();
+        printDiff(result);
       }
       else if (i + 1 < argc)
       {
         std::string file1 = subFlag;
         std::string file2 = argv[++i];
-        DiffResult result = compareFiles(file1, file2);
-        show_diff(result);
+        DiffResult result = compareTwoFiles(file1, file2);
+        printDiff(result);
       }
       else
       {
         DiffResult result = diffWorkingDirectory();
-        show_diff(result);
+        printDiff(result);
       }
     }
     else
     {
       DiffResult result = diffWorkingDirectory();
-      show_diff(result);
+      printDiff(result);
     }
   }
   catch (const BitTrackError &e)
@@ -450,7 +450,7 @@ void diffOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("diff operations")
 }
 
-void stashOperations(int argc, const char *argv[], int &i)
+void stashFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -511,7 +511,7 @@ void stashOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("stash operations")
 }
 
-void configOperations(int argc, const char *argv[], int &i)
+void configFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -556,7 +556,7 @@ void configOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("config operations")
 }
 
-void tagOperations(int argc, const char *argv[], int &i)
+void tagFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -606,7 +606,7 @@ void tagOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("tag operations")
 }
 
-void hooksOperations(int argc, const char *argv[], int &i)
+void hooksFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -616,7 +616,7 @@ void hooksOperations(int argc, const char *argv[], int &i)
 
       if (subFlag == "list")
       {
-        listHooks();
+        printHooks();
       }
       else if (subFlag == "install" && i + 1 < argc)
       {
@@ -708,7 +708,7 @@ void hooksOperations(int argc, const char *argv[], int &i)
     }
     else
     {
-      listHooks();
+      printHooks();
     }
   }
   catch (const BitTrackError &e)
@@ -719,7 +719,7 @@ void hooksOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("hooks operations")
 }
 
-void maintenanceOperations(int argc, const char *argv[], int &i)
+void maintenanceFlag(int argc, const char *argv[], int &i)
 {
   try
   {
@@ -777,7 +777,7 @@ void maintenanceOperations(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("maintenance operations")
 }
 
-void printHelp()
+void helpFlag()
 {
   std::cout << "BitTrack - Lightweight Version Control\n\n";
   std::cout << "Usage:\n";
@@ -837,8 +837,8 @@ void printHelp()
   std::cout << "           -s <url>           set remote URL\n";
   std::cout << "           -l                 list remote branches\n";
   std::cout << "           -d <branch>        delete remote branch\n";
-  std::cout << "  --push [remote] [branch]    push current commit to remote\n";
-  std::cout << "  --pull [remote] [branch]    pull changes from remote\n";
+  std::cout << "  --push                      push current commit to remote\n";
+  std::cout << "  --pull                      pull changes from remote\n";
   std::cout << "  --clone <url> [path]        clone a repository from remote URL\n";
   std::cout << "  --fetch [remote]            fetch changes from remote repository\n";
   std::cout << "  --help                      show this help menu\n";
@@ -850,7 +850,7 @@ int main(int argc, const char *argv[])
   {
     if (argc == 1 || std::string(argv[1]) == "--help")
     {
-      printHelp();
+      helpFlag();
       return 0;
     }
 
@@ -863,6 +863,32 @@ int main(int argc, const char *argv[])
         init();
         break;
       }
+
+      if (arg == "--clone")
+      {
+        try
+        {
+          VALIDATE_ARGS(argc, i + 2, "--clone");
+
+          std::string url = argv[++i];
+          std::string local_path = "";
+
+          if (i + 1 < argc && argv[i + 1][0] != '-')
+          {
+            local_path = argv[++i];
+          }
+
+          cloneRepository(url, local_path);
+        }
+        catch (const BitTrackError &e)
+        {
+          ErrorHandler::printError(e);
+          throw;
+        }
+        HANDLE_EXCEPTION("clone")
+        break;
+      }
+
       if (!ErrorHandler::validateRepository())
       {
         throw BitTrackError(
@@ -879,12 +905,12 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--stage")
       {
-        stageFile(argc, argv, i);
+        stageFlag(argc, argv, i);
         break;
       }
       else if (arg == "--unstage")
       {
-        unstageFiles(argc, argv, i);
+        unstageFlag(argc, argv, i);
         break;
       }
       else if (arg == "--commit")
@@ -929,7 +955,7 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--staged-files-hashes")
       {
-        showStagedFilesHashes();
+        stagedFilesHashesFlag();
         break;
       }
       else if (arg == "--current-commit")
@@ -939,78 +965,64 @@ int main(int argc, const char *argv[])
       }
       else if (arg == "--log")
       {
-        showCommitHistory();
+        commitsHistoryFlag();
         break;
       }
       else if (arg == "--remove-repo")
       {
-        removeCurrentRepo();
+        removeRepositoryFlag();
         break;
       }
       else if (arg == "--branch")
       {
-        branchOperations(argc, argv, i);
+        branchFlag(argc, argv, i);
         break;
       }
       else if (arg == "--diff")
       {
-        diffOperations(argc, argv, i);
+        diffFlag(argc, argv, i);
         break;
       }
       else if (arg == "--stash")
       {
-        stashOperations(argc, argv, i);
+        stashFlag(argc, argv, i);
         break;
       }
       else if (arg == "--config")
       {
-        configOperations(argc, argv, i);
+        configFlag(argc, argv, i);
         break;
       }
       else if (arg == "--tag")
       {
-        tagOperations(argc, argv, i);
+        tagFlag(argc, argv, i);
         break;
       }
       else if (arg == "--hooks")
       {
-        hooksOperations(argc, argv, i);
+        hooksFlag(argc, argv, i);
         break;
       }
       else if (arg == "--maintenance")
       {
-        maintenanceOperations(argc, argv, i);
+        maintenanceFlag(argc, argv, i);
         break;
       }
       else if (arg == "--remote")
       {
-        remoteOperations(argc, argv, i);
+        remoteFlag(argc, argv, i);
         break;
       }
       else if (arg == "--checkout")
       {
-        checkout(argv, i);
+        checkoutFlag(argv, i);
         break;
       }
       else if (arg == "--push")
       {
         try
         {
-          std::string remote_name = "origin";
-          std::string branch_name = getCurrentBranch();
-
-          if (i + 1 < argc && argv[i + 1][0] != '-')
-          {
-            remote_name = argv[++i];
-          }
-
-          if (i + 1 < argc && argv[i + 1][0] != '-')
-          {
-            branch_name = argv[++i];
-            VALIDATE_BRANCH_NAME(branch_name);
-          }
-
-          pushToRemote(remote_name, branch_name);
+          push("origin");
         }
         catch (const BitTrackError &e)
         {
@@ -1024,21 +1036,7 @@ int main(int argc, const char *argv[])
       {
         try
         {
-          std::string remote_name = "origin";
-          std::string branch_name = getCurrentBranch();
-
-          if (i + 1 < argc && argv[i + 1][0] != '-')
-          {
-            remote_name = argv[++i];
-          }
-
-          if (i + 1 < argc && argv[i + 1][0] != '-')
-          {
-            branch_name = argv[++i];
-            VALIDATE_BRANCH_NAME(branch_name);
-          }
-
-          pullFromRemote(remote_name, branch_name);
+          pull("origin");
         }
         catch (const BitTrackError &e)
         {
@@ -1046,30 +1044,6 @@ int main(int argc, const char *argv[])
           throw;
         }
         HANDLE_EXCEPTION("pull")
-        break;
-      }
-      else if (arg == "--clone")
-      {
-        try
-        {
-          VALIDATE_ARGS(argc, i + 2, "--clone");
-
-          std::string url = argv[++i];
-          std::string local_path = "";
-
-          if (i + 1 < argc && argv[i + 1][0] != '-')
-          {
-            local_path = argv[++i];
-          }
-
-          cloneRepository(url, local_path);
-        }
-        catch (const BitTrackError &e)
-        {
-          ErrorHandler::printError(e);
-          throw;
-        }
-        HANDLE_EXCEPTION("clone")
         break;
       }
       else if (arg == "--fetch")

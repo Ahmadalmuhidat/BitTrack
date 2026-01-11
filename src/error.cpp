@@ -5,7 +5,11 @@ void ErrorHandler::printError(const BitTrackError &error)
   printError(error.getCode(), error.what(), error.getSeverity(), error.getContext());
 }
 
-void ErrorHandler::printError(ErrorCode code, const std::string &message, ErrorSeverity severity, const std::string &context)
+void ErrorHandler::printError(
+    ErrorCode code,
+    const std::string &message,
+    ErrorSeverity severity,
+    const std::string &context)
 {
   std::string color;
   std::string severityStr;
@@ -151,7 +155,9 @@ std::string ErrorHandler::getErrorMessage(ErrorCode code)
   }
 }
 
-void ErrorHandler::handleFilesystemError(const std::filesystem::filesystem_error &e, const std::string &operation)
+void ErrorHandler::handleFilesystemError(
+    const std::filesystem::filesystem_error &e,
+    const std::string &operation)
 {
   std::string errorMsg = "Filesystem error during " + operation + ": " + e.what();
 
@@ -173,7 +179,10 @@ void ErrorHandler::handleFilesystemError(const std::filesystem::filesystem_error
   }
 }
 
-bool ErrorHandler::validateArguments(int argc, int expected, const std::string &command)
+bool ErrorHandler::validateArguments(
+    int argc,
+    int expected,
+    const std::string &command)
 {
   if (argc < expected)
   {
@@ -337,7 +346,9 @@ bool ErrorHandler::safeCreateDirectories(const std::filesystem::path &path)
   }
 }
 
-bool ErrorHandler::safeCopyFile(const std::filesystem::path &from, const std::filesystem::path &to)
+bool ErrorHandler::safeCopyFile(
+    const std::filesystem::path &from,
+    const std::filesystem::path &to)
 {
   try
   {
@@ -432,7 +443,9 @@ bool ErrorHandler::safeRemoveFolder(const std::filesystem::path &path)
   }
 }
 
-bool ErrorHandler::safeWriteFile(const std::filesystem::path &path, const std::string &content)
+bool ErrorHandler::safeWriteFile(
+    const std::filesystem::path &path,
+    const std::string &content)
 {
   try
   {
@@ -472,7 +485,9 @@ bool ErrorHandler::safeWriteFile(const std::filesystem::path &path, const std::s
   }
 }
 
-bool ErrorHandler::safeAppendFile(const std::filesystem::path &path, const std::string &content)
+bool ErrorHandler::safeAppendFile(
+    const std::filesystem::path &path,
+    const std::string &content)
 {
   try
   {
@@ -512,7 +527,9 @@ bool ErrorHandler::safeAppendFile(const std::filesystem::path &path, const std::
   }
 }
 
-bool ErrorHandler::safeRename(const std::filesystem::path &from, const std::filesystem::path &to)
+bool ErrorHandler::safeRename(
+    const std::filesystem::path &from,
+    const std::filesystem::path &to)
 {
   try
   {
@@ -647,9 +664,9 @@ std::vector<std::filesystem::path> ErrorHandler::safeListDirectoryFiles(const st
     {
       if (entry.is_regular_file())
       {
-        std::filesystem::path relativePath =
+        std::filesystem::path relative_Path =
             std::filesystem::relative(entry.path(), path);
-        files.push_back(relativePath);
+        files.push_back(relative_Path);
       }
     }
 

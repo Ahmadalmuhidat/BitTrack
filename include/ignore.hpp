@@ -58,16 +58,21 @@ private:
 };
 
 std::vector<std::string> readBitignore(const std::string &filePath);
-std::vector<IgnorePattern>
-parseIgnorePatterns(const std::vector<std::string> &raw_patterns);
-bool isFileIgnoredByIgnorePatterns(const std::string &filePath, const std::vector<IgnorePattern> &patterns);
+std::vector<IgnorePattern> parseIgnorePatterns(const std::vector<std::string> &raw_patterns);
+bool isFileIgnoredByIgnorePatterns(
+    const std::string &filePath,
+    const std::vector<IgnorePattern> &patterns);
 bool shouldIgnoreFile(const std::string &file_path);
 std::string normalizePath(const std::string &path);
-bool matchesPattern(const std::string &filePath, const IgnorePattern &pattern);
+bool matchesPattern(
+    const std::string &filePath,
+    const IgnorePattern &pattern);
 void createDefaultBitignore();
 void addIgnorePattern(const std::string &pattern);
 void removeIgnorePattern(const std::string &pattern);
 void listIgnorePatterns();
-bool isFileIgnoredByPatterns(const std::string &file_path, const std::vector<std::string> &patterns);
+bool isFileIgnoredByPatterns(
+    const std::string &file_path,
+    const std::vector<std::string> &patterns);
 
 #endif

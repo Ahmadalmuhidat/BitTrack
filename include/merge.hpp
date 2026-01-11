@@ -35,26 +35,46 @@ struct MergeConflict
   std::string conflict_type;                 // type of conflict (e.g., content, binary)
   std::vector<std::string> conflict_markers; // conflict markers in the file
 
-  MergeConflict(const std::string &path, const std::string &type) : file_path(path), conflict_type(type) {}
+  MergeConflict(
+      const std::string &path,
+      const std::string &type) : file_path(path), conflict_type(type) {}
 };
 
-MergeResult mergeBranches(const std::string &source_branch, const std::string &target_branch);
-MergeResult mergeCommits(const std::string &commit1, const std::string &commit2);
-MergeResult threeWayMerge(const std::string &base, const std::string &ours, const std::string &theirs);
+MergeResult mergeBranches(
+    const std::string &source_branch,
+    const std::string &target_branch);
+MergeResult mergeCommits(
+    const std::string &commit1,
+    const std::string &commit2);
+MergeResult threeWayMerge(
+    const std::string &base,
+    const std::string &ours,
+    const std::string &theirs);
 bool hasConflicts();
 void showConflicts();
 std::vector<std::string> getConflictedFiles();
 void abortMerge();
 void continueMerge();
-void writeConflict(const std::string &path, const std::string &ours, const std::string &theirs);
-std::string findMergeBase(const std::string &commit1, const std::string &commit2);
-bool isAncestor(const std::string &ancestor, const std::string &descendant);
-bool isFastForward(const std::string &source, const std::string &target);
+void writeConflict(
+    const std::string &path,
+    const std::string &ours,
+    const std::string &theirs);
+std::string findMergeBase(
+    const std::string &commit1,
+    const std::string &commit2);
+bool isAncestor(
+    const std::string &ancestor,
+    const std::string &descendant);
+bool isFastForward(
+    const std::string &source,
+    const std::string &target);
 void saveMergeState(const MergeResult &result);
 MergeResult loadMergeState();
 void clearMergeState();
 bool isMergeInProgress();
 std::vector<std::string> getCommitFiles(const std::string &commit_hash);
-void createMergeCommit(const std::string &message, const std::vector<std::string> &parents);
+void createMergeCommit(
+    const std::string &message,
+    const std::vector<std::string> &parents);
 
 #endif

@@ -13,8 +13,8 @@ void stashChanges(const std::string &message)
   // Create stash entry
   StashEntry entry;
   entry.id = generateStashId();
-  entry.message = message.empty() ? "WIP on " + getCurrentBranch() : message;
-  entry.branch = getCurrentBranch();
+  entry.message = message.empty() ? "WIP on " + getCurrentBranchName() : message;
+  entry.branch = getCurrentBranchName();
   entry.commit_hash = getCurrentCommit();
   entry.timestamp = std::time(nullptr);
   entry.files = staged_files;

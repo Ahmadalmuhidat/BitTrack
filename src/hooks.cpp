@@ -1,6 +1,8 @@
 #include "../include/hooks.hpp"
 
-void installHook(HookType type, const std::string &script_path)
+void installHook(
+    HookType type,
+    const std::string &script_path)
 {
   // Check if the script file exists
   if (!std::filesystem::exists(script_path))
@@ -38,7 +40,7 @@ void uninstallHook(HookType type)
   }
 }
 
-void listHooks()
+void printHooks()
 {
   // List all hooks in the hooks directory
   std::string hooks_dir = getHooksDir();
@@ -74,7 +76,9 @@ void listHooks()
   }
 }
 
-HookResult runHook(HookType type, const std::vector<std::string> &args)
+HookResult runHook(
+    HookType type,
+    const std::vector<std::string> &args)
 {
   // Get the hook path
   std::string hook_path = getHookPath(type);
@@ -98,10 +102,12 @@ HookResult runHook(HookType type, const std::vector<std::string> &args)
     return result;
   }
 
-  return execute_hook(hook_path, args);
+  return executeHook(hook_path, args);
 }
 
-void runAllHooks(const std::string &event, const std::vector<std::string> &args)
+void executeAllHooks(
+    const std::string &event,
+    const std::vector<std::string> &args)
 {
   // Run all hooks matching the event prefix
   std::string hooks_dir = getHooksDir();
@@ -124,7 +130,7 @@ void runAllHooks(const std::string &event, const std::vector<std::string> &args)
       if (hook_name.find(event) == 0)
       {
         // Execute the hook
-        HookResult result = execute_hook(entry.path().string(), args);
+        HookResult result = executeHook(entry.path().string(), args);
 
         // Check for execution errors
         if (!result.success)
@@ -152,24 +158,23 @@ void createPreCommitHook()
   std::string hook_path = getHookPath(HookType::PRE_COMMIT);
   ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
   ErrorHandler::safeWriteFile(
-    hook_path,
-    "#!/bin/bash\n"
-    "# Pre-commit hook\n"
-    "echo \"Running pre-commit checks...\"\n"
-    "\n"
-    "# Check for TODO comments\n"
-    "if grep -r \"TODO\\|FIXME\" . --exclude-dir=.bittrack; then\n"
-    "  echo \"Warning: Found TODO/FIXME comments\"\n"
-    "fi\n"
-    "\n"
-    "# Check for large files\n"
-    "find . -name \"*.txt\" -size +1M -not -path \"./.bittrack/*\" | while read file; do\n"
-    "  echo \"Warning: Large file detected: $file\"\n"
-    "done\n"
-    "\n"
-    "echo \"Pre-commit checks completed.\"\n"
-    "exit 0\n"
-  );
+      hook_path,
+      "#!/bin/bash\n"
+      "# Pre-commit hook\n"
+      "echo \"Running pre-commit checks...\"\n"
+      "\n"
+      "# Check for TODO comments\n"
+      "if grep -r \"TODO\\|FIXME\" . --exclude-dir=.bittrack; then\n"
+      "  echo \"Warning: Found TODO/FIXME comments\"\n"
+      "fi\n"
+      "\n"
+      "# Check for large files\n"
+      "find . -name \"*.txt\" -size +1M -not -path \"./.bittrack/*\" | while read file; do\n"
+      "  echo \"Warning: Large file detected: $file\"\n"
+      "done\n"
+      "\n"
+      "echo \"Pre-commit checks completed.\"\n"
+      "exit 0\n");
 
   makeHookExecutable(hook_path);
 }
@@ -179,22 +184,21 @@ void createPostCommitHook()
   std::string hook_path = getHookPath(HookType::POST_COMMIT);
   ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
   ErrorHandler::safeWriteFile(
-    hook_path,
-    "#!/bin/bash\n"
-    "# Post-commit hook\n"
-    "echo \"Post-commit actions...\"\n"
-    "\n"
-    "# Update commit count\n"
-    "if [ -f .bittrack/commit_count ]; then\n"
-    "  count=$(cat .bittrack/commit_count)\n"
-    "  echo $((count + 1)) > .bittrack/commit_count\n"
-    "else\n"
-    "  echo \"1\" > .bittrack/commit_count\n"
-    "fi\n"
-    "\n"
-    "echo \"Commit completed successfully.\"\n"
-    "exit 0\n"
-  );
+      hook_path,
+      "#!/bin/bash\n"
+      "# Post-commit hook\n"
+      "echo \"Post-commit actions...\"\n"
+      "\n"
+      "# Update commit count\n"
+      "if [ -f .bittrack/commit_count ]; then\n"
+      "  count=$(cat .bittrack/commit_count)\n"
+      "  echo $((count + 1)) > .bittrack/commit_count\n"
+      "else\n"
+      "  echo \"1\" > .bittrack/commit_count\n"
+      "fi\n"
+      "\n"
+      "echo \"Commit completed successfully.\"\n"
+      "exit 0\n");
 
   makeHookExecutable(hook_path);
 }
@@ -204,29 +208,30 @@ void createPrePushHook()
   std::string hook_path = getHookPath(HookType::PRE_PUSH);
   ErrorHandler::safeCreateDirectories(std::filesystem::path(hook_path).parent_path().string());
   ErrorHandler::safeWriteFile(
-    hook_path,
-    "#!/bin/bash\n"
-    "# Pre-push hook\n"
-    "echo \"Running pre-push checks...\"\n"
-    "\n"
-    "# Check if tests pass\n"
-    "if [ -f Makefile ] && grep -q \"test\" Makefile; then\n"
-    "  echo \"Running tests...\"\n"
-    "  make test\n"
-    "  if [ $? -ne 0 ]; then\n"
-    "    echo \"Error: Tests failed. Push aborted.\"\n"
-    "    exit 1\n"
-    "  fi\n"
-    "fi\n"
-    "\n"
-    "echo \"Pre-push checks completed.\"\n"
-    "exit 0\n"
-  );
+      hook_path,
+      "#!/bin/bash\n"
+      "# Pre-push hook\n"
+      "echo \"Running pre-push checks...\"\n"
+      "\n"
+      "# Check if tests pass\n"
+      "if [ -f Makefile ] && grep -q \"test\" Makefile; then\n"
+      "  echo \"Running tests...\"\n"
+      "  make test\n"
+      "  if [ $? -ne 0 ]; then\n"
+      "    echo \"Error: Tests failed. Push aborted.\"\n"
+      "    exit 1\n"
+      "  fi\n"
+      "fi\n"
+      "\n"
+      "echo \"Pre-push checks completed.\"\n"
+      "exit 0\n");
 
   makeHookExecutable(hook_path);
 }
 
-HookResult execute_hook(const std::string &hook_path, const std::vector<std::string> &args)
+HookResult executeHook(
+    const std::string &hook_path,
+    const std::vector<std::string> &args)
 {
   HookResult result;
 
@@ -331,21 +336,4 @@ void initializeHookNames()
     hook_names[HookType::PRE_BRANCH] = "pre-branch";
     hook_names[HookType::POST_BRANCH] = "post-branch";
   }
-}
-
-std::string getEventName(HookType type)
-{
-  initializeHookNames();
-  std::string hook_name = hook_names[type];
-
-  if (hook_name.find("pre-") == 0)
-  {
-    return hook_name.substr(4);
-  }
-  else if (hook_name.find("post-") == 0)
-  {
-    return hook_name.substr(5);
-  }
-
-  return hook_name;
 }

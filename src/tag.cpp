@@ -1,6 +1,9 @@
 #include "../include/tag.hpp"
 
-void tagCreate(const std::string &name, const std::string &commit_hash, bool annotated)
+void tagCreate(
+    const std::string &name,
+    const std::string &commit_hash,
+    bool annotated)
 {
   // Check if tag already exists
   if (tagExists(name))
@@ -223,12 +226,13 @@ void tagSave(const Tag &tag)
   // Write annotated tag format
   if (tag.type == TagType::ANNOTATED)
   {
-    ErrorHandler::safeWriteFile(tag_file,
-                                "object " + tag.commit_hash + "\n" +
-                                    "type commit\n" +
-                                    "tag " + tag.name + "\n" +
-                                    "tagger " + tag.author + " " + std::to_string(tag.timestamp) + "\n\n" +
-                                    tag.message);
+    ErrorHandler::safeWriteFile(
+        tag_file,
+        "object " + tag.commit_hash + "\n" +
+            "type commit\n" +
+            "tag " + tag.name + "\n" +
+            "tagger " + tag.author + " " + std::to_string(tag.timestamp) + "\n\n" +
+            tag.message);
   }
   else
   {

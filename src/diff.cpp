@@ -1,6 +1,8 @@
 #include "../include/diff.hpp"
 
-DiffResult compareFiles(const std::string &file1, const std::string &file2)
+DiffResult compareTwoFiles(
+    const std::string &file1,
+    const std::string &file2)
 {
   // Initialize result
   DiffResult result(file1, file2);
@@ -27,7 +29,9 @@ DiffResult compareFiles(const std::string &file1, const std::string &file2)
   return result;
 }
 
-DiffResult compareFileToContent(const std::string &file, const std::string &content)
+DiffResult compareFileWithContent(
+    const std::string &file,
+    const std::string &content)
 {
   // Initialize result
   DiffResult result(file, "<content>");
@@ -62,7 +66,7 @@ DiffResult compareFileToContent(const std::string &file, const std::string &cont
   return result;
 }
 
-DiffResult diffStaged()
+DiffResult diffStagedFiles()
 {
   // Initialize result
   DiffResult result("last commit", "staged");
@@ -136,7 +140,7 @@ DiffResult diffStaged()
     // Compare staged file to last commit
     if (std::filesystem::exists(commit_file))
     {
-      DiffResult file_diff = compareFiles(commit_file, file);
+      DiffResult file_diff = compareTwoFiles(commit_file, file);
 
       // Adjust hunk headers to include file name
       for (const auto &hunk : file_diff.hunks)
@@ -192,7 +196,7 @@ DiffResult diffStaged()
   return result;
 }
 
-DiffResult diff_unstaged()
+DiffResult diffUnstagedFiles()
 {
   // Initialize result
   DiffResult result("working", "staged");
@@ -215,7 +219,7 @@ DiffResult diff_unstaged()
 
     // Get staged content
     std::string staged_content = getStagedFileContent(file);
-    DiffResult file_diff = compareFileToContent(file, staged_content);
+    DiffResult file_diff = compareFileWithContent(file, staged_content);
 
     // Adjust hunk headers to include file name
     for (const auto &hunk : file_diff.hunks)
@@ -284,7 +288,7 @@ DiffResult diffWorkingDirectory()
     if (std::filesystem::exists(commit_file))
     {
       // Compare working file to last commit
-      DiffResult file_diff = compareFiles(file, commit_file);
+      DiffResult file_diff = compareTwoFiles(file, commit_file);
 
       // Adjust hunk headers to include file name
       for (const auto &hunk : file_diff.hunks)
@@ -321,7 +325,7 @@ DiffResult diffWorkingDirectory()
   return result;
 }
 
-void show_diff(const DiffResult &result)
+void printDiff(const DiffResult &result)
 {
   // Handle binary files
   if (result.is_binary)
@@ -408,7 +412,9 @@ std::vector<std::string> readFileLines(const std::string &file_path)
   return lines;
 }
 
-std::vector<DiffHunk> computeHunks(const std::vector<std::string> &old_lines, const std::vector<std::string> &new_lines)
+std::vector<DiffHunk> computeHunks(
+    const std::vector<std::string> &old_lines,
+    const std::vector<std::string> &new_lines)
 {
   // Compute diff lines
   std::vector<DiffHunk> hunks;
@@ -473,7 +479,9 @@ std::vector<DiffHunk> computeHunks(const std::vector<std::string> &old_lines, co
   return hunks;
 }
 
-std::vector<DiffLine> computeDiffLines(const std::vector<std::string> &old_lines, const std::vector<std::string> &new_lines)
+std::vector<DiffLine> computeDiffLines(
+    const std::vector<std::string> &old_lines,
+    const std::vector<std::string> &new_lines)
 {
   // Compute diff lines using a simple line-by-line comparison
   std::vector<DiffLine> diff_lines;
@@ -515,7 +523,9 @@ std::vector<DiffLine> computeDiffLines(const std::vector<std::string> &old_lines
   return diff_lines;
 }
 
-void printDiffLine(const DiffLine &line, const std::string &prefix)
+void printDiffLine(
+    const DiffLine &line,
+    const std::string &prefix)
 {
   std::cout << prefix << getDiffLinePrefix(line.type) << line.content << std::endl;
 }

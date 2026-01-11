@@ -147,7 +147,7 @@ void fsckRepository()
 void showRepositoryInfo()
 {
   std::cout << "Repository Information:" << std::endl;
-  std::cout << "  Current branch: " << getCurrentBranch() << std::endl;
+  std::cout << "  Current branch: " << getCurrentBranchName() << std::endl;
   std::cout << "  Current commit: " << getCurrentCommit() << std::endl;
 
   size_t total_size = 0;

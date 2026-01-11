@@ -14,7 +14,10 @@
 #include <openssl/sha.h>
 
 std::string toHexString(unsigned char *hash, std::size_t length);
-std::string generateCommitHashWithFiles(const std::string &author, const std::string &commitMessage, const std::unordered_map<std::string, std::string> &fileHashes);
+std::string generateCommitHash(
+    const std::string &author,
+    const std::string &commitMessage,
+    const std::unordered_map<std::string, std::string> &fileHashes);
 std::string calculateFileHash(const std::string &file_path);
 std::string sha256Hash(const std::string &input);
 std::string hashFile(const std::string &file_path);

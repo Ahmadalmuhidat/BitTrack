@@ -33,7 +33,10 @@ struct Tag
   Tag() : type(TagType::LIGHTWEIGHT), timestamp(0) {}
 };
 
-void tagCreate(const std::string &name, const std::string &commit_hash = "", bool annotated = false);
+void tagCreate(
+    const std::string &name,
+    const std::string &commit_hash = "",
+    bool annotated = false);
 void tagList();
 void tagDelete(const std::string &name);
 void tagDetails(const std::string &name);

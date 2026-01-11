@@ -40,13 +40,21 @@ struct HookResult
 
 static std::map<HookType, std::string> hook_names;
 
-void installHook(HookType type, const std::string &script_path);
+void installHook(
+    HookType type,
+    const std::string &script_path);
 void uninstallHook(HookType type);
-void listHooks();
-HookResult runHook(HookType type, const std::vector<std::string> &args = {});
+void printHooks();
+HookResult runHook(
+    HookType type,
+    const std::vector<std::string> &args = {});
 bool hookExists(HookType type);
-HookResult execute_hook(const std::string &hook_path, const std::vector<std::string> &args = {});
-void runAllHooks(const std::string &event, const std::vector<std::string> &args = {});
+HookResult executeHook(
+    const std::string &hook_path,
+    const std::vector<std::string> &args = {});
+void executeAllHooks(
+    const std::string &event,
+    const std::vector<std::string> &args = {});
 void installDefaultHooks();
 void createPreCommitHook();
 void createPostCommitHook();
@@ -56,7 +64,7 @@ std::string getHooksDir();
 std::string getHookName(HookType type);
 bool isHookExecutable(const std::string &hook_path);
 void makeHookExecutable(const std::string &hook_path);
-std::string getEventName(HookType type);
+std::string getHookName(HookType type);
 void initializeHookNames();
 
 #endif

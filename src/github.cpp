@@ -1,12 +1,4 @@
 #include "../include/github.hpp"
-#include "../include/remote.hpp"
-#include <regex>
-
-size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-  ((std::string *)userp)->append((char *)contents, size * nmemb);
-  return size * nmemb;
-}
 
 bool isGithubRemote(const std::string &url)
 {
@@ -14,7 +6,9 @@ bool isGithubRemote(const std::string &url)
   return url.find("github.com") != std::string::npos;
 }
 
-void setGithubCommitMapping(const std::string &bittrack_commit, const std::string &github_commit)
+void setGithubCommitMapping(
+    const std::string &bittrack_commit,
+    const std::string &github_commit)
 {
   std::string mapping = bittrack_commit + " " + github_commit + "\n";
   if (!ErrorHandler::safeAppendFile(".bittrack/github_commits", mapping))
@@ -55,7 +49,10 @@ std::string getGithubCommitForBittrack(const std::string &bittrack_commit)
   return "";
 }
 
-std::string getLatestGithubCommit(const std::string &token, const std::string &username, const std::string &repo_name)
+std::string getLatestGithubCommit(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name)
 {
   CURL *curl = curl_easy_init(); // Initialize CURL
   if (!curl)
@@ -63,7 +60,7 @@ std::string getLatestGithubCommit(const std::string &token, const std::string &u
     return "";
   }
 
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
 
   // Prepare the URL for the latest commit
   std::string response_data;
@@ -104,7 +101,10 @@ std::string getLatestGithubCommit(const std::string &token, const std::string &u
   return "";
 }
 
-std::string extractGithubInfoFromUrl(const std::string &url, std::string &username, std::string &repository)
+std::string extractInfoFromGithubUrl(
+    const std::string &url,
+    std::string &username,
+    std::string &repository)
 {
   // Regex to extract username and repository from GitHub URL
   std::regex github_regex(R"(https?://github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$)");
@@ -121,13 +121,16 @@ std::string extractGithubInfoFromUrl(const std::string &url, std::string &userna
   return "";
 }
 
-bool pushToGithubApi(const std::string &token, const std::string &username, const std::string &repo_name)
+bool pushToGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name)
 {
   try
   {
     // Get current commit and branch
     std::string current_commit = getCurrentCommit();
-    std::string current_branch = getCurrentBranch();
+    std::string current_branch = getCurrentBranchName();
 
     if (current_commit.empty())
     {
@@ -148,7 +151,7 @@ bool pushToGithubApi(const std::string &token, const std::string &username, cons
     }
 
     // Get the last commit SHA on GitHub
-    std::string parent_sha = getGithubLastCommitSha(token, username, repo_name, "heads/" + current_branch);
+    std::string parent_sha = getGithubLastCommithash(token, username, repo_name, "heads/" + current_branch);
     bool branch_exists = !parent_sha.empty();
     bool is_empty_repo = false;
 
@@ -157,10 +160,10 @@ bool pushToGithubApi(const std::string &token, const std::string &username, cons
       // Branch does not exist. Check if repository is empty by checking for
       // main branch.
       std::string main_ref =
-          getGithubLastCommitSha(token, username, repo_name, "heads/main");
+          getGithubLastCommithash(token, username, repo_name, "heads/main");
       if (main_ref.empty())
       {
-        main_ref = getGithubLastCommitSha(token, username, repo_name, "heads/master");
+        main_ref = getGithubLastCommithash(token, username, repo_name, "heads/master");
       }
       is_empty_repo = main_ref.empty();
 
@@ -418,6 +421,13 @@ bool pushToGithubApi(const std::string &token, const std::string &username, cons
 
     std::string author_name = getCommitAuthor(current_commit);         // Get author name
     std::string author_email = getCommitAuthorEmail(current_commit);   // Get author email
+
+    if (author_email.empty())
+    {
+      std::cout << "[WARNING] user.email is not configured. GitHub might reject this commit." << std::endl;
+      std::cout << "Configure it with: ./bittrack --config user.email your@email.com" << std::endl;
+    }
+
     std::string commit_timestamp = getCommitTimestamp(current_commit); // Get commit timestamp
     std::string new_commit_sha = createGithubCommit(
         token,
@@ -445,7 +455,7 @@ bool pushToGithubApi(const std::string &token, const std::string &username, cons
 
     if (branch_exists)
     {
-      if (updateGithubReferance(token, username, repo_name, "heads/" + current_branch, last_commit_sha)) // Update branch reference
+      if (!updateGithubReferance(token, username, repo_name, "heads/" + current_branch, last_commit_sha)) // Update branch reference
       {
         ErrorHandler::printError(
             ErrorCode::REMOTE_CONNECTION_FAILED,
@@ -483,7 +493,11 @@ bool pushToGithubApi(const std::string &token, const std::string &username, cons
   }
 }
 
-std::string createGithubBlob(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &content)
+std::string createGithubBlob(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &content)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -519,6 +533,7 @@ std::string createGithubBlob(const std::string &token, const std::string &userna
             std::string(curl_easy_strerror(res)),
         ErrorSeverity::ERROR,
         "create_github_blob");
+    std::cout << "GitHub API Error Response: " << response_data << std::endl;
     return "";
   }
 
@@ -538,7 +553,12 @@ std::string createGithubBlob(const std::string &token, const std::string &userna
   return "";
 }
 
-std::string createGithubTree(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &blob_sha, const std::string &filename)
+std::string createGithubTree(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &blob_sha,
+    const std::string &filename)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -600,7 +620,11 @@ std::string createGithubTree(const std::string &token, const std::string &userna
   return "";
 }
 
-std::string getGithubCommitTree(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &commit_sha)
+std::string getGithubCommitTree(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &commit_sha)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -647,8 +671,13 @@ std::string getGithubCommitTree(const std::string &token, const std::string &use
   return "";
 }
 
-std::string
-createGithubTreeWithFiles(const std::string &token, const std::string &username, const std::string &repo_name, const std::vector<std::string> &blob_shas, const std::vector<std::string> &file_names, const std::string &base_tree_sha)
+std::string createGithubTreeWithFiles(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::vector<std::string> &blob_shas,
+    const std::vector<std::string> &file_names,
+    const std::string &base_tree_sha)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -729,8 +758,16 @@ createGithubTreeWithFiles(const std::string &token, const std::string &username,
   return "";
 }
 
-std::string
-createGithubCommit(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &tree_sha, const std::string &parent_sha, const std::string &message, const std::string &author_name, const std::string &author_email, const std::string &timestamp)
+std::string createGithubCommit(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tree_sha,
+    const std::string &parent_sha,
+    const std::string &message,
+    const std::string &author_name,
+    const std::string &author_email,
+    const std::string &timestamp)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -783,6 +820,12 @@ createGithubCommit(const std::string &token, const std::string &username, const 
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);     // Set response data storage
 
   CURLcode res = curl_easy_perform(curl); // Perform the request
+
+  if (res != CURLE_OK || response_data.find("\"sha\"") == std::string::npos)
+  {
+    std::cout << "GitHub API Error Response: " << response_data << std::endl;
+  }
+
   curl_slist_free_all(headers);           // Free headers
   curl_easy_cleanup(curl);                // Clean up CURL
 
@@ -811,7 +854,11 @@ createGithubCommit(const std::string &token, const std::string &username, const 
   return "";
 }
 
-std::string getGithubLastCommitSha(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &ref)
+std::string getGithubLastCommithash(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &ref)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -870,7 +917,12 @@ std::string getGithubLastCommitSha(const std::string &token, const std::string &
   return "";
 }
 
-bool updateGithubReferance(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &ref, const std::string &sha)
+bool updateGithubReferance(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &ref,
+    const std::string &sha)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -901,7 +953,12 @@ bool updateGithubReferance(const std::string &token, const std::string &username
   return res == CURLE_OK;
 }
 
-bool createGithubReferance(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &ref, const std::string &sha)
+bool createGithubReferance(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &ref,
+    const std::string &sha)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -946,19 +1003,26 @@ bool createGithubReferance(const std::string &token, const std::string &username
   return false;
 }
 
-bool pullFromGithubApi(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &branch_name)
+bool pullFromGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &branch_name)
 {
   try
   {
     std::string target_branch = branch_name;
     if (target_branch.empty())
     {
-      target_branch = getCurrentBranch();
+      target_branch = getCurrentBranchName();
     }
 
     // Get the latest commit SHA from GitHub
-    std::string latest_commit_sha = getGithubLastCommitSha(
-        token, username, repo_name, "heads/" + target_branch);
+    std::string latest_commit_sha = getGithubLastCommithash(
+        token,
+        username,
+        repo_name,
+        "heads/" + target_branch);
     if (latest_commit_sha.empty())
     {
       // Fallback: try without "heads/" prefix if it fails, or maybe the branch
@@ -968,8 +1032,7 @@ bool pullFromGithubApi(const std::string &token, const std::string &username, co
     }
 
     // Check if we already have this commit
-    std::string commit_data =
-        getGithubCommitData(token, username, repo_name, latest_commit_sha);
+    std::string commit_data = getGithubCommitData(token, username, repo_name, latest_commit_sha);
     if (commit_data.empty())
     {
       ErrorHandler::printError(
@@ -1010,7 +1073,11 @@ bool pullFromGithubApi(const std::string &token, const std::string &username, co
   }
 }
 
-std::string getGithubCommitData(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &commit_sha)
+std::string getGithubCommitData(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &commit_sha)
 {
   // Get commit data from GitHub API
   CURL *curl = curl_easy_init();
@@ -1043,7 +1110,13 @@ std::string getGithubCommitData(const std::string &token, const std::string &use
   return response_data;
 }
 
-bool extractFilesFromGithubCommit(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &commit_sha, const std::string &commit_data, std::vector<std::string> &downloaded_files)
+bool extractFilesFromGithubCommit(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &commit_sha,
+    const std::string &commit_data,
+    std::vector<std::string> &downloaded_files)
 {
   // Extract tree SHA from commit data
   size_t tree_pos = commit_data.find("\"tree\":{\"sha\":\"");
@@ -1071,7 +1144,11 @@ bool extractFilesFromGithubCommit(const std::string &token, const std::string &u
       downloaded_files); // Download files from the tree
 }
 
-std::string getGithubTreeData(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &tree_sha)
+std::string getGithubTreeData(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tree_sha)
 {
   // Get tree data from GitHub API
   CURL *curl = curl_easy_init();
@@ -1104,7 +1181,12 @@ std::string getGithubTreeData(const std::string &token, const std::string &usern
   return response_data;
 }
 
-bool downloadFilesFromGithubTree(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &tree_data, std::vector<std::string> &downloaded_files)
+bool downloadFilesFromGithubTree(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tree_data,
+    std::vector<std::string> &downloaded_files)
 {
   try
   {
@@ -1234,7 +1316,11 @@ bool downloadFilesFromGithubTree(const std::string &token, const std::string &us
   }
 }
 
-std::string getGithubBlobContent(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &blob_sha)
+std::string getGithubBlobContent(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &blob_sha)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -1317,7 +1403,12 @@ bool validateGithubOperationSuccess(const std::string &response_data)
   return false;
 }
 
-bool deleteGithubFile(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &filename, const std::string &message)
+bool deleteGithubFile(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &filename,
+    const std::string &message)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -1413,7 +1504,13 @@ bool deleteGithubFile(const std::string &token, const std::string &username, con
   return validateGithubOperationSuccess(response_data);
 }
 
-bool createGithubFile(const std::string &token, const std::string &username, const std::string &repo_name, const std::string &filename, const std::string &content, const std::string &message)
+bool createGithubFile(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &filename,
+    const std::string &content,
+    const std::string &message)
 {
   CURL *curl = curl_easy_init();
   if (!curl)
@@ -1421,7 +1518,7 @@ bool createGithubFile(const std::string &token, const std::string &username, con
     return false;
   }
 
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
   std::string response_data;                                                                                                           // To store response data
   std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=" + current_branch; // Prepare URL
   std::string base64_content = base64Encode(content);                                                                                  // Base64 encode content
@@ -1465,6 +1562,7 @@ bool createGithubFile(const std::string &token, const std::string &username, con
         "CURL Error: " + std::string(curl_easy_strerror(res)),
         ErrorSeverity::ERROR,
         "create_github_file");
+    std::cout << "GitHub API Error Response: " << response_data << std::endl;
     return false;
   }
 

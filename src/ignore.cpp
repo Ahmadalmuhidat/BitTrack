@@ -110,7 +110,9 @@ std::string normalizePath(const std::string &path)
   return result;
 }
 
-bool matchesPattern(const std::string &filePath, const IgnorePattern &pattern)
+bool matchesPattern(
+    const std::string &filePath,
+    const IgnorePattern &pattern)
 {
   std::string normalized_path = normalizePath(filePath);
 
@@ -190,7 +192,9 @@ std::vector<IgnorePattern> parseIgnorePatterns(const std::vector<std::string> &r
   return patterns;
 }
 
-bool isFileIgnoredByIgnorePatterns(const std::string &filePath, const std::vector<IgnorePattern> &patterns)
+bool isFileIgnoredByIgnorePatterns(
+    const std::string &filePath,
+    const std::vector<IgnorePattern> &patterns)
 {
   if (filePath.empty())
   {
@@ -221,7 +225,9 @@ bool isFileIgnoredByIgnorePatterns(const std::string &filePath, const std::vecto
   return ignored;
 }
 
-bool isFileIgnoredByPatterns(const std::string &file_path, const std::vector<std::string> &patterns)
+bool isFileIgnoredByPatterns(
+    const std::string &file_path,
+    const std::vector<std::string> &patterns)
 {
   try
   {
@@ -253,6 +259,12 @@ bool isFileIgnoredByPatterns(const std::string &file_path, const std::vector<std
 
 bool shouldIgnoreFile(const std::string &file_path)
 {
+  std::string normalized = normalizePath(file_path);
+  if (normalized == ".bittrack" || normalized.find(".bittrack/") == 0 ||  normalized == "bittrack" || normalized == "./bittrack")
+  {
+    return true;
+  }
+
   std::string current_dir = std::filesystem::current_path().string();
   std::string bitignore_path = current_dir + "/.bitignore";
 

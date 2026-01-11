@@ -135,7 +135,9 @@ std::string calculateFileHash(const std::string &file_path)
   return fileHash;
 }
 
-bool isFileUnchangedFromCommit(const std::string &file_path, const std::string &file_hash)
+bool isFileUnchangedFromCommit(
+    const std::string &file_path,
+    const std::string &file_hash)
 {
   // Get the current commit hash
   std::string currentCommit = getCurrentCommit();
@@ -167,11 +169,10 @@ std::unordered_set<std::string> getTrackedFiles()
 {
   // Retrieve the set of tracked files from the current branch's commit history
   std::unordered_set<std::string> trackedFiles;
-  std::string currentBranch = getCurrentBranch();
+  std::string currentBranch = getCurrentBranchName();
 
   // Open the commit history file
-  std::string history_file =
-      ErrorHandler::safeReadFile(".bittrack/commits/history");
+  std::string history_file = ErrorHandler::safeReadFile(".bittrack/commits/history");
   std::istringstream history_file_content(history_file);
 
   // Read each line from the commit history file
@@ -199,8 +200,7 @@ std::unordered_set<std::string> getTrackedFiles()
         {
           // Get the relative path of the file within the commit directory
           std::string filePath = entry.string();
-          std::string relativePath = std::filesystem::relative(filePath, commitDir).string();
-          trackedFiles.insert(relativePath);
+          trackedFiles.insert(filePath);
         }
       }
     }
@@ -208,7 +208,9 @@ std::unordered_set<std::string> getTrackedFiles()
   return trackedFiles;
 }
 
-void stageSingleFile(const std::string &file_path, std::unordered_map<std::string, std::string> &staged_files)
+void stageSingleFile(
+    const std::string &file_path,
+    std::unordered_map<std::string, std::string> &staged_files)
 {
   // Validate the file for staging
   if (!validateFileForStaging(file_path))
@@ -252,7 +254,8 @@ void stageSingleFile(const std::string &file_path, std::unordered_map<std::strin
   }
 }
 
-void stageAllFiles(std::unordered_map<std::string, std::string> &staged_files)
+void stageAllFiles(
+    std::unordered_map<std::string, std::string> &staged_files)
 {
   // Stage all files in the working directory
   std::vector<std::filesystem::path> repository_files = ErrorHandler::safeListDirectoryFiles(".");
@@ -568,8 +571,7 @@ std::vector<std::string> getUnstagedFiles()
         for (const auto &entry : ErrorHandler::safeListDirectoryFiles(commitDir))
         {
           // Get the relative path of the file within the commit directory
-          std::string relativePath = std::filesystem::relative(entry, commitDir).string();
-          committedFiles.insert(relativePath);
+          committedFiles.insert(entry.string());
         }
       }
     }

@@ -1,14 +1,28 @@
 #include "../include/config.hpp"
 
-void configSet(const std::string &key, const std::string &value, ConfigScope scope)
+void configSet(
+    const std::string &key,
+    const std::string &value,
+    ConfigScope scope)
 {
-  // Load existing configuration
+  configLoad();
   setConfigValue(key, value, scope);
-  configSave();
+
+  if (scope == ConfigScope::GLOBAL)
+  {
+    saveGlobal();
+  }
+  else
+  {
+    saveRepo();
+  }
+
   std::cout << "Set " << (scope == ConfigScope::GLOBAL ? "global" : "repository") << " config: " << key << " = " << value << std::endl;
 }
 
-std::string configGet(const std::string &key, ConfigScope scope)
+std::string configGet(
+    const std::string &key,
+    ConfigScope scope)
 {
   // Load existing configuration
   configLoad();
@@ -34,12 +48,11 @@ std::string configGet(const std::string &key, ConfigScope scope)
   }
 }
 
-void configUnset(const std::string &key, ConfigScope scope)
+void configUnset(
+    const std::string &key,
+    ConfigScope scope)
 {
-  // Load existing configuration
   configLoad();
-
-  // Remove the key from the appropriate config map
   if (scope == ConfigScope::GLOBAL)
   {
     global_config.erase(key);
@@ -49,7 +62,15 @@ void configUnset(const std::string &key, ConfigScope scope)
     repository_config.erase(key);
   }
 
-  configSave();
+  if (scope == ConfigScope::GLOBAL)
+  {
+    saveGlobal();
+  }
+  else
+  {
+    saveRepo();
+  }
+
   std::cout << "Unset " << (scope == ConfigScope::GLOBAL ? "global" : "repository") << " config: " << key << std::endl;
 }
 
@@ -92,63 +113,49 @@ void configList(ConfigScope scope)
 
 void configLoad()
 {
-  // Clear existing configurations
-  std::string global_path = getGlobalConfigPath();
+  global_config.clear();
+  repository_config.clear();
 
-  // Load global configuration
+  // Load global
+  std::string global_path = getGlobalConfigPath();
   if (std::filesystem::exists(global_path))
   {
-    std::string file = ErrorHandler::safeReadFile(global_path);
-    std::istringstream file_content(file);
+    std::istringstream file(ErrorHandler::safeReadFile(global_path));
     std::string line;
-
-    // Read each line from the config file
-    while (std::getline(file_content, line))
+    while (std::getline(file, line))
     {
       if (line.empty() || line[0] == '#')
       {
         continue;
       }
 
-      // Parse key-value pairs
-      size_t pos = line.find('=');
+      auto pos = line.find('=');
+
       if (pos != std::string::npos)
       {
-        // Extract key and value
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        global_config[key] = value;
+        global_config[line.substr(0, pos)] = line.substr(pos + 1);
       }
     }
   }
 
-  // Load repository configuration
+  // Load repo
   std::string repo_path = getRepositoryConfigPath();
-
-  // Load repository configuration
   if (std::filesystem::exists(repo_path))
   {
-    // Open the repository config file
-    std::string file = ErrorHandler::safeReadFile(repo_path);
-    std::istringstream file_content(file);
+    std::istringstream file(ErrorHandler::safeReadFile(repo_path));
     std::string line;
-
-    // Read each line from the config file
-    while (std::getline(file_content, line))
+    while (std::getline(file, line))
     {
       if (line.empty() || line[0] == '#')
       {
         continue;
       }
 
-      // Parse key-value pairs
-      size_t pos = line.find('=');
+      auto pos = line.find('=');
+
       if (pos != std::string::npos)
       {
-        // Extract key and value
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        repository_config[key] = value;
+        repository_config[line.substr(0, pos)] = line.substr(pos + 1);
       }
     }
   }
@@ -160,26 +167,32 @@ void configSave()
   std::string global_path = getGlobalConfigPath();
   std::filesystem::create_directories(std::filesystem::path(global_path).parent_path());
 
-  // Open the global config file for writing and write each key-value pair to the config file
-  ErrorHandler::safeWriteFile(global_path, "# BitTrack Global Configuration");
+  std::string global_content = "# BitTrack Global Configuration\n";
   for (const auto &entry : global_config)
   {
-    ErrorHandler::safeWriteFile(global_path, entry.first + "=" + entry.second);
+    global_content += entry.first + "=" + entry.second + "\n";
   }
+  ErrorHandler::safeWriteFile(global_path, global_content);
 
   // Save repository configuration
   std::string repo_path = getRepositoryConfigPath();
-  std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
+  // Ensure the directory exists
+  if (std::filesystem::path(repo_path).has_parent_path())
+  {
+    std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
+  }
 
-  // Open the repository config file for writing and write each key-value pair to the config file
-  ErrorHandler::safeWriteFile(global_path, "# BitTrack Repository Configuration");
+  std::string repo_content = "# BitTrack Repository Configuration\n";
   for (const auto &entry : repository_config)
   {
-    ErrorHandler::safeWriteFile(global_path, entry.first + "=" + entry.second);
+    repo_content += entry.first + "=" + entry.second + "\n";
   }
+  ErrorHandler::safeWriteFile(repo_path, repo_content); 
 }
 
-void setConfigValue(const std::string &key, const std::string &value, ConfigScope scope)
+void setConfigValue(
+    const std::string &key,
+    const std::string &value, ConfigScope scope)
 {
   // Set the key-value pair in the appropriate config map
   if (scope == ConfigScope::GLOBAL)
@@ -206,4 +219,28 @@ std::string getGlobalConfigPath()
 std::string getRepositoryConfigPath()
 {
   return ".bittrack/config";
+}
+
+void saveGlobal()
+{
+  std::string global_path = getGlobalConfigPath();
+  std::filesystem::create_directories(std::filesystem::path(global_path).parent_path());
+
+  std::string content = "# BitTrack Global Configuration\n";
+  for (const auto &entry : global_config)
+    content += entry.first + "=" + entry.second + "\n";
+
+  ErrorHandler::safeWriteFile(global_path, content);
+}
+
+void saveRepo()
+{
+  std::string repo_path = getRepositoryConfigPath();
+  std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
+
+  std::string content = "# BitTrack Repository Configuration\n";
+  for (const auto &entry : repository_config)
+    content += entry.first + "=" + entry.second + "\n";
+
+  ErrorHandler::safeWriteFile(repo_path, content);
 }

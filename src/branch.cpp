@@ -1,6 +1,6 @@
 #include "../include/branch.hpp"
 
-std::string getCurrentBranch()
+std::string getCurrentBranchName()
 {
   // Read the HEAD file to get the current branch name
   std::string line = ErrorHandler::safeReadFirstLine(".bittrack/HEAD");
@@ -26,7 +26,7 @@ std::vector<std::string> getBranchesList()
 void copyCurrentCommitObjectToNewBranch(std::string new_branch_name)
 {
   // Get the current branch and its last commit hash
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
   std::string last_commit_hash = getBranchLastCommitHash(current_branch);
 
   if (current_branch != "" && last_commit_hash != "")
@@ -36,7 +36,10 @@ void copyCurrentCommitObjectToNewBranch(std::string new_branch_name)
   }
 }
 
-bool attemptAutomaticMerge(const std::filesystem::path &first_file, const std::filesystem::path &second_file, const std::string &target_path)
+bool attemptAutomaticMerge(
+    const std::filesystem::path &first_file,
+    const std::filesystem::path &second_file,
+    const std::string &target_path)
 {
   try
   {
@@ -141,7 +144,7 @@ void backupUntrackedFiles()
 {
   // Create backup directory
   ErrorHandler::safeCreateDirectories(".bittrack/untracked_backup");
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
 
   // Iterate through working directory to find untracked files
   for (const auto &entry : ErrorHandler::safeListDirectoryFiles("."))
@@ -314,7 +317,9 @@ void updateWorkingDirectory(const std::string &target_branch)
   }
 }
 
-void renameBranch(const std::string &old_name, const std::string &new_name)
+void renameBranch(
+    const std::string &old_name,
+    const std::string &new_name)
 {
   // Get the list of branches
   std::vector<std::string> branches = getBranchesList();
@@ -368,15 +373,15 @@ void renameBranch(const std::string &old_name, const std::string &new_name)
   }
 
   // update HEAD if the current branch was renamed
-  if (getCurrentBranch() == old_name)
+  if (getCurrentBranchName() == old_name)
   {
     ErrorHandler::safeWriteFile(".bittrack/HEAD", new_name + "\n");
   }
 
-  std::cout << "Renamed branch '" << old_name << "' to '" << new_name << "'"  << std::endl;
+  std::cout << "Renamed branch '" << old_name << "' to '" << new_name << "'" << std::endl;
 }
 
-void showBranchInfo(const std::string &branch_name)
+void printBranchInfo(const std::string &branch_name)
 {
   // Get the list of branches
   std::vector<std::string> branches = getBranchesList();
@@ -393,7 +398,7 @@ void showBranchInfo(const std::string &branch_name)
   }
 
   // gather branch information
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
   std::string last_commit = getBranchLastCommitHash(branch_name);
 
   std::cout << "Branch: " << branch_name << std::endl;
@@ -437,7 +442,7 @@ void addBranch(const std::string &branch_name)
   if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
     // Create new branch file with current commit hash
-    std::string current_branch = getCurrentBranch();
+    std::string current_branch = getCurrentBranchName();
     std::string current_commit = getBranchLastCommitHash(current_branch);
 
     // Create the branch file
@@ -477,7 +482,7 @@ void removeBranch(const std::string &branch_name)
   }
 
   // prevent deletion of the current branch
-  std::string current_branch = getCurrentBranch();
+  std::string current_branch = getCurrentBranchName();
 
   // Check if trying to delete the current branch
   if (current_branch == branch_name)
@@ -504,7 +509,7 @@ void removeBranch(const std::string &branch_name)
   std::cout << "Branch '" << branch_name << "' has been removed." << std::endl;
 }
 
-void switchBranch(const std::string &branch_name)
+void checkoutToBranch(const std::string &branch_name)
 {
   // Get the list of branches
   std::vector<std::string> branches = getBranchesList();
@@ -520,7 +525,7 @@ void switchBranch(const std::string &branch_name)
     return;
   }
   // Check if already in the target branch
-  else if (getCurrentBranch() == branch_name)
+  else if (getCurrentBranchName() == branch_name)
   {
     std::cout << "you are already in " << branch_name << std::endl;
     return;
@@ -567,7 +572,7 @@ void switchBranch(const std::string &branch_name)
   std::cout << "Switched to branch: " << branch_name << std::endl;
 }
 
-bool branchExists(const std::string &branch_name)
+bool isBranchExists(const std::string &branch_name)
 {
   std::vector<std::string> branches = getBranchesList();
   return std::find(branches.begin(), branches.end(), branch_name) != branches.end();
@@ -580,12 +585,14 @@ std::string getBranchLastCommitHash(const std::string &branch_name)
   return ErrorHandler::safeReadFirstLine(branch_path);
 }
 
-void rebaseBranch(const std::string &source_branch, const std::string &target_branch)
+void rebaseBranch(
+    const std::string &source_branch,
+    const std::string &target_branch)
 {
   try
   {
     // validate branches and working directory state
-    if (!branchExists(source_branch))
+    if (!isBranchExists(source_branch))
     {
       ErrorHandler::printError(
           ErrorCode::BRANCH_NOT_FOUND,
@@ -595,7 +602,7 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
       return;
     }
 
-    if (!branchExists(target_branch))
+    if (!isBranchExists(target_branch))
     {
       ErrorHandler::printError(
           ErrorCode::BRANCH_NOT_FOUND,
@@ -618,7 +625,7 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
     }
 
     // Check if currently on source branch
-    std::string current_branch = getCurrentBranch();
+    std::string current_branch = getCurrentBranchName();
     if (current_branch != source_branch)
     {
       ErrorHandler::printError(
@@ -642,7 +649,7 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
     }
 
     // Get commits to rebase from source branch
-    std::vector<std::string> commits_to_rebase = getCommitChain(common_ancestor, source_branch);
+    std::vector<std::string> commits_to_rebase = getCommitsChain(common_ancestor, source_branch);
     if (commits_to_rebase.empty())
     {
       std::cout << "No commits to rebase. Source branch is already up to date." << std::endl;
@@ -668,7 +675,7 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
     try
     {
       // perform the rebase operation
-      switchBranch(target_branch);
+      checkoutToBranch(target_branch);
 
       // apply each commit from source branch onto target branch
       for (const auto &commit_hash : commits_to_rebase)
@@ -692,7 +699,7 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
       }
 
       // after successful rebase, switch back to source branch
-      switchBranch(source_branch);
+      checkoutToBranch(source_branch);
 
       // update source branch to point to new HEAD
       std::string new_head = getCurrentCommit();
@@ -737,10 +744,10 @@ void rebaseBranch(const std::string &source_branch, const std::string &target_br
   }
 }
 
-void showBranchHistory(const std::string &branch_name)
+void printBranchHistory(const std::string &branch_name)
 {
   // Check if branch exists
-  if (!branchExists(branch_name))
+  if (!isBranchExists(branch_name))
   {
     ErrorHandler::printError(
         ErrorCode::BRANCH_NOT_FOUND,
@@ -934,7 +941,9 @@ void cleanupBranchCommits(const std::string &branch_name)
   }
 }
 
-std::string findCommonAncestor(const std::string &branch1, const std::string &branch2)
+std::string findCommonAncestor(
+    const std::string &branch1,
+    const std::string &branch2)
 {
   try
   {
@@ -971,7 +980,9 @@ std::string findCommonAncestor(const std::string &branch1, const std::string &br
   }
 }
 
-std::vector<std::string> getCommitChain(const std::string &from_commit, const std::string &to_commit)
+std::vector<std::string> getCommitsChain(
+    const std::string &from_commit,
+    const std::string &to_commit)
 {
   std::vector<std::string> commit_chain;
   try
