@@ -4,6 +4,12 @@ MergeResult mergeBranches(
     const std::string &source_branch,
     const std::string &target_branch)
 {
+  HookResult result = runHook(HookType::PRE_MERGE);
+  if (result == HookResult::ABORT)
+  {
+    return;
+  }
+
   MergeResult result;
 
   // Get the last commit hashes of both branches
@@ -81,9 +87,7 @@ void writeConflict(
     const std::string &theirs)
 {
   std::ofstream conflict(path);
-  conflict << "<<<<<<< HEAD\n"
-           << ours << "\n=======\n"
-           << theirs << "\n>>>>>>> theirs\n";
+  conflict << "<<<<<<< HEAD\n" << ours << "\n=======\n" << theirs << "\n>>>>>>> theirs\n";
   conflict.close();
 }
 
@@ -209,7 +213,17 @@ MergeResult threeWayMerge(
       continue;
     }
 
-    //  Conflict
+    // Attempt automatic merge before declaring a conflict
+    std::string our_path = ours + "/" + file;
+    std::string their_path = theirs + "/" + file;
+
+    if (attemptAutomaticMerge(our_path, their_path, file))
+    {
+      std::cout << "Successfully auto-merged: " << file << std::endl;
+      continue; // Skip the conflict block
+    }
+
+    // If auto-merge fails, handle as conflict
     result.has_conflicts = true;
     result.conflicted_files.push_back(file);
     writeConflict(file, our_content, their_content);

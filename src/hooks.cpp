@@ -80,6 +80,14 @@ HookResult runHook(
     HookType type,
     const std::vector<std::string> &args)
 {
+  if (!hookExists(type))
+  {
+    // If the hook does not exist, return success (no-op)
+    HookResult result;
+    result.success = true;
+    return result;
+  }
+
   // Get the hook path
   std::string hook_path = getHookPath(type);
 
@@ -103,45 +111,6 @@ HookResult runHook(
   }
 
   return executeHook(hook_path, args);
-}
-
-void executeAllHooks(
-    const std::string &event,
-    const std::vector<std::string> &args)
-{
-  // Run all hooks matching the event prefix
-  std::string hooks_dir = getHooksDir();
-
-  // Check if the hooks directory exists
-  if (!std::filesystem::exists(hooks_dir))
-  {
-    return;
-  }
-
-  // Iterate over all files in the hooks directory
-  for (const auto &entry : std::filesystem::directory_iterator(hooks_dir))
-  {
-    if (entry.is_regular_file())
-    {
-      // Get the hook name
-      std::string hook_name = entry.path().filename().string();
-
-      // Check if the hook name starts with the event prefix
-      if (hook_name.find(event) == 0)
-      {
-        // Execute the hook
-        HookResult result = executeHook(entry.path().string(), args);
-
-        // Check for execution errors
-        if (!result.success)
-        {
-          ErrorHandler::printError(ErrorCode::HOOK_ERROR, "Hook failed: " + hook_name, ErrorSeverity::ERROR, "run_all_hooks");
-          ErrorHandler::printError(ErrorCode::HOOK_ERROR, "Error: " + result.error, ErrorSeverity::ERROR, "run_all_hooks");
-          return;
-        }
-      }
-    }
-  }
 }
 
 void installDefaultHooks()

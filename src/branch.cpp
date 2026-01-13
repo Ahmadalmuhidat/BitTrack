@@ -23,19 +23,6 @@ std::vector<std::string> getBranchesList()
   return branches;
 }
 
-void copyCurrentCommitObjectToNewBranch(std::string new_branch_name)
-{
-  // Get the current branch and its last commit hash
-  std::string current_branch = getCurrentBranchName();
-  std::string last_commit_hash = getBranchLastCommitHash(current_branch);
-
-  if (current_branch != "" && last_commit_hash != "")
-  {
-    // Copy the commit object to the new branch's directory
-    insertCommitRecordToHistory(last_commit_hash, new_branch_name);
-  }
-}
-
 bool attemptAutomaticMerge(
     const std::filesystem::path &first_file,
     const std::filesystem::path &second_file,
@@ -470,8 +457,7 @@ void removeBranch(const std::string &branch_name)
   std::vector<std::string> branches = getBranchesList();
 
   // Check if the branch exists
-  if (std::find(branches.begin(), branches.end(), branch_name) ==
-      branches.end())
+  if (std::find(branches.begin(), branches.end(), branch_name) == branches.end())
   {
     ErrorHandler::printError(
         ErrorCode::BRANCH_NOT_FOUND,
@@ -674,13 +660,13 @@ void rebaseBranch(
 
     try
     {
-      // perform the rebase operation
+      // Perform the rebase operation
       checkoutToBranch(target_branch);
 
-      // apply each commit from source branch onto target branch
+      // Apply each commit from source branch onto target branch
       for (const auto &commit_hash : commits_to_rebase)
       {
-        // apply the commit
+        // Apply the commit
         if (!applyCommitDuringRebase(commit_hash))
         {
           ErrorHandler::printError(
@@ -698,10 +684,10 @@ void rebaseBranch(
         }
       }
 
-      // after successful rebase, switch back to source branch
+      // After successful rebase, switch back to source branch
       checkoutToBranch(source_branch);
 
-      // update source branch to point to new HEAD
+      // Update source branch to point to new HEAD
       std::string new_head = getCurrentCommit();
       ErrorHandler::safeWriteFile(".bittrack/refs/heads/" + source_branch, new_head + "\n");
 
@@ -720,10 +706,10 @@ void rebaseBranch(
           ErrorSeverity::ERROR,
           "rebase_branch");
 
-      // rollback to backup commit on source branch
+      // Rollback to backup commit on source branch
       ErrorHandler::safeWriteFile(".bittrack/refs/heads/" + source_branch, backup_commit + "\n");
 
-      // restore working directory to source branch state
+      // Restore working directory to source branch state
       updateWorkingDirectory(source_branch);
 
       ErrorHandler::printError(
@@ -792,7 +778,7 @@ std::vector<std::string> getBranchCommits(const std::string &branch_name)
 {
   std::vector<std::string> commits;
 
-  // retrieve all commit hashes associated with the specified branch
+  // Retrieve all commit hashes associated with the specified branch
   std::string history_content = ErrorHandler::safeReadFile(".bittrack/commits/history");
   if (history_content.empty())
   {

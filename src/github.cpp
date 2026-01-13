@@ -419,8 +419,8 @@ bool pushToGithub(
       current_tree_sha = parent_tree_sha; // Set current tree to parent tree
     }
 
-    std::string author_name = getCommitAuthor(current_commit);         // Get author name
-    std::string author_email = getCommitAuthorEmail(current_commit);   // Get author email
+    std::string author_name = getCommitAuthor(current_commit);       // Get author name
+    std::string author_email = getCommitAuthorEmail(current_commit); // Get author email
 
     if (author_email.empty())
     {
@@ -550,73 +550,6 @@ std::string createGithubBlob(
   }
 
   ErrorHandler::printError(ErrorCode::REMOTE_CONNECTION_FAILED, "Could not find SHA in response", ErrorSeverity::ERROR, "create_github_blob");
-  return "";
-}
-
-std::string createGithubTree(
-    const std::string &token,
-    const std::string &username,
-    const std::string &repo_name,
-    const std::string &blob_sha,
-    const std::string &filename)
-{
-  CURL *curl = curl_easy_init();
-  if (!curl)
-    return "";
-
-  std::string response_data;                                                                     // To store response data
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/trees"; // Prepare URL
-
-  std::string escaped_filename = filename; // Escape double quotes in filename
-  size_t pos = 0;
-
-  while ((pos = escaped_filename.find("\"", pos)) != std::string::npos) // Find double quotes
-  {
-    escaped_filename.replace(pos, 1, "\\\""); // Replace with escaped version
-    pos += 2;                                 // Move past the escaped quote
-  }
-
-  // Prepare JSON data
-  std::string json_data = "{\"base_tree\":null,\"tree\":[{\"path\":\"" + escaped_filename + "\",\"mode\":\"100644\",\"type\":\"blob\",\"sha\":\"" + blob_sha + "\"}]}";
-
-  struct curl_slist *headers = nullptr;                                            // Initialize headers
-  headers = curl_slist_append(headers, ("Authorization: token " + token).c_str()); // Add authorization header
-  headers = curl_slist_append(headers, "Content-Type: application/json");          // Add content-type header
-  headers = curl_slist_append(headers, "User-Agent: BitTrack/1.0");                // Add user-agent header
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());              // Set the URL
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str()); // Set JSON data
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);           // Set headers
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);  // Set write callback
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);     // Set response data storage
-
-  CURLcode res = curl_easy_perform(curl); // Perform the request
-  curl_slist_free_all(headers);           // Free headers
-  curl_easy_cleanup(curl);                // Clean up CURL
-
-  if (res != CURLE_OK)
-  {
-    ErrorHandler::printError(
-        ErrorCode::REMOTE_CONNECTION_FAILED,
-        "CURL error: " +
-            std::string(curl_easy_strerror(res)),
-        ErrorSeverity::ERROR,
-        "create_github_tree");
-    return "";
-  }
-
-  size_t sha_pos = response_data.find("\"sha\":\""); // Find SHA in response
-  if (sha_pos != std::string::npos)                  // If SHA found
-  {
-    sha_pos += 7;                                       // Skip to SHA value
-    size_t sha_end = response_data.find("\"", sha_pos); // Find end quote
-    if (sha_end != std::string::npos)                   // If end quote found
-    {
-      return response_data.substr(
-          sha_pos, sha_end - sha_pos); // Return the extracted SHA
-    }
-  }
-
   return "";
 }
 
@@ -826,8 +759,8 @@ std::string createGithubCommit(
     std::cout << "GitHub API Error Response: " << response_data << std::endl;
   }
 
-  curl_slist_free_all(headers);           // Free headers
-  curl_easy_cleanup(curl);                // Clean up CURL
+  curl_slist_free_all(headers); // Free headers
+  curl_easy_cleanup(curl);      // Clean up CURL
 
   if (res != CURLE_OK)
   {
@@ -1502,78 +1435,4 @@ bool deleteGithubFile(
   }
 
   return validateGithubOperationSuccess(response_data);
-}
-
-bool createGithubFile(
-    const std::string &token,
-    const std::string &username,
-    const std::string &repo_name,
-    const std::string &filename,
-    const std::string &content,
-    const std::string &message)
-{
-  CURL *curl = curl_easy_init();
-  if (!curl)
-  {
-    return false;
-  }
-
-  std::string current_branch = getCurrentBranchName();
-  std::string response_data;                                                                                                           // To store response data
-  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/contents/" + filename + "?ref=" + current_branch; // Prepare URL
-  std::string base64_content = base64Encode(content);                                                                                  // Base64 encode content
-
-  std::string escaped_message = message; // Escape double quotes and newlines in message
-  size_t pos = 0;
-  while ((pos = escaped_message.find("\"", pos)) != std::string::npos) // Find double quotes
-  {
-    escaped_message.replace(pos, 1, "\\\""); // Replace with escaped version
-    pos += 2;
-  }
-  pos = 0;
-  while ((pos = escaped_message.find("\n", pos)) != std::string::npos) // Find newlines
-  {
-    escaped_message.replace(pos, 1, "\\n");
-    pos += 2;
-  }
-
-  // Prepare JSON data for file creation
-  std::string json_data = "{\"message\":\"" + escaped_message + "\",\"content\":\"" + base64_content + "\",\"branch\":\"" + current_branch + "\"}";
-
-  struct curl_slist *headers = nullptr;                                            // Initialize headers
-  headers = curl_slist_append(headers, ("Authorization: token " + token).c_str()); // Add authorization header
-  headers = curl_slist_append(headers, "Content-Type: application/json");          // Add content-type header
-  headers = curl_slist_append(headers, "User-Agent: BitTrack/1.0");                // Add user-agent header
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());              // Set the URL
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str()); // Set JSON data
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);           // Set headers
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);  // Set write callback
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);     // Set response data storage
-
-  CURLcode res = curl_easy_perform(curl); // Perform the request
-  curl_slist_free_all(headers);           // Free headers
-  curl_easy_cleanup(curl);                // Clean up CURL
-
-  if (res != CURLE_OK)
-  {
-    ErrorHandler::printError(
-        ErrorCode::REMOTE_CONNECTION_FAILED,
-        "CURL Error: " + std::string(curl_easy_strerror(res)),
-        ErrorSeverity::ERROR,
-        "create_github_file");
-    std::cout << "GitHub API Error Response: " << response_data << std::endl;
-    return false;
-  }
-
-  bool success = validateGithubOperationSuccess(response_data);
-  if (!success)
-  {
-    ErrorHandler::printError(
-        ErrorCode::REMOTE_CONNECTION_FAILED,
-        "Failed to create file " + filename + " - GitHub API error",
-        ErrorSeverity::ERROR,
-        "create_github_file");
-  }
-  return success;
 }

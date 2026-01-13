@@ -179,6 +179,13 @@ void push(const std::string &remote_name)
     return;
   }
 
+  // Run pre-push hook
+  HookResult result = runHook(HookType::PRE_PUSH);
+  if (result == HookResult::ABORT)
+  {
+    return;
+  }
+
   // Handle GitHub remote
   if (isGithubRemote(remote_url))
   {
@@ -216,6 +223,7 @@ void push(const std::string &remote_name)
     // Attempt to push using GitHub API
     if (pushToGithub(token, username, repo_name))
     {
+      runHook(HookType::POST_PUSH);
       return;
     }
     else
@@ -282,6 +290,13 @@ void pull(const std::string &remote_name)
   // Handle GitHub remote
   if (isGithubRemote(remote_url))
   {
+    // Run pre-pull hook
+    HookResult result = runHook(HookType::PRE_PULL);
+    if (result == HookResult::ABORT)
+    {
+      return;
+    }
+
     // Get GitHub token from config
     std::string token = configGet("github.token", ConfigScope::REPOSITORY);
     if (token.empty())
@@ -314,6 +329,7 @@ void pull(const std::string &remote_name)
     // Attempt to pull using GitHub API
     if (pullFromGithub(token, username, repo_name, current_branch))
     {
+      runHook(HookType::POST_PULL);
       return;
     }
     else
@@ -531,12 +547,6 @@ void cloneRepository(
   system("./bittrack --pull"); // pull from remote
 
   std::cout << "Repository cloned successfully" << std::endl;
-}
-
-bool isRemoteConfigured()
-{
-  // Check if remote origin is set
-  return !getRemoteOriginUrl().empty();
 }
 
 std::string getRemoteUrl(const std::string &remote_name)
@@ -771,9 +781,6 @@ void integratePulledFilesWithBittrack(
     {
       // Get relative path of the file
       std::string file_path = entry.string();
-      // std::string relative_path = std::filesystem::relative(file_path, commit_dir).string();
- 
-
       // Check if the file was pulled
       bool was_pulled = false;
       for (const auto &pulled_file : downloaded_files)
@@ -796,6 +803,12 @@ void integratePulledFilesWithBittrack(
     std::string commit_log_content = "GitHub Pull: " + commit_sha + "\n";
     commit_log_content += "Date: " + getCurrentTimestamp() + "\n";
     commit_log_content += "Files:\n";
+
+    // Write file paths
+    for (const std::string &file_path : downloaded_files)
+    {
+      commit_log_content += file_path + "\n";
+    }
 
     if (!ErrorHandler::safeWriteFile(".bittrack/commits/" + commit_sha, commit_log_content))
     {

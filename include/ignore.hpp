@@ -68,9 +68,6 @@ bool matchesPattern(
     const std::string &filePath,
     const IgnorePattern &pattern);
 void createDefaultBitignore();
-void addIgnorePattern(const std::string &pattern);
-void removeIgnorePattern(const std::string &pattern);
-void listIgnorePatterns();
 bool isFileIgnoredByPatterns(
     const std::string &file_path,
     const std::vector<std::string> &patterns);

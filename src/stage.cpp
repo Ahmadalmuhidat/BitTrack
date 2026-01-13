@@ -235,23 +235,12 @@ void stageSingleFile(
   // Check if the file is already committed and unchanged
   if (!is_deleted_file && isFileUnchangedFromCommit(actual_path, file_hash))
   {
-    std::cout << "File already committed and unchanged: " << actual_path << std::endl;
     return;
   }
 
   // Add the file to the staging area
-  std::string stored_path =
-      is_deleted_file ? actual_path + " (deleted)" : actual_path;
+  std::string stored_path = is_deleted_file ? actual_path + " (deleted)" : actual_path;
   staged_files[stored_path] = file_hash;
-
-  if (is_deleted_file)
-  {
-    std::cout << "Staged deletion: " << actual_path << std::endl;
-  }
-  else
-  {
-    std::cout << "Staged: " << actual_path << std::endl;
-  }
 }
 
 void stageAllFiles(
@@ -395,7 +384,6 @@ void unstage(const std::string &filePath)
     // If the file is not found in the staged files, print a message and return
     if (!found)
     {
-      std::cout << "File is not staged: " << filePath << std::endl;
       return;
     }
 
@@ -649,30 +637,6 @@ std::vector<std::string> getUnstagedFiles()
   }
 
   return std::vector<std::string>(unstagedFiles.begin(), unstagedFiles.end());
-}
-
-bool isStaged(const std::string &file_path)
-{
-  try
-  {
-    if (file_path.empty())
-    {
-      return false;
-    }
-
-    // Get the list of staged files
-    std::vector<std::string> stagedFiles = getStagedFiles();
-    return std::find(stagedFiles.begin(), stagedFiles.end(), file_path) != stagedFiles.end(); // Check if the file is in the staged files list
-  }
-  catch (const std::exception &e)
-  {
-    ErrorHandler::printError(
-        ErrorCode::UNEXPECTED_EXCEPTION,
-        "Error checking if file is staged: " + std::string(e.what()),
-        ErrorSeverity::ERROR,
-        "is_staged");
-    return false;
-  }
 }
 
 std::string getFileHash(const std::string &file_path)

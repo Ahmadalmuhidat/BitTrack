@@ -87,6 +87,8 @@ void init()
           "init");
     }
 
+    createDefaultBitignore();
+
     std::cout << "Initialized empty BitTrack repository." << std::endl;
   }
   catch (const BitTrackError &e)
@@ -123,6 +125,15 @@ void stageFlag(int argc, const char *argv[], int &i)
 
     std::string file_to_add = argv[++i];
     VALIDATE_FILE_PATH(file_to_add);
+
+    if (shouldIgnoreFile(file_to_add) || isFileIgnoredByIgnorePatterns(file_to_add, parseIgnorePatterns(readBitignore(".bitignore"))))
+    {
+      throw BitTrackError(
+          ErrorCode::FILE_IGNORED,
+          "File is ignored by .bitignore",
+          ErrorSeverity::ERROR,
+          "stage");
+    }
 
     stage(file_to_add);
   }
@@ -264,25 +275,6 @@ void branchFlag(int argc, const char *argv[], int &i)
 
     printBranchHistory(name);
   }
-  else if (subFlag == "-merge")
-  {
-    VALIDATE_ARGS(argc, i + 3, "--branch -merge");
-
-    std::string source = argv[++i];
-    std::string target = argv[++i];
-    VALIDATE_BRANCH_NAME(source);
-    VALIDATE_BRANCH_NAME(target);
-
-    MergeResult result = mergeBranches(source, target);
-    if (result.success)
-    {
-      std::cout << "Merge completed successfully: " << result.message << std::endl;
-    }
-    else
-    {
-      std::cout << "Merge failed: " << result.message << std::endl;
-    }
-  }
   else if (subFlag == "-rebase")
   {
     VALIDATE_ARGS(argc, i + 3, "--branch -rebase");
@@ -313,15 +305,7 @@ void remoteFlag(int argc, const char *argv[], int &i)
 
     if (subFlag == "-v")
     {
-      std::string remote = getRemoteOriginUrl();
-      if (remote.empty())
-      {
-        std::cout << "No remote origin set" << std::endl;
-      }
-      else
-      {
-        std::cout << remote << std::endl;
-      }
+      showRemoteInfo();
     }
     else if (subFlag == "-s")
     {
@@ -336,8 +320,13 @@ void remoteFlag(int argc, const char *argv[], int &i)
             ErrorSeverity::ERROR,
             "--remote -s");
       }
-
       setRemoteOrigin(url);
+    }
+    else if (subFlag == "set-url")
+    {
+      VALIDATE_ARGS(argc, i + 2, "--remote set-url");
+      std::string new_url = argv[++i];
+      updateRemoteUrl("origin", new_url);
     }
     else if (subFlag == "-l")
     {
@@ -395,6 +384,16 @@ void checkoutFlag(const char *argv[], int &i)
   {
     std::string name = argv[++i];
     VALIDATE_BRANCH_NAME(name);
+
+    if (hasUncommittedChanges())
+    {
+      throw BitTrackError(
+          ErrorCode::UNCOMMITTED_CHANGES,
+          "Uncommitted changes detected. Please commit or stash your changes "
+          "before checking out to another branch.",
+          ErrorSeverity::ERROR, "checkout");
+    }
+
     checkoutToBranch(name);
   }
   catch (const BitTrackError &e)
@@ -519,16 +518,22 @@ void configFlag(int argc, const char *argv[], int &i)
     {
       std::string subFlag = argv[++i];
 
-      if (subFlag == "--list")
+      if (subFlag == "-l")
       {
         configList();
       }
-      else if (i + 1 < argc)
+      else if (subFlag == "-s")
       {
         std::string key = subFlag;
         std::string value = argv[++i];
         configSet(key, value);
         std::cout << "Set " << key << " = " << value << std::endl;
+      }
+      else if (subFlag == "-u")
+      {
+        std::string key = argv[++i];
+        configUnset(key);
+        std::cout << "Unset " << key << std::endl;
       }
       else
       {
@@ -623,25 +628,45 @@ void hooksFlag(int argc, const char *argv[], int &i)
         std::string hook_type = argv[++i];
         HookType type = HookType::PRE_COMMIT;
         if (hook_type == "pre-commit")
+        {
           type = HookType::PRE_COMMIT;
+        }
         else if (hook_type == "post-commit")
+        {
           type = HookType::POST_COMMIT;
+        }
         else if (hook_type == "pre-push")
+        {
           type = HookType::PRE_PUSH;
+        }
         else if (hook_type == "post-push")
+        {
           type = HookType::POST_PUSH;
+        }
         else if (hook_type == "pre-merge")
+        {
           type = HookType::PRE_MERGE;
+        }
         else if (hook_type == "post-merge")
+        {
           type = HookType::POST_MERGE;
+        }
         else if (hook_type == "pre-checkout")
+        {
           type = HookType::PRE_CHECKOUT;
+        }
         else if (hook_type == "post-checkout")
+        {
           type = HookType::POST_CHECKOUT;
+        }
         else if (hook_type == "pre-branch")
+        {
           type = HookType::PRE_BRANCH;
+        }
         else if (hook_type == "post-branch")
+        {
           type = HookType::POST_BRANCH;
+        }
         else
         {
           ErrorHandler::printError(
@@ -667,25 +692,45 @@ void hooksFlag(int argc, const char *argv[], int &i)
         std::string hook_type = argv[++i];
         HookType type = HookType::PRE_COMMIT;
         if (hook_type == "pre-commit")
+        {
           type = HookType::PRE_COMMIT;
+        }
         else if (hook_type == "post-commit")
+        {
           type = HookType::POST_COMMIT;
+        }
         else if (hook_type == "pre-push")
+        {
           type = HookType::PRE_PUSH;
+        }
         else if (hook_type == "post-push")
+        {
           type = HookType::POST_PUSH;
+        }
         else if (hook_type == "pre-merge")
+        {
           type = HookType::PRE_MERGE;
+        }
         else if (hook_type == "post-merge")
+        {
           type = HookType::POST_MERGE;
+        }
         else if (hook_type == "pre-checkout")
+        {
           type = HookType::PRE_CHECKOUT;
+        }
         else if (hook_type == "post-checkout")
+        {
           type = HookType::POST_CHECKOUT;
+        }
         else if (hook_type == "pre-branch")
+        {
           type = HookType::PRE_BRANCH;
+        }
         else if (hook_type == "post-branch")
+        {
           type = HookType::POST_BRANCH;
+        }
         else
         {
           throw BitTrackError(
@@ -777,71 +822,123 @@ void maintenanceFlag(int argc, const char *argv[], int &i)
   HANDLE_EXCEPTION("maintenance operations")
 }
 
+void mergeFlag(int argc, const char *argv[], int &i)
+{
+  try
+  {
+    VALIDATE_ARGS(argc, i + 2, "--merge");
+    std::string subFlag = argv[++i];
+
+    if (subFlag == "-abort")
+    {
+      abortMerge();
+    }
+    else if (subFlag == "-continue")
+    {
+      continueMerge();
+    }
+    else if (subFlag == "-conflicts")
+    {
+      showConflicts();
+    }
+    else
+    {
+      // Positional merge: --merge <src> <tgt>
+      VALIDATE_ARGS(argc, i + 1, "--merge <src> <tgt>"); // We already consumed i here for subFlag
+      std::string source = subFlag;
+      std::string target = argv[++i];
+
+      VALIDATE_BRANCH_NAME(source);
+      VALIDATE_BRANCH_NAME(target);
+
+      MergeResult result = mergeBranches(source, target);
+      if (result.success)
+      {
+        std::cout << "Merge completed successfully: " << result.message << std::endl;
+      }
+      else
+      {
+        std::cout << "Merge failed: " << result.message << std::endl;
+      }
+    }
+  }
+  catch (const BitTrackError &e)
+  {
+    ErrorHandler::printError(e);
+    throw;
+  }
+  HANDLE_EXCEPTION("merge management")
+}
+
 void helpFlag()
 {
   std::cout << "BitTrack - Lightweight Version Control\n\n";
   std::cout << "Usage:\n";
   std::cout << "  bittrack <command> [options]\n\n";
   std::cout << "Commands:\n";
-  std::cout << "  init                        initialize a new BitTrack repository\n";
-  std::cout << "  --status                    show staged and unstaged files\n";
-  std::cout << "  --stage <file>              stage a file for commit\n";
-  std::cout << "  --unstage <file>            unstage a file\n";
-  std::cout << "  --commit                    commit staged files with a message\n";
-  std::cout << "           -m <message>        commit with message (no prompt)\n";
-  std::cout << "  --log                       show commit history\n";
-  std::cout << "  --current-commit            show the current commit ID\n";
-  std::cout << "  --staged-files-hashes       show hashes of staged files\n";
-  std::cout << "  --remove-repo               delete the current BitTrack repository\n";
-  std::cout << "  --branch -l                 list all branches\n";
-  std::cout << "           -c <name>          create a new branch\n";
-  std::cout << "           -r <name>          remove a branch\n";
-  std::cout << "           -m <old> <new>     rename a branch\n";
-  std::cout << "           -i <name>          show branch information\n";
-  std::cout << "           -h <name>          show branch history\n";
-  std::cout << "           -merge <src> <tgt> merge source into target branch\n";
-  std::cout << "           -rebase <src> <tgt> rebase source onto target branch\n";
-  std::cout << "  --checkout <name>           switch to a different branch\n";
-  std::cout << "  --diff                      show differences\n";
-  std::cout << "           --staged           show staged changes\n";
-  std::cout << "           --unstaged         show unstaged changes\n";
-  std::cout << "           <file1> <file2>    compare two files\n";
-  std::cout << "  --stash                     stash current changes\n";
-  std::cout << "           list               list all stashes\n";
-  std::cout << "           show <index>       show stash contents\n";
-  std::cout << "           apply <index>      apply stash\n";
-  std::cout << "           pop <index>        apply and remove stash\n";
-  std::cout << "           drop <index>       remove stash\n";
-  std::cout << "           clear              remove all stashes\n";
-  std::cout << "  --config                    manage configuration\n";
-  std::cout << "           --list             list all config\n";
-  std::cout << "           <key> <value>      set config value\n";
-  std::cout << "  --tag                       manage tags\n";
-  std::cout << "           -l                 list all tags\n";
-  std::cout << "           -a <name> <msg>    create annotated tag\n";
-  std::cout << "           -d <name>          delete tag\n";
-  std::cout << "           show <name>        show tag information\n";
-  std::cout << "  --hooks                     manage hooks\n";
-  std::cout << "           list               list all hooks\n";
-  std::cout << "           install <type>     install hook\n";
-  std::cout << "           uninstall <type>   uninstall hook\n";
-  std::cout << "  --maintenance               repository maintenance\n";
-  std::cout << "           gc                 garbage collection\n";
-  std::cout << "           repack             repack objects\n";
-  std::cout << "           fsck               check repository integrity\n";
-  std::cout << "           stats              show repository statistics\n";
-  std::cout << "           optimize           optimize repository\n";
-  std::cout << "           analyze            analyze repository structure\n";
-  std::cout << "           prune              prune unreachable objects\n";
-  std::cout << "  --remote -v                 print current remote URL\n";
-  std::cout << "           -s <url>           set remote URL\n";
-  std::cout << "           -l                 list remote branches\n";
-  std::cout << "           -d <branch>        delete remote branch\n";
-  std::cout << "  --push                      push current commit to remote\n";
-  std::cout << "  --pull                      pull changes from remote\n";
-  std::cout << "  --clone <url> [path]        clone a repository from remote URL\n";
-  std::cout << "  --fetch [remote]            fetch changes from remote repository\n";
-  std::cout << "  --help                      show this help menu\n";
+  std::cout << "  init                          initialize a new BitTrack repository\n";
+  std::cout << "  --status                      show staged and unstaged files\n";
+  std::cout << "  --stage <file>                stage a file for commit\n";
+  std::cout << "  --unstage <file>              unstage a file\n";
+  std::cout << "  --commit                      commit staged files with a message\n";
+  std::cout << "           -m <message>         commit with message (no prompt)\n";
+  std::cout << "  --log                         show commit history\n";
+  std::cout << "  --current-commit              show the current commit ID\n";
+  std::cout << "  --staged-files-hashes         show hashes of staged files\n";
+  std::cout << "  --remove-repo                 delete the current BitTrack repository\n";
+  std::cout << "  --branch -l                   list all branches\n";
+  std::cout << "           -c <name>            create a new branch\n";
+  std::cout << "           -r <name>            remove a branch\n";
+  std::cout << "           -m <old> <new>       rename a branch\n";
+  std::cout << "           -i <name>            show branch information\n";
+  std::cout << "           -h <name>            show branch history\n";
+  std::cout << "           -rebase <src> <tgt>  rebase source onto target branch\n";
+  std::cout << " --merge <src> <tgt>            merge source into target branch\n";
+  std::cout << "         -abort                 abort a merge\n";
+  std::cout << "         -continue              continue a merge\n";
+  std::cout << "         -conflicts             show merge conflicts\n";
+  std::cout << "         -conflicts             show merge conflicts\n";
+  std::cout << "  --checkout <name>             switch to a different branch\n";
+  std::cout << "  --diff                        show differences\n";
+  std::cout << "           --staged             show staged changes\n";
+  std::cout << "           --unstaged           show unstaged changes\n";
+  std::cout << "           <file1> <file2>      compare two files\n";
+  std::cout << "  --stash                       stash current changes\n";
+  std::cout << "           list                 list all stashes\n";
+  std::cout << "           show <index>         show stash contents\n";
+  std::cout << "           apply <index>        apply stash\n";
+  std::cout << "           pop <index>          apply and remove stash\n";
+  std::cout << "           drop <index>         remove stash\n";
+  std::cout << "           clear                remove all stashes\n";
+  std::cout << "  --config                      manage configuration\n";
+  std::cout << "           --l                  list all config\n";
+  std::cout << "           <key> <value>        set config value\n";
+  std::cout << "  --tag                         manage tags\n";
+  std::cout << "           -l                   list all tags\n";
+  std::cout << "           -a <name> <msg>      create annotated tag\n";
+  std::cout << "           -d <name>            delete tag\n";
+  std::cout << "           show <name>          show tag information\n";
+  std::cout << "  --hooks                       manage hooks\n";
+  std::cout << "           list                 list all hooks\n";
+  std::cout << "           install <type>       install hook\n";
+  std::cout << "           uninstall <type>     uninstall hook\n";
+  std::cout << "  --maintenance                 repository maintenance\n";
+  std::cout << "           gc                   garbage collection\n";
+  std::cout << "           repack               repack objects\n";
+  std::cout << "           fsck                 check repository integrity\n";
+  std::cout << "           stats                show repository statistics\n";
+  std::cout << "           optimize             optimize repository\n";
+  std::cout << "           analyze              analyze repository structure\n";
+  std::cout << "           prune                prune unreachable objects\n";
+  std::cout << "  --remote -v                   print current remote URL\n";
+  std::cout << "           -s <url>             set remote URL\n";
+  std::cout << "           -l                   list remote branches\n";
+  std::cout << "           -d <branch>          delete remote branch\n";
+  std::cout << "  --push                        push current commit to remote\n";
+  std::cout << "  --pull                        pull changes from remote\n";
+  std::cout << "  --clone <url> [path]          clone a repository from remote URL\n";
+  std::cout << "  --fetch [remote]              fetch changes from remote repository\n";
+  std::cout << "  --help                        show this help menu\n";
 }
 
 int main(int argc, const char *argv[])
@@ -1013,6 +1110,11 @@ int main(int argc, const char *argv[])
         remoteFlag(argc, argv, i);
         break;
       }
+      else if (arg == "--merge")
+      {
+        mergeFlag(argc, argv, i);
+        break;
+      }
       else if (arg == "--checkout")
       {
         checkoutFlag(argv, i);
@@ -1071,8 +1173,7 @@ int main(int argc, const char *argv[])
       {
         throw BitTrackError(
             ErrorCode::INVALID_ARGUMENTS,
-            "Unknown command: " +
-                arg,
+            "Unknown command: " + arg,
             ErrorSeverity::ERROR,
             "command parsing");
       }

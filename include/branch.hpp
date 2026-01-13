@@ -46,5 +46,9 @@ std::vector<std::string> getCommitsChain(
     const std::string &from_commit,
     const std::string &to_commit);
 bool applyCommitDuringRebase(const std::string &commit_hash);
+bool attemptAutomaticMerge(
+    const std::filesystem::path &first_file,
+    const std::filesystem::path &second_file,
+    const std::string &target_path);
 
 #endif

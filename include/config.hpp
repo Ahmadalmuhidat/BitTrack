@@ -45,7 +45,6 @@ void configUnset(
     ConfigScope scope = ConfigScope::REPOSITORY);
 void configList(ConfigScope scope = ConfigScope::REPOSITORY);
 void configLoad();
-void configSave();
 void setConfigValue(
     const std::string &key,
     const std::string &value,

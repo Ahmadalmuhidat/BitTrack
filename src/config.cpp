@@ -161,35 +161,6 @@ void configLoad()
   }
 }
 
-void configSave()
-{
-  // Save global configuration
-  std::string global_path = getGlobalConfigPath();
-  std::filesystem::create_directories(std::filesystem::path(global_path).parent_path());
-
-  std::string global_content = "# BitTrack Global Configuration\n";
-  for (const auto &entry : global_config)
-  {
-    global_content += entry.first + "=" + entry.second + "\n";
-  }
-  ErrorHandler::safeWriteFile(global_path, global_content);
-
-  // Save repository configuration
-  std::string repo_path = getRepositoryConfigPath();
-  // Ensure the directory exists
-  if (std::filesystem::path(repo_path).has_parent_path())
-  {
-    std::filesystem::create_directories(std::filesystem::path(repo_path).parent_path());
-  }
-
-  std::string repo_content = "# BitTrack Repository Configuration\n";
-  for (const auto &entry : repository_config)
-  {
-    repo_content += entry.first + "=" + entry.second + "\n";
-  }
-  ErrorHandler::safeWriteFile(repo_path, repo_content); 
-}
-
 void setConfigValue(
     const std::string &key,
     const std::string &value, ConfigScope scope)

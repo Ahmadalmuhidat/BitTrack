@@ -42,7 +42,7 @@ void stashList()
   // Get stash entries
   std::vector<StashEntry> entries = getStashEntries();
 
-  if (entries.empty())
+  if (stashHasStashes())
   {
     std::cout << "No stashes found" << std::endl;
     return;
@@ -395,24 +395,6 @@ void restoreWorkingDirectory(const std::string &stash_id)
     // Copy file back to working directory
     ErrorHandler::safeCopyFile(entry, rel_path);
   }
-}
-
-std::vector<std::string> getAllTrackedFiles()
-{
-  // Get all tracked files (staged and unstaged)
-  std::vector<std::string> files;
-  std::vector<std::string> staged = getStagedFiles();
-  std::vector<std::string> unstaged = getUnstagedFiles();
-
-  // Combine and deduplicate
-  files.insert(files.end(), staged.begin(), staged.end());
-  files.insert(files.end(), unstaged.begin(), unstaged.end());
-
-  // Remove duplicates
-  std::sort(files.begin(), files.end());
-  files.erase(std::unique(files.begin(), files.end()), files.end());
-
-  return files;
 }
 
 void removeStagedFilesFromWorkingDirectory()

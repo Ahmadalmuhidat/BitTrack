@@ -45,7 +45,6 @@ std::string generateStashId();
 void backupStagedFiles(const std::string &stash_id);
 void restoreWorkingDirectory(const std::string &stash_id);
 void removeStagedFilesFromWorkingDirectory();
-std::vector<std::string> getAllTrackedFiles();
 std::string getStashDir();
 std::string getStashFilePath(const std::string &stash_id);
 

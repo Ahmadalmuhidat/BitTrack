@@ -52,9 +52,6 @@ bool hookExists(HookType type);
 HookResult executeHook(
     const std::string &hook_path,
     const std::vector<std::string> &args = {});
-void executeAllHooks(
-    const std::string &event,
-    const std::vector<std::string> &args = {});
 void installDefaultHooks();
 void createPreCommitHook();
 void createPostCommitHook();

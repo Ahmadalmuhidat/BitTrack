@@ -4,6 +4,7 @@
 #include "github.hpp"
 #include "utils.hpp"
 #include "config.hpp"
+#include "hooks.hpp"
 
 void setRemoteOrigin(const std::string &url);
 std::string getRemoteOriginUrl();
@@ -22,14 +23,12 @@ void fetchFromRemote(const std::string &remote_name = "origin");
 void cloneRepository(
     const std::string &url,
     const std::string &local_path = "");
-bool isRemoteConfigured();
 std::string getRemoteUrl(const std::string &remote_name = "origin");
 void updateRemoteUrl(
     const std::string &remote_name,
     const std::string &new_url);
 void showRemoteInfo();
 std::string getLastPushedCommit();
-std::vector<std::string> getUnpushedCommits();
 bool isLocalBehindRemote();
 void setLastPushedCommit(const std::string &commit);
 std::vector<std::string> getCommittedFiles(const std::string &commit);

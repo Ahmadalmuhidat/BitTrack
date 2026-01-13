@@ -22,7 +22,6 @@ void stage(const std::string &file_path);
 void unstage(const std::string &file_path);
 std::vector<std::string> getStagedFiles();
 std::vector<std::string> getUnstagedFiles();
-bool isStaged(const std::string &file_path);
 std::string getFileHash(const std::string &file_path);
 std::string getStagedFileContent(const std::string &file_path);
 bool isDeleted(const std::string &file_path);

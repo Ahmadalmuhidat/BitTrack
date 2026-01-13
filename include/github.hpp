@@ -24,13 +24,6 @@ bool pullFromGithub(
     const std::string &username,
     const std::string &repo_name,
     const std::string &branch_name = "");
-bool createGithubFile(
-    const std::string &token,
-    const std::string &username,
-    const std::string &repo_name,
-    const std::string &filename,
-    const std::string &content,
-    const std::string &message);
 bool deleteGithubFile(
     const std::string &token,
     const std::string &username,
@@ -52,12 +45,6 @@ std::string createGithubBlob(
     const std::string &username,
     const std::string &repo_name,
     const std::string &content);
-std::string createGithubTree(
-    const std::string &token,
-    const std::string &username,
-    const std::string &repo_name,
-    const std::string &blob_sha,
-    const std::string &filename);
 std::string createGithubTreeWithFiles(
     const std::string &token,
     const std::string &username,
