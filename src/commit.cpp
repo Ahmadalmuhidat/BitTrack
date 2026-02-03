@@ -179,10 +179,7 @@ std::string getLastCommit(const std::string &branch)
   return "";
 }
 
-void commitChanges(
-  const std::string &author,
-  const std::string &message
-)
+void commitChanges(const std::string &author, const std::string &message)
 {
   // Check for un-pushed commits
   if (hasUnpushedCommits())
@@ -207,7 +204,7 @@ void commitChanges(
 
   // Run pre-commit hook
   HookResult result = runHook(HookType::PRE_COMMIT);
-  if (result == HookResult::ABORT)
+  if (!result.success)
   {
     return;
   }
@@ -293,7 +290,8 @@ void commitChanges(
   }
 
   // Process staged files
-  std::string staging_content_final = ErrorHandler::safeReadFile(".bittrack/index");
+  std::string staging_content_final =
+      ErrorHandler::safeReadFile(".bittrack/index");
   if (staging_content_final.empty())
   {
     ErrorHandler::printError(
@@ -365,8 +363,8 @@ void commitChanges(
   // Clear the staging area
   ErrorHandler::safeWriteFile(".bittrack/index", "");
   // Run post-commit hook
-  HookResult result = runHook(HookType::POST_COMMIT);
-  if (result == HookResult::ABORT)
+  HookResult hook_result = runHook(HookType::POST_COMMIT);
+  if (!hook_result.success)
   {
     return;
   }
@@ -392,7 +390,8 @@ std::string getCurrentCommit()
   }
 
   // Read the current commit hash from the branch reference file safely
-  std::string commit_hash = ErrorHandler::safeReadFile(".bittrack/refs/heads/" + current_branch);
+  std::string commit_hash =
+      ErrorHandler::safeReadFile(".bittrack/refs/heads/" + current_branch);
   if (!commit_hash.empty() && commit_hash.back() == '\n')
   {
     commit_hash.pop_back();
@@ -465,7 +464,8 @@ std::vector<std::string> getCommitFiles(const std::string &commit_hash)
   std::string commit_path = ".bittrack/objects/" + commit_hash;
 
   // Use safe list directory files
-  std::vector<std::filesystem::path> commitFiles = ErrorHandler::safeListDirectoryFiles(commit_path);
+  std::vector<std::filesystem::path> commitFiles =
+      ErrorHandler::safeListDirectoryFiles(commit_path);
   for (const auto &entry : commitFiles)
   {
     files.push_back(entry.filename().string());

@@ -4,13 +4,14 @@ MergeResult mergeBranches(
     const std::string &source_branch,
     const std::string &target_branch)
 {
-  HookResult result = runHook(HookType::PRE_MERGE);
-  if (result == HookResult::ABORT)
-  {
-    return;
-  }
-
+  HookResult hook_result = runHook(HookType::PRE_MERGE);
   MergeResult result;
+  if (!hook_result.success)
+  {
+    std::cout << hook_result.error << std::endl;
+    result.success = false;
+    return result;
+  }
 
   // Get the last commit hashes of both branches
   std::string source_commit = getBranchLastCommitHash(source_branch);
@@ -52,11 +53,11 @@ MergeResult mergeBranches(
   result = threeWayMerge(merge_base, target_commit, source_commit);
 
   // Create merge commit if successful and no conflicts
-  if (result.success && !result.has_conflicts)
+  if (result.success)
   {
     std::string merge_message = "Merge branch '" + source_branch + "' into " + target_branch;
     createMergeCommit(merge_message, {target_commit, source_commit});
-    result.merge_commit = getCurrentCommit();
+    result.message = getCurrentCommit();
   }
 
   return result;
@@ -87,7 +88,11 @@ void writeConflict(
     const std::string &theirs)
 {
   std::ofstream conflict(path);
-  conflict << "<<<<<<< HEAD\n" << ours << "\n=======\n" << theirs << "\n>>>>>>> theirs\n";
+  conflict << "<<<<<<< HEAD\n"
+           << ours
+           << "\n=======\n"
+           << theirs
+           << "\n>>>>>>> theirs\n";
   conflict.close();
 }
 

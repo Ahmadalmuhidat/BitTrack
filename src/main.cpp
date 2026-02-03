@@ -326,7 +326,8 @@ void remoteFlag(int argc, const char *argv[], int &i)
     {
       VALIDATE_ARGS(argc, i + 2, "--remote set-url");
       std::string new_url = argv[++i];
-      updateRemoteUrl("origin", new_url);
+      std::string remote_name = "origin";
+      updateRemoteUrl(remote_name, new_url);
     }
     else if (subFlag == "-l")
     {
@@ -588,6 +589,16 @@ void tagFlag(int argc, const char *argv[], int &i)
       {
         std::string tag_name = argv[++i];
         tagDetails(tag_name);
+      }
+      else if (subFlag == "push" && i + 1 < argc)
+      {
+        std::string tag_name = argv[++i];
+        pushTag(tag_name);
+      }
+      else if (subFlag == "pull" && i + 1 < argc)
+      {
+        std::string tag_name = argv[++i];
+        pullTag(tag_name);
       }
       else
       {
@@ -918,6 +929,8 @@ void helpFlag()
   std::cout << "           -a <name> <msg>      create annotated tag\n";
   std::cout << "           -d <name>            delete tag\n";
   std::cout << "           show <name>          show tag information\n";
+  std::cout << "           push                 push all local tags to remote\n";
+  std::cout << "           pull                 pull all remote tags to local\n";
   std::cout << "  --hooks                       manage hooks\n";
   std::cout << "           list                 list all hooks\n";
   std::cout << "           install <type>       install hook\n";
@@ -934,8 +947,8 @@ void helpFlag()
   std::cout << "           -s <url>             set remote URL\n";
   std::cout << "           -l                   list remote branches\n";
   std::cout << "           -d <branch>          delete remote branch\n";
-  std::cout << "  --push                        push current commit to remote\n";
-  std::cout << "  --pull                        pull changes from remote\n";
+  std::cout << "  --push   <branch>             push current commit to remote\n";
+  std::cout << "  --pull   <branch>             pull changes from remote\n";
   std::cout << "  --clone <url> [path]          clone a repository from remote URL\n";
   std::cout << "  --fetch [remote]              fetch changes from remote repository\n";
   std::cout << "  --help                        show this help menu\n";
@@ -1124,7 +1137,15 @@ int main(int argc, const char *argv[])
       {
         try
         {
-          push("origin");
+          std::string remote_name = "origin";
+          std::string branch_name = getCurrentBranchName();
+
+          if (i + 1 < argc)
+          {
+            branch_name = argv[++i];
+          }
+
+          push(remote_name, branch_name);
         }
         catch (const BitTrackError &e)
         {
@@ -1138,7 +1159,15 @@ int main(int argc, const char *argv[])
       {
         try
         {
-          pull("origin");
+          std::string remote_name = "origin";
+          std::string branch_name = getCurrentBranchName();
+
+          if (i + 1 < argc)
+          {
+            branch_name = argv[++i];
+          }
+
+          pull(remote_name, branch_name);
         }
         catch (const BitTrackError &e)
         {

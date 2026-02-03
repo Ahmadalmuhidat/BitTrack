@@ -1,14 +1,14 @@
 #ifndef HOOKS_HPP
 #define HOOKS_HPP
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
-#include <cstdlib>
 #include <iostream>
 #include <map>
-#include <vector>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "error.hpp"
 
@@ -19,6 +19,8 @@ enum class HookType
   POST_COMMIT,   // After a commit is made
   PRE_PUSH,      // Before pushing to remote
   POST_PUSH,     // After pushing to remote
+  PRE_PULL,      // Before pull from remote
+  POST_PULL,     // After pull from remote
   PRE_MERGE,     // Before a merge operation
   POST_MERGE,    // After a merge operation
   PRE_CHECKOUT,  // Before checking out a branch

@@ -30,11 +30,7 @@ std::string getRemoteOriginUrl()
   return url;
 }
 
-size_t writeData(
-    void *ptr,
-    size_t size,
-    size_t nmemb,
-    void *stream)
+size_t writeData(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   // Write data to the provided stream (ofstream in this case)
   std::ofstream *out = static_cast<std::ofstream *>(stream);
@@ -144,7 +140,7 @@ bool deleteRemoteBranch(
   }
 }
 
-void push(const std::string &remote_name)
+void push(const std::string &remote_name, const std::string &branch_name)
 {
   // Get remote URL
   std::string remote_url = getRemoteUrl(remote_name);
@@ -153,7 +149,8 @@ void push(const std::string &remote_name)
     ErrorHandler::printError(
         ErrorCode::FILE_NOT_FOUND,
         "Remote '" + remote_name + "' not found",
-        ErrorSeverity::ERROR, "push");
+        ErrorSeverity::ERROR,
+        "push");
 
     remote_url = getRemoteOriginUrl();
   }
@@ -164,7 +161,8 @@ void push(const std::string &remote_name)
     ErrorHandler::printError(
         ErrorCode::INVALID_REMOTE_URL,
         "No remote origin set. Use '--remote -s <url>' first",
-        ErrorSeverity::ERROR, "push");
+        ErrorSeverity::ERROR,
+        "push");
     return;
   }
 
@@ -173,7 +171,8 @@ void push(const std::string &remote_name)
   {
     ErrorHandler::printError(
         ErrorCode::REMOTE_CONNECTION_FAILED,
-        "Local repository is behind the remote repository. Use 'bittrack --pull' to sync with remote",
+        "Local repository is behind the remote repository. Use 'bittrack "
+        "--pull' to sync with remote",
         ErrorSeverity::ERROR,
         "push");
     return;
@@ -181,8 +180,9 @@ void push(const std::string &remote_name)
 
   // Run pre-push hook
   HookResult result = runHook(HookType::PRE_PUSH);
-  if (result == HookResult::ABORT)
+  if (!result.success)
   {
+    std::cout << result.error << std::endl;
     return;
   }
 
@@ -200,7 +200,8 @@ void push(const std::string &remote_name)
     {
       ErrorHandler::printError(
           ErrorCode::CONFIG_ERROR,
-          "GitHub token not configured. Use 'bittrack --config github.token <token>'",
+          "GitHub token not configured. Use 'bittrack "
+          "--config github.token <token>'",
           ErrorSeverity::ERROR,
           "push");
       return;
@@ -221,7 +222,7 @@ void push(const std::string &remote_name)
     std::cout << "Pushing to GitHub repository: " << username << "/" << repo_name << std::endl;
 
     // Attempt to push using GitHub API
-    if (pushToGithub(token, username, repo_name))
+    if (pushToGithub(token, username, repo_name, branch_name))
     {
       runHook(HookType::POST_PUSH);
       return;
@@ -242,7 +243,7 @@ void push(const std::string &remote_name)
   }
 }
 
-void pull(const std::string &remote_name)
+void pull(const std::string &remote_name, const std::string &branch_name)
 {
   // Get remote URL
   std::string remote_url = getRemoteUrl(remote_name);
@@ -266,9 +267,6 @@ void pull(const std::string &remote_name)
     return;
   }
 
-  // Check current branch
-  std::string current_branch = getCurrentBranchName();
-
   // Set remote origin and pull
   setRemoteOrigin(remote_url);
 
@@ -281,7 +279,8 @@ void pull(const std::string &remote_name)
   {
     ErrorHandler::printError(
         ErrorCode::UNCOMMITTED_CHANGES,
-        "Cannot pull with uncommitted changes. Please commit or stash your changes before pulling",
+        "Cannot pull with uncommitted changes. Please "
+        "commit or stash your changes before pulling",
         ErrorSeverity::ERROR,
         "pull");
     return;
@@ -292,8 +291,9 @@ void pull(const std::string &remote_name)
   {
     // Run pre-pull hook
     HookResult result = runHook(HookType::PRE_PULL);
-    if (result == HookResult::ABORT)
+    if (!result.success)
     {
+      std::cout << result.error << std::endl;
       return;
     }
 
@@ -327,7 +327,7 @@ void pull(const std::string &remote_name)
     }
 
     // Attempt to pull using GitHub API
-    if (pullFromGithub(token, username, repo_name, current_branch))
+    if (pullFromGithub(token, username, repo_name, branch_name))
     {
       runHook(HookType::POST_PULL);
       return;
@@ -346,16 +346,15 @@ void pull(const std::string &remote_name)
   {
     ErrorHandler::printError(
         ErrorCode::INTERNAL_ERROR,
-        "Pull is only supported for GitHub repositories. Please use a GitHub repository URL",
+        "Pull is only supported for GitHub repositories. "
+        "Please use a GitHub repository URL",
         ErrorSeverity::ERROR,
         "pull");
     return;
   }
 }
 
-void addRemote(
-    const std::string &name,
-    const std::string &url)
+void addRemote(const std::string &name, const std::string &url)
 {
   // Validate inputs
   if (name.empty() || url.empty())
@@ -516,9 +515,7 @@ void fetchFromRemote(const std::string &remote_name)
   system("rm -f .bittrack/remote_fetch_folder.zip");
 }
 
-void cloneRepository(
-    const std::string &url,
-    const std::string &local_path)
+void cloneRepository(const std::string &url, const std::string &local_path)
 {
   if (url.empty())
   {
@@ -578,9 +575,7 @@ std::string getRemoteUrl(const std::string &remote_name)
   return url;
 }
 
-void updateRemoteUrl(
-    const std::string &remote_name,
-    const std::string &new_url)
+void updateRemoteUrl(const std::string &remote_name, const std::string &new_url)
 {
   if (remote_name.empty() || new_url.empty())
   {
@@ -641,7 +636,8 @@ void showRemoteInfo()
 
 std::string getLastPushedCommit()
 {
-  std::string commit = ErrorHandler::safeReadFile(".bittrack/last_pushed_commit");
+  std::string commit =
+      ErrorHandler::safeReadFile(".bittrack/last_pushed_commit");
   if (commit.empty())
   {
     return "";
@@ -672,7 +668,8 @@ std::vector<std::string> getCommittedFiles(const std::string &commit)
 {
   std::vector<std::string> files;
 
-  std::string content = ErrorHandler::safeReadFile(".bittrack/commits/" + commit);
+  std::string content =
+      ErrorHandler::safeReadFile(".bittrack/commits/" + commit);
   if (content.empty())
   {
     return files;
@@ -728,7 +725,8 @@ std::vector<std::string> getCommittedFiles(const std::string &commit)
 
 std::string getCommitMessage(const std::string &commit)
 {
-  std::string content = ErrorHandler::safeReadFile(".bittrack/commits/" + commit);
+  std::string content =
+      ErrorHandler::safeReadFile(".bittrack/commits/" + commit);
   if (content.empty())
   {
     return "";
@@ -762,7 +760,8 @@ void integratePulledFilesWithBittrack(
           "integratePulledFilesWithBittrack");
     }
 
-    std::string commit_dir = ".bittrack/objects/" + commit_sha; // Create commit directory
+    std::string commit_dir =
+        ".bittrack/objects/" + commit_sha; // Create commit directory
     ErrorHandler::safeCreateDirectories(commit_dir);
 
     // Copy pulled files to commit directory
@@ -813,10 +812,8 @@ void integratePulledFilesWithBittrack(
     if (!ErrorHandler::safeWriteFile(".bittrack/commits/" + commit_sha, commit_log_content))
     {
       ErrorHandler::printError(
-          ErrorCode::FILE_WRITE_ERROR,
-          "Could not create commit log",
-          ErrorSeverity::ERROR,
-          "integratePulledFilesWithBittrack");
+          ErrorCode::FILE_WRITE_ERROR, "Could not create commit log",
+          ErrorSeverity::ERROR, "integratePulledFilesWithBittrack");
     }
 
     // Update branch reference
@@ -864,7 +861,8 @@ bool isLocalBehindRemote()
     ErrorHandler::printError(
         ErrorCode::INVALID_REMOTE_URL,
         "No remote origin set. Use '--remote -s <url>' first",
-        ErrorSeverity::ERROR, "is_local_behind_remote");
+        ErrorSeverity::ERROR,
+        "is_local_behind_remote");
     return false;
   }
 
@@ -880,8 +878,7 @@ bool isLocalBehindRemote()
     {
       ErrorHandler::printError(
           ErrorCode::CONFIG_ERROR,
-          "GitHub token not configured. Use 'bittrack "
-          "--config github.token <token>'",
+          "GitHub token not configured. Use 'bittrack --config github.token <token>'",
           ErrorSeverity::ERROR,
           "is_local_behind_remote");
       return false;
@@ -902,7 +899,8 @@ bool isLocalBehindRemote()
     std::string current_branch = getCurrentBranchName();
 
     // Get remote last commit SHA
-    std::string remote_commit = getGithubLastCommithash(token, username, repo_name, "heads/" + current_branch);
+    std::string remote_commit = getGithubLastCommithash(
+        token, username, repo_name, "heads/" + current_branch);
     if (remote_commit.empty())
     {
       return false;
@@ -926,7 +924,9 @@ bool isLocalBehindRemote()
     }
     else
     {
-      std::cout << "Local repository is behind remote. Last pushed: " << last_pushed.substr(0, 8) << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
+      std::cout << "Local repository is behind remote. Last pushed: "
+                << last_pushed.substr(0, 8)
+                << ", Remote: " << remote_commit.substr(0, 8) << std::endl;
       return true;
     }
   }
@@ -1004,4 +1004,98 @@ bool hasUnpushedCommits()
   }
 
   return current_commit != last_pushed;
+}
+
+void pushTag(const std::string &remote_name)
+{
+  std::string actual_remote = remote_name.empty() ? "origin" : remote_name;
+  std::string remote_url = getRemoteUrl(actual_remote);
+
+  if (remote_url.empty())
+  {
+    ErrorHandler::printError(
+        ErrorCode::INVALID_REMOTE_URL,
+        "Remote URL not found",
+        ErrorSeverity::ERROR,
+        "pushTag");
+    return;
+  }
+
+  // Get GitHub token
+  std::string token = configGet("github.token", ConfigScope::REPOSITORY);
+  if (token.empty())
+    token = configGet("github.token", ConfigScope::GLOBAL);
+
+  if (token.empty())
+  {
+    ErrorHandler::printError(
+        ErrorCode::CONFIG_ERROR,
+        "GitHub token not configured",
+        ErrorSeverity::ERROR,
+        "pushTag");
+    return;
+  }
+
+  std::string username, repo_name;
+  extractInfoFromGithubUrl(remote_url, username, repo_name);
+
+  std::cout << "Pushing tags to " << username << "/" << repo_name << "..." << std::endl;
+
+  // Push all local tags
+  std::vector<Tag> tags = getAllTags();
+  int success_count = 0;
+  for (const auto &tag : tags)
+  {
+    if (pushTagToGithub(token, username, repo_name, tag.name))
+    {
+      success_count++;
+    }
+  }
+
+  std::cout << "Successfully pushed " << success_count << "/" << tags.size() << " tags." << std::endl;
+}
+
+void pullTag(const std::string &remote_name)
+{
+  std::string actual_remote = remote_name.empty() ? "origin" : remote_name;
+  std::string remote_url = getRemoteUrl(actual_remote);
+
+  if (remote_url.empty())
+  {
+    ErrorHandler::printError(
+        ErrorCode::INVALID_REMOTE_URL,
+        "Remote URL not found",
+        ErrorSeverity::ERROR,
+        "pullTag");
+    return;
+  }
+
+  // Get GitHub token
+  std::string token = configGet("github.token", ConfigScope::REPOSITORY);
+  if (token.empty())
+    token = configGet("github.token", ConfigScope::GLOBAL);
+
+  if (token.empty())
+  {
+    ErrorHandler::printError(
+        ErrorCode::CONFIG_ERROR,
+        "GitHub token not configured",
+        ErrorSeverity::ERROR,
+        "pullTag");
+    return;
+  }
+
+  std::string username, repo_name;
+  extractInfoFromGithubUrl(remote_url, username, repo_name);
+
+  std::cout << "Pulling tags from " << username << "/" << repo_name << "..." << std::endl;
+
+  if (pullTagsFromGithub(token, username, repo_name))
+  {
+    std::cout << "Successfully pulled segments from remote tags." << std::endl;
+  }
+  else
+  {
+    std::cout << "Failed to pull tags." << std::endl;
+  }
 }

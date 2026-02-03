@@ -17,8 +17,8 @@ std::vector<std::string> listRemoteBranches(const std::string &remote_name = "or
 bool deleteRemoteBranch(
     const std::string &branch_name,
     const std::string &remote_name = "origin");
-void push(const std::string &remote_name = "");
-void pull(const std::string &remote_name = "");
+void push(const std::string &remote_name = "", const std::string &branch_name = "");
+void pull(const std::string &remote_name = "", const std::string &branch_name = "");
 void fetchFromRemote(const std::string &remote_name = "origin");
 void cloneRepository(
     const std::string &url,
@@ -40,5 +40,7 @@ std::string getCommitAuthorEmail(const std::string &commit_hash);
 std::string getCommitTimestamp(const std::string &commit_hash);
 bool hasUnpushedCommits();
 std::string getCommitMessage(const std::string &commit);
+void pushTag(const std::string &remote_name = "");
+void pullTag(const std::string &remote_name = "");
 
 #endif

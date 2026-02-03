@@ -124,13 +124,13 @@ std::string extractInfoFromGithubUrl(
 bool pushToGithub(
     const std::string &token,
     const std::string &username,
-    const std::string &repo_name)
+    const std::string &repo_name,
+    const std::string &branch_name)
 {
   try
   {
     // Get current commit and branch
     std::string current_commit = getCurrentCommit();
-    std::string current_branch = getCurrentBranchName();
 
     if (current_commit.empty())
     {
@@ -151,7 +151,7 @@ bool pushToGithub(
     }
 
     // Get the last commit SHA on GitHub
-    std::string parent_sha = getGithubLastCommithash(token, username, repo_name, "heads/" + current_branch);
+    std::string parent_sha = getGithubLastCommithash(token, username, repo_name, "heads/" + branch_name);
     bool branch_exists = !parent_sha.empty();
     bool is_empty_repo = false;
 
@@ -455,7 +455,7 @@ bool pushToGithub(
 
     if (branch_exists)
     {
-      if (!updateGithubReferance(token, username, repo_name, "heads/" + current_branch, last_commit_sha)) // Update branch reference
+      if (!updateGithubReferance(token, username, repo_name, "heads/" + branch_name, last_commit_sha)) // Update branch reference
       {
         ErrorHandler::printError(
             ErrorCode::REMOTE_CONNECTION_FAILED,
@@ -467,7 +467,7 @@ bool pushToGithub(
     }
     else
     {
-      if (!createGithubReferance(token, username, repo_name, "heads/" + current_branch, last_commit_sha)) // Create branch reference
+      if (!createGithubReferance(token, username, repo_name, "heads/" + branch_name, last_commit_sha)) // Create branch reference
       {
         ErrorHandler::printError(
             ErrorCode::REMOTE_CONNECTION_FAILED,
@@ -1435,4 +1435,181 @@ bool deleteGithubFile(
   }
 
   return validateGithubOperationSuccess(response_data);
+}
+
+bool pushTagToGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tag_name)
+{
+  // 1. Get local tag info
+  Tag tag = getTag(tag_name);
+  if (tag.name.empty())
+  {
+    ErrorHandler::printError(ErrorCode::TAG_ERROR, "Local tag '" + tag_name + "' not found", ErrorSeverity::ERROR, "pushTagToGithub");
+    return false;
+  }
+  // 2. Determine what SHA to point the reference to
+  std::string ref_sha;
+  if (tag.type == TagType::ANNOTATED)
+  {
+    // For annotated tags, we must create a tag object first
+    std::string tagger_email = configGet("user.email");
+    if (tagger_email.empty())
+    {
+      tagger_email = "bittrack@example.com"; // Fallback
+    }
+
+    ref_sha = createGithubTagObject(token, username, repo_name, tag.name, tag.commit_hash, tag.message, tag.author, tagger_email);
+  }
+  else
+  {
+    // For lightweight tags, we point directly to the commit SHA
+    ref_sha = tag.commit_hash;
+  }
+  if (ref_sha.empty())
+  {
+    return false;
+  }
+  // 3. Create or update the tag reference on GitHub
+  // Standard ref for tags is "tags/NAME" (creating "refs/tags/NAME")
+  std::string remote_sha = getGithubLastCommithash(token, username, repo_name, "tags/" + tag_name);
+  if (remote_sha.empty())
+  {
+    return createGithubReferance(token, username, repo_name, "tags/" + tag_name, ref_sha);
+  }
+  else
+  {
+    // Update existing tag reference
+    return updateGithubReferance(token, username, repo_name, "tags/" + tag_name, ref_sha);
+  }
+}
+
+bool pullTagsFromGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name)
+{
+  CURL *curl = curl_easy_init();
+  if (!curl)
+    return false;
+
+  std::string response_data;
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/refs/tags";
+
+  // Prepare headers
+  struct curl_slist *headers = nullptr;
+  headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
+  headers = curl_slist_append(headers, "User-Agent: BitTrack/1.0");
+
+  // Set options
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+
+  // Perform the request
+  CURLcode res = curl_easy_perform(curl);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  if (res != CURLE_OK)
+    return false;
+  // Simple parsing of the JSON response to find tags
+  size_t pos = 0;
+
+  while ((pos = response_data.find("\"ref\":\"", pos)) != std::string::npos)
+  {
+    // Find the end of the ref string
+    pos += 7;
+    size_t ref_end = response_data.find("\"", pos);
+    std::string full_ref = response_data.substr(pos, ref_end - pos);
+
+    // Extract tag name (refs/tags/NAME)
+    std::string tag_name = full_ref.substr(10);
+    // Find the SHA for this tag
+    size_t sha_pos = response_data.find("\"sha\":\"", ref_end);
+    sha_pos += 7;
+    size_t sha_end = response_data.find("\"", sha_pos);
+    std::string sha = response_data.substr(sha_pos, sha_end - sha_pos);
+    // Save as a lightweight tag for now (we can enhance this to fetch annotated data later)
+    Tag tag;
+    tag.name = tag_name;
+    tag.commit_hash = sha;
+    tag.type = TagType::LIGHTWEIGHT;
+    tagSave(tag);
+
+    pos = sha_end;
+  }
+  return true;
+}
+
+std::string createGithubTagObject(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tag_name,
+    const std::string &commit_sha,
+    const std::string &message,
+    const std::string &tagger_name,
+    const std::string &tagger_email)
+{
+  CURL *curl = curl_easy_init(); // Initialize CURL
+  if (!curl)
+  {
+    return "";
+  }
+
+  std::string response_data;
+  std::string url = "https://api.github.com/repos/" + username + "/" + repo_name + "/git/tags";
+
+  // Format timestamp
+  auto now = std::chrono::system_clock::now();
+  auto time_t = std::chrono::system_clock::to_time_t(now);
+
+  std::stringstream ss;
+  ss << std::put_time(std::gmtime(&time_t), "%Y-%m-%dT%H:%M:%SZ");
+  std::string github_timestamp = ss.str();
+
+  // Prepare JSON data
+  std::string json_data = "{\"tag\":\"" + tag_name + "\",\"message\":\"" + message + "\",\"object\":\"" + commit_sha + "\",\"type\":\"commit\",\"tagger\":{\"name\":\"" + tagger_name + "\",\"email\":\"" + tagger_email + "\",\"date\":\"" + github_timestamp + "\"}}";
+
+  // Prepare headers
+  struct curl_slist *headers = nullptr;
+  headers = curl_slist_append(headers, ("Authorization: token " + token).c_str());
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  headers = curl_slist_append(headers, "User-Agent: BitTrack/1.0");
+
+  // Perform request
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+
+  // Perform request
+  CURLcode res = curl_easy_perform(curl);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  // Check response
+  if (res != CURLE_OK)
+  {
+    return "";
+  }
+
+  // Extract SHA
+  size_t sha_pos = response_data.find("\"sha\":\"");
+  if (sha_pos != std::string::npos)
+  {
+    // Extract SHA
+    sha_pos += 7;
+    size_t sha_end = response_data.find("\"", sha_pos);
+    if (sha_end != std::string::npos)
+    {
+      return response_data.substr(sha_pos, sha_end - sha_pos);
+    }
+  }
+  return "";
 }

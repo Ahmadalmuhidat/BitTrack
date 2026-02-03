@@ -9,6 +9,7 @@
 
 #include "config.hpp"
 #include "error.hpp"
+#include "../include/tag.hpp"
 
 bool isGithubRemote(const std::string &url);
 std::string extractInfoFromGithubUrl(
@@ -18,7 +19,8 @@ std::string extractInfoFromGithubUrl(
 bool pushToGithub(
     const std::string &token,
     const std::string &username,
-    const std::string &repo_name);
+    const std::string &repo_name,
+    const std::string &branch_name);
 bool pullFromGithub(
     const std::string &token,
     const std::string &username,
@@ -113,5 +115,23 @@ std::string getGithubBlobContent(
     const std::string &repo_name,
     const std::string &blob_sha);
 std::string getCommitMessage(const std::string &commit);
+bool pushTagToGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tag_name);
+bool pullTagsFromGithub(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name);
+std::string createGithubTagObject(
+    const std::string &token,
+    const std::string &username,
+    const std::string &repo_name,
+    const std::string &tag_name,
+    const std::string &commit_sha,
+    const std::string &message,
+    const std::string &tagger_name,
+    const std::string &tagger_email);
 
 #endif
